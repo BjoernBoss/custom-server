@@ -7,10 +7,18 @@ import * as libHttp from "./server/http.js";
 
 const server = new libServer.Server();
 
+/* try to load the local configuration */
+import("./local/local.js")
+	.then(locModule => {
+		libLog.Info('Local module loaded');
+		locModule.run(server);
+	})
+	.catch(() => {
+		libLog.Warning('Unable to load local module');
+	});
+
 /* internally reachable */
 server.listenHttp(libConfig.PortInternalHttp, true);
-
-/* public facing */
 
 /* add the catch-all handler */
 server.addHandler('', false, function (req, response, sec, url) {

@@ -89,14 +89,14 @@ export function ParseRange(range, size) {
 	if (end == undefined) {
 		if (begin >= size)
 			return [0, 0, ParseRangeIssue];
-		return [begin, size - begin];
+		return [begin, size - begin, ParseRangeValid];
 	}
 
 	/* check if only a suffix has been requested */
 	if (begin == undefined) {
 		if (end >= size)
 			return [0, 0, ParseRangeIssue];
-		return [size - end, end];
+		return [size - end, end, ParseRangeValid];
 	}
 
 	/* check that the range is well defined */
