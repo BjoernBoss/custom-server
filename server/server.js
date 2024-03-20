@@ -73,11 +73,16 @@ export class Server {
 			const server = libNodeHttp.createServer((req, resp) =>
 				this._requestHandler(req, resp, secureInternal)
 			).listen(port);
+			server.on('error', (err) => {
+				libLog.Error(`While listening to port ${port} using http: ${err}`);
+			});
+			if (!server.listening)
+				return;
 
 			const address = server.address();
 			libLog.Info(`Http-server${secureInternal ? " flagged as secure-internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
-			libLog.Error(`Error while listening to port ${port} using http: ${err}`);
+			libLog.Error(`While listening to port ${port} using http: ${err}`);
 		}
 	}
 	listenHttps(port, key, cert, secureInternal) {
@@ -92,11 +97,16 @@ export class Server {
 			const server = libNodeHttps.createServer(config, (req, resp) =>
 				this._requestHandler(req, resp, secureInternal)
 			).listen(port);
+			server.on('error', (err) => {
+				libLog.Error(`While listening to port ${port} using https: ${err}`);
+			});
+			if (!server.listening)
+				return;
 
 			const address = server.address();
 			libLog.Info(`Https-server${secureInternal ? " flagged as secure-internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
-			libLog.Error(`Error while listening to port ${port} using https: ${err}`);
+			libLog.Error(`While listening to port ${port} using https: ${err}`);
 		}
 	}
 };
