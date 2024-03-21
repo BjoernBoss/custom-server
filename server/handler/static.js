@@ -7,15 +7,16 @@ import * as libFs from "fs";
 
 export const StaticSubPath = '/static';
 
-function ListDirectory(response, actualPath, relativePath) {
-	var content = libFs.readdirSync(actualPath);
+function ListDirectory(msg, filePath) {
+	var content = libFs.readdirSync(filePath);
 
 	/* cleanup the path to end in a slash */
-	if (!relativePath.endsWith('/'))
-		relativePath = relativePath + '/';
+	var dirPath = msg.url.pathname;
+	if (!dirPath.endsWith('/'))
+		dirPath = dirPath + '/';
 
 	/* check if the parent directory should be added */
-	if (relativePath != '/')
+	if (dirPath != StaticSubPath + '/')
 		content = ['..'].concat(content);
 
 	/* check if entries have been found */
@@ -26,14 +27,14 @@ function ListDirectory(response, actualPath, relativePath) {
 
 		/* expand all entries */
 		for (var i = 0; i < content.length; ++i) {
-			var childPath = relativePath + content[i];
+			var childPath = dirPath + content[i];
 
 			/* check if this is the parent-entry and make the path cleaner (skip the last slash) */
 			if (content[i] == '..')
-				childPath = relativePath.substr(0, relativePath.lastIndexOf('/', relativePath.length - 2));
+				childPath = dirPath.substr(0, dirPath.lastIndexOf('/', dirPath.length - 2));
 
 			entries += libTemplates.Expand(teEntry, {
-				path: StaticSubPath + childPath,
+				path: childPath,
 				name: content[i]
 			});
 		}
@@ -42,44 +43,43 @@ function ListDirectory(response, actualPath, relativePath) {
 		entries = libTemplates.LoadExpanded(libTemplates.ListDir.empty, {});
 
 	/* update the path to not contain the trailing slash */
-	if (relativePath != '/')
-		relativePath = relativePath.substr(0, relativePath.length - 1);
+	if (dirPath != '/')
+		dirPath = dirPath.substr(0, dirPath.length - 1);
 
 	/* construct the final template and return it */
-	libHttp.RespondTemplate(response, libHttp.StatusCode.Ok,
-		libTemplates.ListDir.base, { path: relativePath, entries });
+	const out = libTemplates.LoadExpanded(libTemplates.ListDir.base, { path: dirPath, entries });
+	msg.respondHtml(out);
 }
 
-export function HandleStatic(request, response, secureInternal, url) {
-	libLog.Log(`Static handler for [${url.pathname}]`);
+export function HandleStatic(msg) {
+	libLog.Log(`Static handler for [${msg.url.pathname}]`);
 
 	/* expand the path */
-	const relativePath = (url.pathname == StaticSubPath ? '/' : url.pathname.substr(StaticSubPath.length));
-	const actualPath = libPath.join(libConfig.StaticPath, '.' + relativePath);
+	const relativePath = (msg.url.pathname == StaticSubPath ? '/' : msg.url.pathname.substr(StaticSubPath.length));
+	const filePath = libPath.join(libConfig.StaticPath, '.' + relativePath);
 
 	/* ensure the request is using the Get-method */
-	if (request.method != 'GET') {
-		libLog.Log(`Request used invalid method [${request.method}]`);
-		libHttp.RespondTemplate(response, libHttp.StatusCode.MethodNotAllowed, libTemplates.ErrorInvalidMethod,
-			{ path: relativePath, method: request.method, allowed: 'GET' });
+	if (!msg.ensureMethod(['GET']))
 		return;
-	}
 
-	/* check if the path is a file */
-	if (libFs.existsSync(actualPath)) {
-		if (libFs.lstatSync(actualPath).isFile()) {
-			libHttp.RespondFile(request.headers.range, response, relativePath, actualPath);
+	/* check if the path exists in the filesystem */
+	if (libFs.existsSync(filePath)) {
+		const what = libFs.lstatSync(filePath);
+
+		/* check if the path is a file */
+		if (what.isFile()) {
+			msg.respondFile(filePath);
 			return;
 		}
 
 		/* check if the path is a directory */
-		else if (libFs.lstatSync(actualPath).isDirectory()) {
-			ListDirectory(response, actualPath, relativePath);
+		else if (what.isDirectory()) {
+			ListDirectory(msg, filePath);
 			return;
 		}
 	}
 
 	/* add the not found error */
 	libLog.Log(`Request to unknown resource`);
-	libHttp.RespondTemplate(response, libHttp.StatusCode.NotFound, libTemplates.ErrorNotFound, { path: relativePath });
+	msg.respondNotFound();
 }
