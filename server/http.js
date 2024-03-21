@@ -1,38 +1,97 @@
 import * as libConfig from "./config.js";
+import * as libTemplates from "./templates.js";
+import * as libLog from "./log.js";
 import * as libPath from "path";
 import * as libBuffer from "buffer";
+import * as libFs from "fs";
+import * as libStream from "stream";
 
-export const Ok = 200;
-export const PartialContent = 206;
-export const BadRequest = 400;
-export const NotFound = 404;
-export const MethodNotAllowed = 405;
-export const RangeIssue = 416;
-export const InternalError = 500;
+export const StatusCode = {
+	Ok: 200,
+	PartialContent: 206,
+	BadRequest: 400,
+	NotFound: 404,
+	MethodNotAllowed: 405,
+	RangeIssue: 416,
+	InternalError: 500
+};
 
-export function PrepareResponse(response, code, contentPath, size) {
+export function RespondStream(response, code, path, length = undefined) {
 	response.statusCode = code;
 	response.setHeader('Server', libConfig.ServerName);
-	response.setHeader('Content-Type', MapContentType(contentPath));
+	response.setHeader('Content-Type', MapContentType(path));
+	response.setHeader('Date', new Date().toUTCString());
 	if (!response.hasHeader('Accept-Ranges'))
 		response.setHeader('Accept-Ranges', 'none');
-	if (size != undefined)
-		response.setHeader('Content-Length', size);
+	if (length != undefined)
+		response.setHeader('Content-Length', length);
 };
-
-export function HtmlResponse(response, code, content) {
-	const buffer = libBuffer.Buffer.from(content, 'utf-8');
-	PrepareResponse(response, code, 'f.html', buffer.byteLength);
+export function RespondString(response, code, path, string) {
+	const buffer = libBuffer.Buffer.from(string, 'utf-8');
+	RespondStream(response, code, path, buffer.length);
 	response.end(buffer);
+}
+export function RespondHtml(response, code, content) {
+	RespondString(response, code, 'f.html', content);
 };
-export function TextResponse(response, code, content) {
-	const buffer = libBuffer.Buffer.from(content, 'utf-8');
-	PrepareResponse(response, code, 'f.txt', buffer.byteLength);
-	response.end(buffer);
+export function RespondText(response, code, content) {
+	RespondString(response, code, 'f.txt', content);
 };
+export function RespondTemplate(response, code, name, args) {
+	const content = libTemplates.LoadExpanded(name, args);
+	RespondHtml(response, code, content);
+};
+export function RespondFile(range, response, path, filePath) {
+	const fileSize = libFs.statSync(filePath).size;
+
+	/* mark byte-ranges to be supported in principle */
+	response.setHeader('Accept-Ranges', 'bytes');
+
+	/* parse the range and check if it is invalid */
+	const [offset, size, rangeResult] = ParseRangeHeader(range, fileSize);
+	if (rangeResult == ParseRangeMalformed) {
+		libLog.Log(`Malformed range-request encountered [${range}]`);
+		RespondTemplate(response, StatusCode.BadRequest, libTemplates.ErrorBadRequest,
+			{ path, reason: `Issues while parsing http-header range: [${range}]` });
+		return;
+	}
+	else if (rangeResult == ParseRangeIssue) {
+		libLog.Log(`Unsatisfiable range-request encountered [${range}] with file-size [${fileSize}]`);
+		response.setHeader('Content-Range', `bytes */${fileSize}`);
+		RespondTemplate(response, StatusCode.RangeIssue, libTemplates.ErrorRangeIssue,
+			{ path, range: range, size: String(fileSize) });
+		return;
+	}
+
+	/* check if the file is empty (can only happen for unused ranges) */
+	if (size == 0) {
+		libLog.Log('Sending empty content');
+		RespondString(response, StatusCode.Ok, path, '');
+		return;
+	}
+
+	/* setup the filestream object */
+	let stream = libFs.createReadStream(filePath, {
+		start: offset, end: offset + size - 1
+	});
+
+	/* setup the response */
+	RespondStream(response, (rangeResult == ParseRangeNoRange ? StatusCode.Ok : StatusCode.PartialContent), path, size);
+	if (rangeResult == ParseRangeValid)
+		response.setHeader('Content-Range', `bytes ${offset}-${offset + size - 1}/${fileSize}`);
+
+	/* write the content to the stream */
+	libLog.Log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
+	libStream.pipeline(stream, response, (err) => {
+		if (err != undefined)
+			libLog.Error(`While sending content: [${err}]`);
+		else
+			libLog.Log('Content has been sent');
+	});
+}
 
 
-export function MapContentType(filePath) {
+function MapContentType(filePath) {
 	const fileExtension = libPath.extname(filePath).toLowerCase();
 
 	if (fileExtension == '.html')
@@ -50,7 +109,7 @@ export const ParseRangeNoRange = 0;
 export const ParseRangeValid = 1;
 export const ParseRangeIssue = 2;
 export const ParseRangeMalformed = 3;
-export function ParseRange(range, size) {
+function ParseRangeHeader(range, size) {
 	if (range == undefined)
 		return [0, size, ParseRangeNoRange];
 

@@ -4,7 +4,6 @@ import * as libConfig from "../config.js";
 import * as libHttp from "../http.js"
 import * as libPath from "path";
 import * as libFs from "fs";
-import * as libStream from "stream";
 
 export const StaticSubPath = '/static';
 
@@ -47,70 +46,12 @@ function ListDirectory(response, actualPath, relativePath) {
 		relativePath = relativePath.substr(0, relativePath.length - 1);
 
 	/* construct the final template and return it */
-	libHttp.HtmlResponse(response, libHttp.Ok, libTemplates.LoadExpanded(
-		libTemplates.ListDir.base, { path: relativePath, entries }
-	));
-}
-function SendFile(request, response, actualPath, relativePath) {
-	const fileSize = libFs.statSync(actualPath).size;
-
-	/* mark byte-ranges to be supported in principle */
-	response.setHeader('Accept-Ranges', 'bytes');
-
-	/* parse the range and check if it is invalid */
-	const [offset, size, rangeResult] = libHttp.ParseRange(request.headers.range, fileSize);
-	if (rangeResult == libHttp.ParseRangeMalformed) {
-		libLog.Info(`Malformed range-request encountered [${request.headers.range}]`);
-		libHttp.HtmlResponse(response, libHttp.BadRequest,
-			libTemplates.LoadExpanded(libTemplates.ErrorBadRequest, {
-				path: relativePath,
-				reason: `Issues while parsing http-header range: [${request.headers.range}]`
-			})
-		);
-		return;
-	}
-	else if (rangeResult == libHttp.ParseRangeIssue) {
-		libLog.Info(`Unsatisfiable range-request encountered [${request.headers.range}] with file-size [${fileSize}]`);
-		response.setHeader('Content-Range', `bytes */${fileSize}`);
-		libHttp.HtmlResponse(response, libHttp.RangeIssue,
-			libTemplates.LoadExpanded(libTemplates.ErrorRangeIssue, {
-				path: relativePath,
-				range: request.headers.range, size: String(fileSize)
-			})
-		);
-		return;
-	}
-
-	/* check if the file is empty (can only happen for unused ranges) */
-	if (size == 0) {
-		libLog.Info('Sending empty content');
-		libHttp.PrepareResponse(response, libHttp.Ok, actualPath, 0);
-		response.end();
-		return;
-	}
-
-	/* setup the filestream object */
-	let stream = libFs.createReadStream(actualPath, {
-		start: offset, end: offset + size - 1
-	});
-
-	/* setup the response */
-	libHttp.PrepareResponse(response, (rangeResult == libHttp.ParseRangeNoRange ? libHttp.Ok : libHttp.PartialContent), actualPath, size);
-	if (rangeResult == libHttp.ParseRangeValid)
-		response.setHeader('Content-Range', `bytes ${offset}-${offset + size - 1}/${fileSize}`);
-
-	/* write the content to the stream */
-	libLog.Info(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
-	libStream.pipeline(stream, response, (err) => {
-		if (err != undefined)
-			libLog.Error(`While sending content: [${err}]`);
-		else
-			libLog.Info('Content has been sent');
-	});
+	libHttp.RespondTemplate(response, libHttp.StatusCode.Ok,
+		libTemplates.ListDir.base, { path: relativePath, entries });
 }
 
 export function HandleStatic(request, response, secureInternal, url) {
-	libLog.Info(`Static handler for [${url.pathname}]`);
+	libLog.Log(`Static handler for [${url.pathname}]`);
 
 	/* expand the path */
 	const relativePath = (url.pathname == StaticSubPath ? '/' : url.pathname.substr(StaticSubPath.length));
@@ -118,21 +59,16 @@ export function HandleStatic(request, response, secureInternal, url) {
 
 	/* ensure the request is using the Get-method */
 	if (request.method != 'GET') {
-		libLog.Info(`Request used invalid method [${request.method}]`);
-		libHttp.HtmlResponse(response, libHttp.MethodNotAllowed,
-			libTemplates.LoadExpanded(libTemplates.ErrorInvalidMethod, {
-				path: relativePath,
-				method: request.method,
-				allowed: 'GET'
-			})
-		);
+		libLog.Log(`Request used invalid method [${request.method}]`);
+		libHttp.RespondTemplate(response, libHttp.StatusCode.MethodNotAllowed, libTemplates.ErrorInvalidMethod,
+			{ path: relativePath, method: request.method, allowed: 'GET' });
 		return;
 	}
 
 	/* check if the path is a file */
 	if (libFs.existsSync(actualPath)) {
 		if (libFs.lstatSync(actualPath).isFile()) {
-			SendFile(request, response, actualPath, relativePath);
+			libHttp.RespondFile(request.headers.range, response, relativePath, actualPath);
 			return;
 		}
 
@@ -144,10 +80,6 @@ export function HandleStatic(request, response, secureInternal, url) {
 	}
 
 	/* add the not found error */
-	libLog.Info(`Request to unknown resource`);
-	libHttp.HtmlResponse(response, libHttp.NotFound,
-		libTemplates.LoadExpanded(libTemplates.ErrorNotFound, {
-			path: relativePath
-		})
-	);
-};
+	libLog.Log(`Request to unknown resource`);
+	libHttp.RespondTemplate(response, libHttp.StatusCode.NotFound, libTemplates.ErrorNotFound, { path: relativePath });
+}

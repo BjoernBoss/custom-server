@@ -30,7 +30,7 @@ export class Server {
 				*	immediately followed by a '/' (i.e. its not a partial name of a path-component) */
 				if (!url.pathname.startsWith(key))
 					continue;
-				if (url.pathname.length > key.length && url.pathname[key.length] != '/')
+				if (url.pathname.length > key.length && url.pathname[key.length] != '/' && (key.length == 0 || url.pathname[key.length - 1] != '/'))
 					continue;
 
 				/* check if this is the better match by being the first match or more precise */
@@ -46,14 +46,14 @@ export class Server {
 
 			/* add the default 404 (not-found) response */
 			libLog.Error(`No handler registered for [${url.pathname}]`)
-			libHttp.TextResponse(response, libHttp.NotFound, `No handler registered for [${url.pathname}]`);
+			libHttp.RespondText(response, libHttp.StatusCode.NotFound, `No handler registered for [${url.pathname}]`);
 			response.end();
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
 			libLog.Error(`Uncaught exception encountered: ${err}`)
 			if (!response.headersSent) {
 				response.removeHeader('Content-Range');
-				libHttp.TextResponse(response, libHttp.InternalError, 'Unknown internal error encountered');
+				libHttp.RespondText(response, libHttp.StatusCode.InternalError, 'Unknown internal error encountered');
 				response.end();
 			}
 		}
