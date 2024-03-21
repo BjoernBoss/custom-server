@@ -5,31 +5,36 @@ import * as libStatic from "./server/handler/static.js";
 import * as libConfig from "./server/config.js";
 import * as libHttp from "./server/http.js";
 
-const server = new libServer.Server();
+function Setup(localModule) {
+	const server = new libServer.Server();
 
-/* try to load the local configuration */
-import("./local/local.js")
-	.then(locModule => {
+	/* check if the local-module has been loaded and run it */
+	if (localModule != null) {
 		libLog.Info('Local module loaded');
-		locModule.run(server);
-	})
-	.catch(() => {
+		localModule.run(server);
+	}
+	else
 		libLog.Warning('Unable to load local module');
+
+	/* internally reachable */
+	server.listenHttp(libConfig.PortInternalHttp, true);
+
+	/* add the catch-all handler */
+	server.addHandler('', false, function (req, response, sec, url) {
+		libLog.Info(`Catch-all not-found handler for [${url.pathname}]`);
+
+		libHttp.HtmlResponse(response, libHttp.NotFound,
+			libTemplates.LoadExpanded(libTemplates.ErrorNotFound, {
+				path: url.pathname
+			})
+		);
 	});
 
-/* internally reachable */
-server.listenHttp(libConfig.PortInternalHttp, true);
+	/* add the static content handler */
+	server.addHandler(libStatic.StaticSubPath, false, libStatic.HandleStatic);
+}
 
-/* add the catch-all handler */
-server.addHandler('', false, function (req, response, sec, url) {
-	libLog.Info(`Catch-all not-found handler for [${url.pathname}]`);
-
-	libHttp.HtmlResponse(response, libHttp.NotFound,
-		libTemplates.LoadExpanded(libTemplates.ErrorNotFound, {
-			path: url.pathname
-		})
-	);
-});
-
-/* add the static content handler */
-server.addHandler(libStatic.StaticSubPath, false, libStatic.HandleStatic);
+/* try to load the local configuration and otherwise perform the default-setup */
+import("./local/local.js")
+	.then(localModule => Setup(localModule))
+	.catch(() => Setup(null));
