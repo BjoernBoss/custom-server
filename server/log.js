@@ -2,10 +2,12 @@ import * as libFs from "fs";
 
 var logIntoConsole = true;
 var logFile = {
-	path: null,
-	logEntries: 0,
-	bufMaximum: 1500,
-	logMaximum: 10_000,
+	configured: false,
+	logFilePath: null,
+	oldFilePath: null,
+	logFileSize: 0,
+	bufMaximumLines: 1500,
+	logMaximumSize: 10_000_000,
 	fs: null,
 	buffer: [],
 	flushId: null,
@@ -13,9 +15,14 @@ var logFile = {
 };
 
 function FlushToFile() {
+	console.log('flushing into file');
+
 	/* write the buffer to the file */
-	if (logFile.buffer.length > 0 && logFile.fs != null)
-		try { libFs.writeFileSync(logFile.fs, logFile.buffer.join(""), 'utf-8'); } catch (err) { }
+	if (logFile.buffer.length > 0 && logFile.fs != null) {
+		const content = Buffer.from(logFile.buffer.join(""), 'utf-8');
+		try { libFs.writeFileSync(logFile.fs, content); } catch (err) { }
+		logFile.logFileSize += content.length;
+	}
 	logFile.buffer = [];
 
 	/* clear any currently queued flushes */
@@ -32,12 +39,12 @@ function MakeActualLog(level, msg) {
 		console.log(log);
 
 	/* check if the log should be written to a file */
-	if (logFile.path == null)
+	if (!logFile.configured)
 		return;
 
 	/* write the log to the buffer and check if the data need to be flushed inplace, or if the flushing can be delayed */
 	logFile.buffer.push(`${log}\n`);
-	if (logFile.buffer.length >= logFile.bufMaximum)
+	if (logFile.buffer.length >= logFile.bufMaximumLines)
 		FlushToFile();
 	else {
 		if (logFile.flushId != null)
@@ -46,9 +53,8 @@ function MakeActualLog(level, msg) {
 	}
 
 	/* check if the log-files need to be swapped */
-	if (++logFile.logEntries < logFile.logMaximum)
+	if (logFile.logFileSize < logFile.logMaximumSize)
 		return;
-	logFile.logEntries = 0;
 
 	/* flush the buffered entries */
 	FlushToFile();
@@ -60,8 +66,9 @@ function MakeActualLog(level, msg) {
 	}
 
 	/* move it to the old-slot and open the new file */
-	try { libFs.renameSync(logFile.path, `${logFile.path}.old`); } catch (err) { }
-	try { logFile.fs = libFs.openSync(logFile.path, 'w'); } catch (err) { }
+	try { libFs.renameSync(logFile.logFilePath, logFile.oldFilePath); } catch (err) { }
+	try { logFile.fs = libFs.openSync(logFile.logFilePath, 'w'); } catch (err) { }
+	logFile.logFileSize = 0;
 };
 
 export function SetLogConsole(logConsole) {
@@ -69,12 +76,17 @@ export function SetLogConsole(logConsole) {
 }
 export function SetFileLogging(filePath) {
 	/* check if a logging-file already exists */
-	if (logFile.path != null)
+	if (logFile.configured)
 		return false;
+	logFile.configured = true;
+
+	/* setup the two paths */
+	logFile.logFilePath = `${filePath}.log`;
+	logFile.oldFilePath = `${filePath}.old.log`;
 
 	/* setup the logging state */
-	logFile.path = filePath;
-	try { logFile.fs = libFs.openSync(logFile.path, 'w'); } catch (err) { }
+	try { logFile.fs = libFs.openSync(logFile.logFilePath, 'a'); } catch (err) { }
+	try { logFile.logFileSize = libFs.fstatSync(logFile.fs).size; } catch (err) { }
 }
 export function Error(msg) {
 	MakeActualLog('Error', msg);
