@@ -19,6 +19,7 @@ export class Server {
 
 			/* check if an exact handler exists */
 			if (msg.url.pathname in this._exact) {
+				msg.translate(msg.url.pathname);
 				this._exact[msg.url.pathname](msg);
 				return;
 			}
@@ -40,6 +41,7 @@ export class Server {
 
 			/* check if a handler has been found */
 			if (bestKey != undefined) {
+				msg.translate(bestKey);
 				this._handler[bestKey](msg);
 				return;
 			}

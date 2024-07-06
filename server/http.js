@@ -6,6 +6,9 @@ import * as libBuffer from "buffer";
 import * as libFs from "fs";
 import * as libStream from "stream";
 import * as libURL from "url";
+import * as libWs from "ws";
+
+const WebSocketServer = new libWs.WebSocketServer({ noServer: true });
 
 export const StatusCode = {
 	Ok: 200,
@@ -23,6 +26,7 @@ export class HttpMessage {
 		this.response = response;
 		this.secureInternal = secureInternal;
 		this.url = new libURL.URL(request.url, `http://${request.headers.host}`);
+		this.relative = this.url.pathname;
 		this._headersDone = false;
 		this._headers = {};
 	}
@@ -92,6 +96,10 @@ export class HttpMessage {
 
 		if (fileExtension == '.html')
 			return 'text/html; charset=utf-8';
+		if (fileExtension == '.css')
+			return 'text/css; charset=utf-8';
+		if (fileExtension == '.js')
+			return 'text/javascript; charset=utf-8';
 		if (fileExtension == '.txt')
 			return 'text/plain; charset=utf-8';
 		if (fileExtension == '.mp4')
@@ -120,7 +128,12 @@ export class HttpMessage {
 		this.response.end(buffer);
 	}
 
-
+	translate(path) {
+		if (this.url.pathname == path)
+			this.relative = '/';
+		else
+			this.relative = this.url.pathname.substring(path.length);
+	}
 	addHeader(key, value) {
 		this._headers[key] = value;
 	}
@@ -150,7 +163,7 @@ export class HttpMessage {
 	respondHtml(content) {
 		this._responseString(StatusCode.Ok, 'f.html', content);
 	}
-	respondFile(filePath) {
+	respondFile(filePath, useURLPathForType) {
 		const fileSize = libFs.statSync(filePath).size;
 
 		/* mark byte-ranges to be supported in principle */
@@ -189,7 +202,7 @@ export class HttpMessage {
 		/* setup the response */
 		if (rangeResult == HttpMessage._ParseRangeValid)
 			this._headers['Content-Range'] = `bytes ${offset}-${offset + size - 1}/${fileSize}`;
-		this._closeHeader((rangeResult == HttpMessage._ParseRangeNoRange ? StatusCode.Ok : StatusCode.PartialContent), this.url.pathname, size);
+		this._closeHeader((rangeResult == HttpMessage._ParseRangeNoRange ? StatusCode.Ok : StatusCode.PartialContent), useURLPathForType ? this.url.pathname : filePath, size);
 
 		/* write the content to the stream */
 		libLog.Log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
@@ -198,5 +211,20 @@ export class HttpMessage {
 				err = 'Content has been sent';
 			libLog.Log(`While sending content: [${err}]`);
 		});
+	}
+	tryRespondFile(filePath, useURLPathForType) {
+		/* check if the file exists */
+		if (!libFs.existsSync(filePath) || !libFs.lstatSync(filePath).isFile()) {
+			libLog.Log(`Request to unknown resource`);
+			this.respondNotFound();
+		}
+		else
+			this.respondFile(filePath, useURLPathForType);
+	}
+	tryAcceptWebSocket(callback) {
+		if (this.request.headers.connection.toLowerCase() != 'upgrade' || this.request.headers.upgrade.toLowerCase() != 'websocket')
+			return false;
+		WebSocketServer.handleUpgrade(this.request, this.request.socket, Buffer.alloc(0), (ws, _) => callback(ws));
+		return true;
 	}
 };

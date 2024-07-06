@@ -1,8 +1,10 @@
 import * as libServer from "./server/server.js";
 import * as libLog from "./server/log.js";
-import * as libStatic from "./server/handler/static.js";
-import * as libCatchAll from "./server/handler/catch-all.js";
 import * as libConfig from "./server/config.js";
+
+import * as libShared from "./handler/shared.js";
+import * as libCatchAll from "./handler/catch-all.js";
+import * as libGame from "./handler/game.js";
 
 function Setup(localModule) {
 	const server = new libServer.Server();
@@ -19,10 +21,13 @@ function Setup(localModule) {
 	server.listenHttp(libConfig.PortInternalHttp, true);
 
 	/* add the catch-all handler */
-	server.addHandler(libCatchAll.CatchAllSubPath, false, libCatchAll.HandleCatchAll);
+	server.addHandler(libCatchAll.SubPath, false, libCatchAll.Handle);
 
-	/* add the static content handler */
-	server.addHandler(libStatic.StaticSubPath, false, libStatic.HandleStatic);
+	/* add the shared content handler */
+	server.addHandler(libShared.SubPath, false, libShared.Handle);
+
+	/* add the game content handler */
+	server.addHandler(libGame.SubPath, false, libGame.Handle);
 }
 
 /* try to load the local configuration and otherwise perform the default-setup */

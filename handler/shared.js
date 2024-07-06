@@ -1,11 +1,10 @@
-import * as libLog from "../log.js";
-import * as libTemplates from "../templates.js";
-import * as libConfig from "../config.js";
-import * as libHttp from "../http.js"
+import * as libLog from "../server/log.js";
+import * as libTemplates from "../server/templates.js";
 import * as libPath from "path";
 import * as libFs from "fs";
 
-export const StaticSubPath = '/static';
+export const SubPath = '/shared';
+const ActualPath = libPath.resolve('./www/shared');
 
 function ListDirectory(msg, filePath) {
 	var content = libFs.readdirSync(filePath);
@@ -16,7 +15,7 @@ function ListDirectory(msg, filePath) {
 		dirPath = dirPath + '/';
 
 	/* check if the parent directory should be added */
-	if (dirPath != StaticSubPath + '/')
+	if (msg.relative != '/')
 		content = ['..'].concat(content);
 
 	/* check if entries have been found */
@@ -51,12 +50,11 @@ function ListDirectory(msg, filePath) {
 	msg.respondHtml(out);
 }
 
-export function HandleStatic(msg) {
-	libLog.Log(`Static handler for [${msg.url.pathname}]`);
+export function Handle(msg) {
+	libLog.Log(`Shared handler for [${msg.relative}]`);
 
 	/* expand the path */
-	const relativePath = (msg.url.pathname == StaticSubPath ? '/' : msg.url.pathname.substr(StaticSubPath.length));
-	const filePath = libPath.join(libConfig.StaticPath, '.' + relativePath);
+	const filePath = libPath.join(ActualPath, '.' + msg.relative);
 
 	/* ensure the request is using the Get-method */
 	if (!msg.ensureMethod(['GET']))
@@ -68,7 +66,7 @@ export function HandleStatic(msg) {
 
 		/* check if the path is a file */
 		if (what.isFile()) {
-			msg.respondFile(filePath);
+			msg.respondFile(filePath, false);
 			return;
 		}
 

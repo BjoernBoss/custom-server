@@ -1,2 +1,4 @@
 local/*
-www/static/*
+www/shared/*
+node_modules/*
+package-lock.json
