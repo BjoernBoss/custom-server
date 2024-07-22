@@ -1,0 +1,192 @@
+html,
+body {
+	margin: 0;
+	height: 100%;
+	user-select: none;
+}
+
+.core {
+	overflow: clip;
+	background-color: rgb(212, 212, 212);
+	display: flex;
+	flex-flow: column;
+	height: 100%;
+}
+
+.state {
+	min-height: 6em;
+	background-color: rgb(158, 158, 158);
+	flex: 0 1 auto;
+	padding: 1em;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.state .text {
+	margin: 0;
+	color: black;
+	font-size: 2em;
+	font-weight: bolder;
+	text-align: center;
+}
+
+.core-separator {
+	height: 0.25em;
+	min-height: 0.25em;
+	background-color: #404040;
+}
+
+.options {
+	padding: 2em;
+	background-color: rgb(212, 212, 212);
+	display: flex;
+	flex-flow: column;
+}
+
+.separator {
+	height: 2em;
+	min-height: 2em;
+}
+
+.option {
+	overflow: clip;
+	background-color: #ffffff;
+	border-radius: 2em;
+	border-style: solid;
+	border-color: #949494;
+	border-width: 0.5em;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.interact {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: #ffffff30;
+}
+
+.interact.disabled {
+	background-color: #00000040;
+	color: #d0d0d0;
+}
+
+.interact p {
+	margin: 0.3em;
+	color: black;
+	font-size: 2em;
+	font-weight: bolder;
+	text-align: center;
+	padding: 0 1em;
+}
+
+.interact.disabled p {
+	color: #505050;
+}
+
+.interact:not(.disabled):active {
+	background-color: #00000080;
+}
+
+@media (hover: hover),
+(-ms-high-contrast:none) {
+	.interact:not(.disabled):hover {
+		background-color: #00000080;
+	}
+}
+
+.overlay {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	background-color: #000000a0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.select {
+	width: 90%;
+	display: flex;
+	flex-direction: column;
+}
+
+.config {
+	width: 100%;
+	height: 100%;
+	background-color: #c0c0c0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.config .content {
+	width: 80%;
+	background-color: white;
+	border-radius: 1em;
+	border-width: 0.2em;
+	border-color: #606060;
+	border-style: solid;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: 1em;
+}
+
+.config .content .title {
+	color: black;
+	font-size: 3em;
+	margin: 0;
+}
+
+.confirm {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.confirm .button .interact p {
+	font-size: 2.5em;
+}
+
+.confirm .button {
+	background-color: #a0a0a0;
+	border-radius: 1em;
+	border-width: 0.3em;
+	border-style: solid;
+	border-color: #606060;
+	flex: 1 1 auto;
+	overflow: clip;
+	margin: 0.2em 0;
+}
+
+.warning {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.warning .text {
+	margin: 0;
+	width: 100%;
+	color: #ff4040;
+	font-size: 2em;
+	font-style: italic;
+	font-weight: bold;
+}
+
+.hidden {
+	display: none;
+}
+
+.active {
+	border-color: rgb(89, 214, 89);
+}

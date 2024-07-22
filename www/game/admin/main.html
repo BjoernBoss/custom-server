@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Spiel Kontrolle!</title>
+	<link rel="stylesheet" type="text/css" href="/game/admin/style.css">
+	<script src="/game/admin/script.js"></script>
+</head>
+
+<body contenteditable="false">
+	<div class="overlay" id="initial">
+		<div class="config">
+			<div class="content">
+				<p class="title">Admin Seite vom Spiel!</p>
+				<div style="height:1.5em;"></div>
+				<div class="warning hidden" id="warning">
+					<p id="warningText" class="text">Eine Warnung!</p>
+					<div style="height:1.5em;"></div>
+				</div>
+				<div class="confirm" id="login">
+					<div class="button">
+						<div class="interact" onclick="_game.login(false, false);">
+							<p>Aktiver Admin werden!</p>
+						</div>
+					</div>
+				</div>
+				<div style="height:1.5em;"></div>
+				<div class="confirm">
+					<div class="button">
+						<div class="interact" onclick="_game.login(true, false);">
+							<p>Aktiv werden und Runde zurücksetzen!</p>
+						</div>
+					</div>
+					<div style="height:1.5em;"></div>
+					<div class="button">
+						<div class="interact" onclick="_game.login(true, true);">
+							<p>Aktiv werden und alles zurücksetzen!</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="core">
+		<div class="state">
+			<p class="text" id="state">
+				State...
+			</p>
+			<div style="height:1.5em;"></div>
+			<div class="select">
+				<div class="option">
+					<div class="interact" onclick="_game.next();" id="nextInteract">
+						<p id="nextText">Next-State</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="core-separator"></div>
+		<div style="overflow: auto;">
+			<div class="options" id="options">
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>

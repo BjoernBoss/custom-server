@@ -1,0 +1,75 @@
+html,
+body {
+	margin: 0;
+	height: 100%;
+	user-select: none;
+}
+
+.core {
+	overflow: clip;
+	background-color: rgb(212, 212, 212);
+	display: flex;
+	flex-flow: column;
+	height: 100%;
+}
+
+.header {
+	min-height: 6em;
+	background-color: rgb(158, 158, 158);
+	flex: 0 1 auto;
+	padding: 1em;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.header .text {
+	margin: 0;
+	color: black;
+	font-size: 2em;
+	font-weight: bolder;
+	text-align: center;
+}
+
+.scores {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+}
+
+.row {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	font-size: 1.5em;
+	font-weight: bold;
+	margin: 0;
+	padding: 0.4em 0;
+}
+
+.name {
+	flex: 1 1 auto;
+	padding-left: 1em;
+	min-width: 8em;
+}
+
+.name p {
+	margin: 0;
+}
+
+.score {
+	width: 6em;
+	min-width: 6em;
+	flex: 0 1 auto;
+}
+
+.score p {
+	margin: 0;
+}
+
+.core-separator {
+	height: 0.25em;
+	min-height: 0.25em;
+	background-color: #404040;
+}

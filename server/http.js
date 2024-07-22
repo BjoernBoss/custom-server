@@ -91,20 +91,22 @@ export class HttpMessage {
 		/* setup the corrected range */
 		return [begin, end - begin + 1, HttpMessage._ParseRangeValid];
 	}
+	static _contentTypeMap = {
+		'.html': 'text/html; charset=utf-8',
+		'.css':'text/css; charset=utf-8',
+		'.js': 'text/javascript; charset=utf-8',
+		'.txt': 'text/plain; charset=utf-8',
+		'.mp4': 'video/mp4',
+		'.png': 'image/png',
+		'.gif': 'image/gif',
+		'.jpg': 'image/jpeg',
+		'.jpeg': 'image/jpeg',
+		'.svg': 'image/svg+xml'
+	};
 	static _ContentType(filePath) {
 		const fileExtension = libPath.extname(filePath).toLowerCase();
-
-		if (fileExtension == '.html')
-			return 'text/html; charset=utf-8';
-		if (fileExtension == '.css')
-			return 'text/css; charset=utf-8';
-		if (fileExtension == '.js')
-			return 'text/javascript; charset=utf-8';
-		if (fileExtension == '.txt')
-			return 'text/plain; charset=utf-8';
-		if (fileExtension == '.mp4')
-			return 'video/mp4';
-
+		if (fileExtension in HttpMessage._contentTypeMap)
+			return HttpMessage._contentTypeMap[fileExtension];
 		return 'application/octet-stream';
 	}
 	_closeHeader(statusCode, path, length = undefined) {

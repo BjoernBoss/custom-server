@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Normaler Mitspieler!</title>
+	<link rel="stylesheet" type="text/css" href="/game/client/style.css">
+	<script src="/game/client/script.js"></script>
+</head>
+
+<body contenteditable="false">
+	<div class="overlay" id="initial">
+		<div class="config">
+			<div class="content">
+				<p class="title">Wie heißt du?</p>
+				<div style="height:1.5em;"></div>
+				<input class="name" type="text" placeholder="Name..." id="name" oninput="_game.nameChanged();">
+				<div style="height:1.5em;"></div>
+				<div class="warning hidden" id="warning">
+					<p id="warningText" class="text">Eine Warnung!</p>
+					<div style="height:1.5em;"></div>
+				</div>
+				<div class="confirm" id="loginBasic">
+					<div class="button">
+						<div class="interact" onclick="_game.login(false, false);">
+							<p>Mitspielen!</p>
+						</div>
+					</div>
+				</div>
+				<div class="confirm hidden" id="loginTakeOwnership">
+					<div class="button">
+						<div class="interact" onclick="_game.login(true, false);">
+							<p>Das war ich, weiterspielen!</p>
+						</div>
+					</div>
+					<div style="width:1.5em;height:1.5em;"></div>
+					<div class="button">
+						<div class="interact" onclick="_game.login(true, true);">
+							<p>Mein erstes Spiel, Stand zurücksetzen!</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="overlay hidden" id="not-ready">
+	</div>
+	<div class="overlay hidden" id="select" onclick="_game.selected('');">
+		<div class="select">
+			<div class="select-option dk">
+				<div class="interact" onclick="_game.selected('dk');"></div>
+			</div>
+			<div class="select-option hu">
+				<div class="interact" onclick="_game.selected('hu');"></div>
+			</div>
+			<div class="select-option de">
+				<div class="interact" onclick="_game.selected('de');"></div>
+			</div>
+			<div class="select-option kh">
+				<div class="interact" onclick="_game.selected('kh');"></div>
+			</div>
+		</div>
+	</div>
+	<div class="core">
+		<div class="header">
+			<p class="text" id="header">Quest...</p>
+		</div>
+		<div class="core-separator"></div>
+		<div style="overflow: auto;">
+			<p class="score" id="score">
+				Punkte: ...
+			</p>
+			<div class="options">
+				<div class="option" id="option0">
+					<div class="interact disabled" onclick="_game.select(0);" id="interact0">
+						<p id="text0">Opt.0</p>
+					</div>
+				</div>
+				<div class="separator"></div>
+				<div class="option" id="option1">
+					<div class="interact disabled" onclick="_game.select(1);" id="interact1">
+						<p id="text1">Opt.1</p>
+					</div>
+				</div>
+				<div class="separator"></div>
+				<div class="option" id="option2">
+					<div class="interact disabled" onclick="_game.select(2);" id="interact2">
+						<p id="text2">Opt.2</p>
+					</div>
+				</div>
+				<div class="separator"></div>
+				<div class="option" id="option3">
+					<div class="interact disabled" onclick="_game.select(3);" id="interact3">
+						<p id="text3">Opt.3</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
