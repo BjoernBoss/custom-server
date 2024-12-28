@@ -1,8 +1,8 @@
 import * as libLog from "../server/log.js";
 import * as libPath from "path";
 
-export const SubPath = '/game';
-const ActualPath = libPath.resolve('./www/game');
+export const SubPath = '/quiz-game';
+const ActualPath = libPath.resolve('./www/quiz-game');
 
 let GameGlobal = {};
 
@@ -31,8 +31,8 @@ class GameSync {
 			obj.err = function (msg) { libLog.Error(`WS-client[${obj.uniqueId}: ${obj.name}]: ${msg}`); };
 		}
 		else {
-			obj.log = function (msg) { libLog.Log(`WS-score[${obj.uniqueId}: ${obj.name}]: ${msg}`); };
-			obj.err = function (msg) { libLog.Error(`WS-score[${obj.uniqueId}: ${obj.name}]: ${msg}`); };
+			obj.log = function (msg) { libLog.Log(`WS-score[${obj.uniqueId}]: ${msg}`); };
+			obj.err = function (msg) { libLog.Error(`WS-score[${obj.uniqueId}]: ${msg}`); };
 		}
 
 		/* immediately register the scores */
@@ -136,16 +136,16 @@ class GameSync {
 };
 class GameState {
 	constructor() {
-		this.state = 'start'; //start, prepared, open, closed, resolved
-		this.correct = [-1, -1, -1, -1];
-		this.options = ['', '', '', ''];
+		this.state = 'start'; //start, open, closed, resolved
+		this.correct = -1;
+		this.options = [];
 		this.description = '';
 		this.players = {};
 	}
 
 	createPlayer(obj, reset) {
 		if (reset || !(obj.name in this.players))
-			this.players[obj.name] = { score: 0, choices: [-1, -1, -1, -1] };
+			this.players[obj.name] = { score: 0, choice: -1 };
 
 		/* notify the listener about the changed state */
 		GameGlobal.sync.stateChanged(null);
@@ -153,18 +153,18 @@ class GameState {
 	}
 
 	/* called by client/admin */
-	makeChoice(obj, index, value) {
+	makeChoice(obj, index) {
 		/* check if the choice can be made and is valid */
 		if (this.state != 'open')
 			return { code: 'noChoicePossible' };
-		if (index < 0 || index >= this.options.length || value < 0 || value >= 4)
+		if (index < 0 || index >= this.options.length)
 			return { code: 'outOfRange' };
-		if (value == this.players[obj.name].choices[index])
+		if (this.players[obj.name].choice == index)
 			return { code: 'ok' };
-		obj.log(`made choice [${value}] for [${index}]`);
+		obj.log(`made choice [${index}]`);
 
 		/* update the choice of the player and notify the listener */
-		this.players[obj.name].choices[index] = value;
+		this.players[obj.name].choice = index;
 		GameGlobal.sync.stateChanged(obj);
 		return { code: 'ok' };
 	}
@@ -175,7 +175,7 @@ class GameState {
 			options: this.options,
 			open: (this.state == 'open'),
 			score: this.players[obj.name].score,
-			choices: this.players[obj.name].choices,
+			choice: this.players[obj.name].choice,
 			correct: this.correct
 		};
 	}
@@ -209,44 +209,34 @@ class GameState {
 			GameGlobal.sync.disconnectAll();
 		}
 		else for (const name in this.players)
-			this.players[name].choices = [-1, -1, -1, -1];
-		this.correct = [-1, -1, -1, -1];
+			this.players[name].choice = -1;
+		this.correct = -1;
 
 		/* reset the current round */
 		this.description = '';
-		this.options = ['', '', '', ''];
+		this.options = [];
 
 		/* notify the listener */
 		GameGlobal.sync.allStatesChanged();
 		GameGlobal.sync.scoreChanged();
 		return { code: 'ok' };
 	}
-	setupNext(obj, desc, opt) {
+	startNext(obj, desc, opt) {
 		if (this.state != 'start' && this.state != 'resolved')
 			return { code: 'seqError' };
-		this.state = 'prepared';
-		obj.log('setup next game');
+		this.state = 'open';
+		obj.log('starting next game');
 
 		/* reset the choices */
 		for (const name in this.players)
-			this.players[name].choices = [-1, -1, -1, -1];
-		this.correct = [-1, -1, -1, -1];
+			this.players[name].choice = -1;
+		this.correct = -1;
 
 		/* setup the next game */
 		this.description = desc;
 		this.options = opt;
 
 		/* notify the listener */
-		GameGlobal.sync.allStatesChanged();
-		return { code: 'ok' };
-	}
-	startRound(obj) {
-		if (this.state != 'prepared')
-			return { code: 'seqError' };
-		obj.log('started next game');
-
-		/* update the state and notify the listener */
-		this.state = 'open';
 		GameGlobal.sync.allStatesChanged();
 		return { code: 'ok' };
 	}
@@ -263,18 +253,14 @@ class GameState {
 	resolveRound(obj, result) {
 		if (this.state != 'closed')
 			return { code: 'seqError' };
-		if (result.length != 4)
-			return { code: 'malformed' };
 		this.state = 'resolved';
 		obj.log('resolved game');
 
 		/* update the player scores */
 		this.correct = result;
 		for (const name in this.players) {
-			for (let i = 0; i < 4; ++i) {
-				if (this.players[name].choices[i] == this.correct[i])
-					this.players[name].score += 1;
-			}
+			if (this.players[name].choice == this.correct)
+				this.players[name].score += 1;
 		}
 
 		/* notify the listener */
@@ -337,9 +323,9 @@ function HandleClientMessage(msg, client) {
 		case 'state':
 			return GameGlobal.state.getClient(client);
 		case 'choice':
-			if (typeof (msg.index) != 'number' || typeof (msg.value) != 'number')
+			if (typeof (msg.index) != 'number')
 				return { code: 'malformed' };
-			return GameGlobal.state.makeChoice(client, msg.index, msg.value);
+			return GameGlobal.state.makeChoice(client, msg.index);
 		default:
 			return { code: 'malformed' };
 	}
@@ -363,21 +349,19 @@ function HandleAdminMessage(msg, admin) {
 		case 'reset':
 			return GameGlobal.state.resetAll(admin, msg.total === true);
 		case 'next':
-			if (typeof (msg.description) != 'string' || msg.description.length == 0 || typeof (msg.options) != 'object' || msg.options.length != 4)
+			if (typeof (msg.description) != 'string' || msg.description.length == 0 || typeof (msg.options) != 'object' || typeof (msg.options.length) != 'number')
 				return { code: 'malformed' };
-			for (let i = 0; i < 4; ++i) {
+			for (let i = 0; i < msg.options.length; ++i) {
 				if (typeof (msg.options[i]) != 'string' || msg.options[i].length == 0)
 					return { code: 'malformed' };
 			}
-			return GameGlobal.state.setupNext(admin, msg.description, msg.options);
-		case 'start':
-			return GameGlobal.state.startRound(admin);
+			return GameGlobal.state.startNext(admin, msg.description, msg.options);
 		case 'close':
 			return GameGlobal.state.closeRound(admin);
 		case 'resolve':
-			if (typeof (msg.values) != 'object')
+			if (typeof (msg.value) != 'number' || msg.value < 0 || msg.value >= GameGlobal.state.options.length)
 				return { code: 'malformed' };
-			return GameGlobal.state.resolveRound(admin, msg.values);
+			return GameGlobal.state.resolveRound(admin, msg.value);
 		default:
 			return { code: 'malformed' };
 	}

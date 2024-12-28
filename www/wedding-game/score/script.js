@@ -10,7 +10,7 @@ window.onload = function () {
 	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
 	_game.sock = {
 		ws: null,
-		url: `${protocol}://${url.host}/game/ws-score`,
+		url: `${protocol}://${url.host}/wedding-game/ws-score`,
 		handling: false,
 		state: 'creating',
 		connectionFailedDelay: 256

@@ -249,7 +249,7 @@ body {
 
 
 .dk {
-	background: url('/game/dk-flag-feature.svg'),
+	background: url('/wedding-game/dk-flag-feature.svg'),
 		linear-gradient(to bottom,
 			#c8102e 0, #c8102e 42.8571%,
 			#ffffff 42.8571%, #ffffff 57.1429%,
@@ -274,7 +274,7 @@ body {
 }
 
 .kh {
-	background: url('/game/kh-flag-feature.svg'),
+	background: url('/wedding-game/kh-flag-feature.svg'),
 		linear-gradient(to bottom,
 			#032ea1 0%, #032ea1 25%,
 			#e00025 25%, #e00025 75%,

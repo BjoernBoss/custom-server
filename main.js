@@ -4,7 +4,8 @@ import * as libConfig from "./server/config.js";
 
 import * as libShared from "./handler/shared.js";
 import * as libCatchAll from "./handler/catch-all.js";
-import * as libGame from "./handler/game.js";
+import * as libQuizGame from "./handler/quiz-game.js";
+import * as libWeddingGame from "./handler/wedding-game.js";
 
 function Setup(localModule) {
 	const server = new libServer.Server();
@@ -26,8 +27,11 @@ function Setup(localModule) {
 	/* add the shared content handler */
 	server.addHandler(libShared.SubPath, false, libShared.Handle);
 
-	/* add the game content handler */
-	server.addHandler(libGame.SubPath, false, libGame.Handle);
+	/* add the quiz-game content handler */
+	server.addHandler(libQuizGame.SubPath, false, libQuizGame.Handle);
+
+	/* add the wedding-game content handler */
+	server.addHandler(libWeddingGame.SubPath, false, libWeddingGame.Handle);
 }
 
 /* try to load the local configuration and otherwise perform the default-setup */

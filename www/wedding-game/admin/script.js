@@ -136,7 +136,7 @@ window.onload = function () {
 	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
 	_game.sock = {
 		ws: null,
-		url: `${protocol}://${url.host}/game/ws-admin`,
+		url: `${protocol}://${url.host}/wedding-game/ws-admin`,
 		queue: [],
 		handling: false,
 		state: 'creating',

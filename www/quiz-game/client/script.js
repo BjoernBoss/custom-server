@@ -2,25 +2,7 @@ let _game = {};
 
 window.onload = function () {
 	/* fetch all relevant components */
-	_game.htmlSelectOverlay = document.getElementById('select');
-	_game.htmlOptions = [
-		document.getElementById('option0'),
-		document.getElementById('option1'),
-		document.getElementById('option2'),
-		document.getElementById('option3')
-	];
-	_game.htmlTexts = [
-		document.getElementById('text0'),
-		document.getElementById('text1'),
-		document.getElementById('text2'),
-		document.getElementById('text3')
-	];
-	_game.htmlInteract = [
-		document.getElementById('interact0'),
-		document.getElementById('interact1'),
-		document.getElementById('interact2'),
-		document.getElementById('interact3')
-	];
+	_game.htmlOptions = document.getElementById('options');
 	_game.htmlScore = document.getElementById('score');
 	_game.htmlHeader = document.getElementById('header');
 	_game.htmlInitial = document.getElementById('initial');
@@ -31,8 +13,6 @@ window.onload = function () {
 	_game.htmlLoginTakeOwnership = document.getElementById('loginTakeOwnership');
 
 	/* setup the overall state */
-	_game.flagToIndex = { dk: 0, de: 1, kh: 2, hu: 3 };
-	_game.indexToFlag = ['dk', 'de', 'kh', 'hu'];
 	_game.state = {};
 	_game.name = '';
 
@@ -41,7 +21,7 @@ window.onload = function () {
 	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
 	_game.sock = {
 		ws: null,
-		url: `${protocol}://${url.host}/game/ws-client`,
+		url: `${protocol}://${url.host}/quiz-game/ws-client`,
 		queue: [],
 		handling: false,
 		state: 'creating',
@@ -49,7 +29,7 @@ window.onload = function () {
 	};
 	_game.setupConnection();
 };
-window.onbeforeunload = function() { return "Your work will be lost."; };
+window.onbeforeunload = function () { return "Your work will be lost."; };
 
 _game.connectionFailed = function () {
 	if (_game.sock.connectionFailedDelay > 8192) {
@@ -115,7 +95,7 @@ _game.setupConnection = function () {
 	};
 	_game.sock.ws.onerror = function () {
 		console.log('Failed to establish a connection to the server');
-		_game.sock.ws.onclose = function() {};
+		_game.sock.ws.onclose = function () { };
 		_game.connectionFailed();
 	};
 };
@@ -131,7 +111,7 @@ _game.handleLogOff = function () {
 	/* setup the warning screen */
 	_game.htmlInitial.classList.remove('hidden');
 	_game.htmlWarning.classList.remove('hidden');
-	_game.htmlWarningText.innerText = 'Ein anderer Spieler hat sich mit Ihrem Namen angemeldet, und Sie abgemeldet!';
+	_game.htmlWarningText.innerText = 'Another player is using your name, you have been logged off!';
 	_game.htmlLoginBasic.classList.remove('hidden');
 	_game.htmlLoginTakeOwnership.classList.add('hidden');
 	_game.name = '';
@@ -152,35 +132,69 @@ _game.applyState = function () {
 	console.log('Applying received state');
 
 	/* update the choices */
-	for (let i = 0; i < 4; ++i) {
-		_game.htmlOptions[i].classList.remove('dk');
-		_game.htmlOptions[i].classList.remove('de');
-		_game.htmlOptions[i].classList.remove('kh');
-		_game.htmlOptions[i].classList.remove('hu');
-		_game.htmlOptions[i].classList.remove('correct');
-		_game.htmlOptions[i].classList.remove('invalid');
-		if (_game.state.choices[i] != -1)
-			_game.htmlOptions[i].classList.add(_game.indexToFlag[_game.state.choices[i]]);
-		if (_game.state.correct[i] != -1)
-			_game.htmlOptions[i].classList.add((_game.state.choices[i] == _game.state.correct[i]) ? 'correct' : 'invalid');
-		if (_game.state.options[i] == '')
-			_game.htmlTexts[i].innerText = `${i + 1}. Option`;
+	for (let i = 0; i < _game.state.options.length; ++i) {
+		/* check if the element already exists or needs to be created */
+		if (i * 2 >= _game.htmlOptions.children.length) {
+			if (i > 0) {
+				let temp = document.createElement('div');
+				temp.classList.add('separator');
+				_game.htmlOptions.appendChild(temp);
+			}
+
+			let node = document.createElement('div');
+			_game.htmlOptions.appendChild(node);
+			node.classList.add('option');
+
+			let inner = document.createElement('div');
+			node.appendChild(inner);
+			inner.classList.add('interact');
+			inner.onclick = () => _game.selected(i);
+
+			inner.appendChild(document.createElement('p'));
+		}
+		let node = _game.htmlOptions.children[2 * i];
+
+		if (_game.state.choice == i)
+			node.classList.add('selected');
 		else
-			_game.htmlTexts[i].innerText = _game.state.options[i];
+			node.classList.remove('selected');
+
+		if (_game.state.correct == -1) {
+			node.classList.remove('invalid');
+			node.classList.remove('correct');
+		}
+		else if (_game.state.correct == i) {
+			node.classList.remove('invalid');
+			node.classList.add('correct');
+		}
+		else {
+			node.classList.remove('correct');
+			node.classList.add('invalid');
+		}
+
+		node.children[0].children[0].innerText = _game.state.options[i];
 
 		/* update the enabled state */
 		if (_game.state.open)
-			_game.htmlInteract[i].classList.remove('disabled');
+			node.children[0].classList.remove('disabled');
 		else
-			_game.htmlInteract[i].classList.add('disabled');
+			node.children[0].classList.add('disabled');
+	}
+
+	/* remove the remaining children */
+	let count = 2 * _game.state.options.length - (_game.state.options.length == 0 ? 0 : 1);
+	while (_game.htmlOptions.children.length > count) {
+		_game.htmlOptions.lastChild.remove();
+		if (count > 0)
+			_game.htmlOptions.lastChild.remove();
 	}
 
 	/* update the overall option and score */
 	if (_game.state.description == '')
-		_game.htmlHeader.innerText = 'Fragestellung';
+		_game.htmlHeader.innerText = 'Question';
 	else
 		_game.htmlHeader.innerText = _game.state.description;
-	_game.htmlScore.innerText = `Punkte: ${_game.state.score}`;
+	_game.htmlScore.innerText = `Score: ${_game.state.score}`;
 };
 _game.handleTask = function () {
 	if (_game.sock.queue.length == 0 || _game.sock.handling)
@@ -215,7 +229,7 @@ _game.login = function (takeOwnership, reset) {
 	/* validate the name */
 	else if (_game.htmlName.value == '') {
 		_game.htmlWarning.classList.remove('hidden');
-		_game.htmlWarningText.innerText = 'Bitte gib einen Namen ein';
+		_game.htmlWarningText.innerText = 'Please enter a name';
 		return;
 	}
 	else
@@ -228,12 +242,12 @@ _game.login = function (takeOwnership, reset) {
 		if (_game.sock.state == 'failed') {
 			_game.htmlLoginBasic.classList.add('hidden');
 			_game.htmlLoginTakeOwnership.classList.add('hidden');
-			_game.htmlWarningText.innerText = 'Es konnte keine Verbindung zum Server aufgebaut werden!';
+			_game.htmlWarningText.innerText = 'Unable to establish a connection to the server!';
 		}
 		else {
 			_game.htmlLoginBasic.classList.remove('hidden');
 			_game.htmlLoginTakeOwnership.classList.add('hidden');
-			_game.htmlWarningText.innerText = 'Verbindung zum Server wird aufgebaut...';
+			_game.htmlWarningText.innerText = 'Connection to server is being established...';
 			setTimeout(() => _game.login(takeOwnership, reset), 150);
 		}
 		return;
@@ -258,46 +272,34 @@ _game.login = function (takeOwnership, reset) {
 
 		/* kill the last login */
 		if (_game.name != '') {
-			_game.htmlWarningText.innerText = 'Aufgrund von einem Fehler bei der Verbindung wurden Sie abgemeldet!';
+			_game.htmlWarningText.innerText = 'You have been logged off due to an error with the connection!';
 			_game.htmlLoginBasic.classList.remove('hidden');
 			_game.htmlLoginTakeOwnership.classList.add('hidden');
 			_game.name = '';
 		}
 		else if (resp.code != 'inUse' && resp.code != 'alreadyExists') {
 			console.log(`Unknown response code: ${resp.code} received`);
-			_game.htmlWarningText.innerText = 'Ein unbekannter Fehler ist aufgetreten!';
+			_game.htmlWarningText.innerText = 'An unknown error occurred!';
 			_game.htmlLoginBasic.classList.add('hidden');
 			_game.htmlLoginTakeOwnership.classList.add('hidden');
 		}
 		else {
 			if (resp.code == 'inUse')
-				_game.htmlWarningText.innerText = 'Es ist bereits ein Spieler mit diesem Namen angemeldet. Soll er abgemeldet werden?';
+				_game.htmlWarningText.innerText = 'There already exists a player with the same name. Do you want to log him off?';
 			else
-				_game.htmlWarningText.innerText = 'Ein Spieler mit diesem Namen hat bereits einmal existiert!';
+				_game.htmlWarningText.innerText = 'There has already existed a player with this name!';
 			_game.htmlLoginBasic.classList.add('hidden');
 			_game.htmlLoginTakeOwnership.classList.remove('hidden');
 		}
 	});
 };
-_game.select = function (index) {
-	/* check if a selection can be performed */
+_game.selected = function (index) {
 	if (!_game.state.open)
 		return;
 
-	/* mark the current object as being selected and show the select-overlay */
-	_game.current = index;
-	_game.htmlSelectOverlay.classList.remove('hidden');
-};
-_game.selected = function (name) {
-	/* hide the select-overlay */
-	_game.htmlSelectOverlay.classList.add('hidden');
-	if (_game.current == -1 || name == '')
-		return;
-
 	/* send the change */
-	console.log(`Selected: [${name}] for [${_game.current}]`);
-	_game.pushTask({ cmd: 'choice', index: _game.current, value: _game.flagToIndex[name] }, () => {
+	console.log(`Selected: [${index}]`);
+	_game.pushTask({ cmd: 'choice', index: index }, () => {
 		_game.applyState();
 	});
-	_game.current = -1;
 };
