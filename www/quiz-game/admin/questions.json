@@ -970,7 +970,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "1. What is the name of the 1994 film directed by Quentin Tarantino that intertwines the stories of two mob hitmen, a boxer, a gangster's wife, and a pair of bandits?",
+		"desc": "What is the name of the 1994 film directed by Quentin Tarantino that intertwines the stories of two mob hitmen, a boxer, a gangster's wife, and a pair of bandits?",
 		"text": [
 			"Reservoir Dogs",
 			"Pulp Fiction",
@@ -980,7 +980,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "2. In the 1993 movie \"Jurassic Park,\" what type of dinosaur was the first to be cloned and shown to the audience?",
+		"desc": "In the 1993 movie \"Jurassic Park,\" what type of dinosaur was the first to be cloned and shown to the audience?",
 		"text": [
 			"Tyrannosaurus Rex",
 			"Velociraptor",
@@ -990,7 +990,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "3. What is the title of the 1995 crime thriller directed by Bryan Singer, which follows the investigation of a mysterious murder that leads to an intricate web of deceit and corruption?",
+		"desc": "What is the title of the 1995 crime thriller directed by Bryan Singer, which follows the investigation of a mysterious murder that leads to an intricate web of deceit and corruption?",
 		"text": [
 			"Reservoir Dogs",
 			"The Usual Suspects",
@@ -1000,7 +1000,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "4. What is the title of the 1999 science fiction film directed by Lana and Lilly Wachowski that explores the concept of simulated reality?",
+		"desc": "What is the title of the 1999 science fiction film directed by Lana and Lilly Wachowski that explores the concept of simulated reality?",
 		"text": [
 			"Inception",
 			"The Truman Show",
@@ -1010,7 +1010,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "5. In the 1996 film \"Fargo,\" directed by Joel and Ethan Coen, what is the name of the pregnant police chief who investigates a series of homicides in Minnesota?",
+		"desc": "In the 1996 film \"Fargo,\" directed by Joel and Ethan Coen, what is the name of the pregnant police chief who investigates a series of homicides in Minnesota?",
 		"text": [
 			"Marge Gunderson",
 			"Clarice Starling",
@@ -1020,7 +1020,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "6. Who directed the 1999 psychological thriller film \"Fight Club,\" based on the novel by Chuck Palahniuk?",
+		"desc": "Who directed the 1999 psychological thriller film \"Fight Club,\" based on the novel by Chuck Palahniuk?",
 		"text": [
 			"Quentin Tarantino",
 			"David Fincher",
@@ -1030,7 +1030,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "7. In the 1997 film \"L.A. Confidential,\" which actor played the role of LAPD Sergeant Jack Vincennes, who becomes embroiled in a corruption scandal?",
+		"desc": "In the 1997 film \"L.A. Confidential,\" which actor played the role of LAPD Sergeant Jack Vincennes, who becomes embroiled in a corruption scandal?",
 		"text": [
 			"Kevin Spacey",
 			"Russell Crowe",
@@ -1040,7 +1040,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "8. What is the name of the 1999 film directed by Paul Thomas Anderson that follows the rise and fall of a pornographic filmmaker during the Golden Age of Porn in the 1970s and 1980s?",
+		"desc": "What is the name of the 1999 film directed by Paul Thomas Anderson that follows the rise and fall of a pornographic filmmaker during the Golden Age of Porn in the 1970s and 1980s?",
 		"text": [
 			"Punch-Drunk Love",
 			"Magnolia",
@@ -1050,7 +1050,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "9. Who directed the 1998 film \"American History X,\" a drama that explores themes of racism and redemption through the story of a former neo-Nazi skinhead?",
+		"desc": "Who directed the 1998 film \"American History X,\" a drama that explores themes of racism and redemption through the story of a former neo-Nazi skinhead?",
 		"text": [
 			"Quentin Tarantino",
 			"Tony Kaye",
@@ -1060,7 +1060,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "10. Which 1994 film, directed by Robert Zemeckis and based on a Winston Groom novel, won the Academy Award for Best Picture?",
+		"desc": "Which 1994 film, directed by Robert Zemeckis and based on a Winston Groom novel, won the Academy Award for Best Picture?",
 		"text": [
 			"Pulp Fiction",
 			"Schindler's List",
@@ -1070,7 +1070,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "1. What is the only mammal capable of true flight (not gliding)?",
+		"desc": "What is the only mammal capable of true flight (not gliding)?",
 		"text": [
 			"Flying fox",
 			"Colugo",
@@ -1080,7 +1080,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "2. Which animal possesses the largest brain relative to its body size?",
+		"desc": "Which animal possesses the largest brain relative to its body size?",
 		"text": [
 			"Elephant",
 			"Sperm whale",
@@ -1090,7 +1090,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "3. What is the name of the smallest species of penguin?",
+		"desc": "What is the name of the smallest species of penguin?",
 		"text": [
 			"Little blue penguin",
 			"Adélie penguin",
@@ -1100,7 +1100,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "4. Which insect holds the record for the fastest flying insect in the world?",
+		"desc": "Which insect holds the record for the fastest flying insect in the world?",
 		"text": [
 			"Dragonfly",
 			"Hawk moth",
@@ -1110,7 +1110,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "5. What is the name of the small, elusive mammal native to Australia that is capable of laying eggs?",
+		"desc": "What is the name of the small, elusive mammal native to Australia that is capable of laying eggs?",
 		"text": [
 			"Platypus",
 			"Kangaroo",
@@ -1120,7 +1120,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "6. Which bird species is known for its ability to mimic chainsaws and other mechanical sounds?",
+		"desc": "Which bird species is known for its ability to mimic chainsaws and other mechanical sounds?",
 		"text": [
 			"Mockingbird",
 			"Lyrebird",
@@ -1130,7 +1130,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "7. What is the only species of bear found in the Southern Hemisphere?",
+		"desc": "What is the only species of bear found in the Southern Hemisphere?",
 		"text": [
 			"Polar bear",
 			"Brown bear",
@@ -1140,7 +1140,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "8. Which animal has the most complex eyesight in the animal kingdom?",
+		"desc": "Which animal has the most complex eyesight in the animal kingdom?",
 		"text": [
 			"Mantis shrimp",
 			"Eagle",
@@ -1150,7 +1150,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "9. What is the name of the largest living species of turtle, known for its distinctive ridged shell and often found in tropical and subtropical oceans?",
+		"desc": "What is the name of the largest living species of turtle, known for its distinctive ridged shell and often found in tropical and subtropical oceans?",
 		"text": [
 			"Loggerhead turtle",
 			"Leatherback sea turtle",
@@ -1160,7 +1160,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "10. Which creature holds the record for the longest migration journey of any animal?",
+		"desc": "Which creature holds the record for the longest migration journey of any animal?",
 		"text": [
 			"Sockeye salmon",
 			"Monarch butterfly",
@@ -1170,7 +1170,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "3. Which European city is split by the Bosphorus Strait, separating its European and Asian sectors?",
+		"desc": "Which European city is split by the Bosphorus Strait, separating its European and Asian sectors?",
 		"text": [
 			"Budapest",
 			"Warsaw",
@@ -1180,7 +1180,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "4. What city holds the title of the oldest continuously inhabited city globally?",
+		"desc": "What city holds the title of the oldest continuously inhabited city globally?",
 		"text": [
 			"Athens",
 			"Jerusalem",
@@ -1190,7 +1190,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "5. Which Asian city earns the moniker \"City of Temples\" due to its plethora of ancient temples and pagodas?",
+		"desc": "Which Asian city earns the moniker \"City of Temples\" due to its plethora of ancient temples and pagodas?",
 		"text": [
 			"Bagan",
 			"Kyoto",
@@ -1200,7 +1200,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "6. What city is recognized as the northernmost capital city worldwide?",
+		"desc": "What city is recognized as the northernmost capital city worldwide?",
 		"text": [
 			"Helsinki",
 			"Stockholm",
@@ -1210,7 +1210,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "7. What is the capital city of New Zealand?",
+		"desc": "What is the capital city of New Zealand?",
 		"text": [
 			"Auckland",
 			"Christchurch",
@@ -1220,7 +1220,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "8. Which city in India is home to the iconic Taj Mahal?",
+		"desc": "Which city in India is home to the iconic Taj Mahal?",
 		"text": [
 			"Delhi",
 			"Mumbai",
@@ -1230,7 +1230,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "9. Which city is often referred to as the \"Pearl of the Adriatic\" for its stunning coastline and medieval architecture?",
+		"desc": "Which city is often referred to as the \"Pearl of the Adriatic\" for its stunning coastline and medieval architecture?",
 		"text": [
 			"Athens",
 			"Dubrovnik",
@@ -1240,7 +1240,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "10. What is the capital city of Kazakhstan, known for its modern skyline, cultural landmarks, and Eurasian heritage?",
+		"desc": "What is the capital city of Kazakhstan, known for its modern skyline, cultural landmarks, and Eurasian heritage?",
 		"text": [
 			"Almaty",
 			"Bishkek",
@@ -1250,7 +1250,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "1. What is the title of the novel by Fyodor Dostoevsky that follows the psychological turmoil of Rodion Raskolnikov, a former student who commits a murder?",
+		"desc": "What is the title of the novel by Fyodor Dostoevsky that follows the psychological turmoil of Rodion Raskolnikov, a former student who commits a murder?",
 		"text": [
 			"The Brothers Karamazov",
 			"Crime and Punishment",
@@ -1260,7 +1260,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "2. In George Orwell's dystopian novel, what is the ruling entity that governs Oceania in \"1984\"?",
+		"desc": "In George Orwell's dystopian novel, what is the ruling entity that governs Oceania in \"1984\"?",
 		"text": [
 			"The Brotherhood",
 			"The Regime",
@@ -1270,7 +1270,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "3. Who is the author of the novel \"To Kill a Mockingbird,\" which explores themes of racial injustice and moral growth in the American South?",
+		"desc": "Who is the author of the novel \"To Kill a Mockingbird,\" which explores themes of racial injustice and moral growth in the American South?",
 		"text": [
 			"F. Scott Fitzgerald",
 			"Harper Lee",
@@ -1280,7 +1280,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "4. What is the title of the science fiction novel by Stanisław Lem that explores the challenges of communication with an extraterrestrial species?",
+		"desc": "What is the title of the science fiction novel by Stanisław Lem that explores the challenges of communication with an extraterrestrial species?",
 		"text": [
 			"The Futurological Congress",
 			"Solaris",
@@ -1290,7 +1290,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "5. Which novel by Thomas Pynchon follows the journey of Oedipa Maas as she unravels a conspiracy involving a mysterious underground postal system?",
+		"desc": "Which novel by Thomas Pynchon follows the journey of Oedipa Maas as she unravels a conspiracy involving a mysterious underground postal system?",
 		"text": [
 			"Gravity's Rainbow",
 			"V.",
@@ -1300,7 +1300,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "6. What is the title of Aldous Huxley's dystopian novel that portrays a futuristic society where human beings are genetically engineered and classified into castes?",
+		"desc": "What is the title of Aldous Huxley's dystopian novel that portrays a futuristic society where human beings are genetically engineered and classified into castes?",
 		"text": [
 			"Fahrenheit 451",
 			"Brave New World",
@@ -1310,7 +1310,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "7. Which novel by Franz Kafka tells the story of a man who wakes up one morning to find himself transformed into a giant insect?",
+		"desc": "Which novel by Franz Kafka tells the story of a man who wakes up one morning to find himself transformed into a giant insect?",
 		"text": [
 			"The Trial",
 			"The Castle",
@@ -1320,7 +1320,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "8. Which classic novel by Mary Shelley follows the story of a scientist who creates a creature from reanimated body parts?",
+		"desc": "Which classic novel by Mary Shelley follows the story of a scientist who creates a creature from reanimated body parts?",
 		"text": [
 			"Dracula",
 			"Frankenstein",
@@ -1330,7 +1330,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "9. In Margaret Atwood's dystopian novel \"The Handmaid's Tale,\" what is the name of the protagonist who serves as a handmaid in the Republic of Gilead?",
+		"desc": "In Margaret Atwood's dystopian novel \"The Handmaid's Tale,\" what is the name of the protagonist who serves as a handmaid in the Republic of Gilead?",
 		"text": [
 			"Ofglen",
 			"Offred",
@@ -1340,7 +1340,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "10. In the novel by J.D. Salinger that follows the journey of a disillusioned teenager in New York City, who is the protagonist?",
+		"desc": "In the novel by J.D. Salinger that follows the journey of a disillusioned teenager in New York City, who is the protagonist?",
 		"text": [
 			"John Gallagher",
 			"Sally Hayes",
@@ -1350,7 +1350,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "1. What British inventor is credited for developing the concept of the world's first programmable computer, the Analytical Engine, in the 1830s?",
+		"desc": "What British inventor is credited for developing the concept of the world's first programmable computer, the Analytical Engine, in the 1830s?",
 		"text": [
 			"Alan Turing",
 			"Ada Lovelace",
@@ -1360,7 +1360,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "2. Who invented the first mass-produced, practical sewing machine in 1846, revolutionizing the textile industry?",
+		"desc": "Who invented the first mass-produced, practical sewing machine in 1846, revolutionizing the textile industry?",
 		"text": [
 			"Isaac Singer",
 			"Elias Howe",
@@ -1370,7 +1370,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "3. What French chemist and microbiologist is credited with a namesake discovery that revolutionized food preservation?",
+		"desc": "What French chemist and microbiologist is credited with a namesake discovery that revolutionized food preservation?",
 		"text": [
 			"Louis Pasteur",
 			"Alexander Fleming",
@@ -1380,7 +1380,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "4. Known for her pioneering research on radioactivity, who was the first woman to win a Nobel Prize?",
+		"desc": "Known for her pioneering research on radioactivity, who was the first woman to win a Nobel Prize?",
 		"text": [
 			"Stephanie Kwolek",
 			"Rosalind Franklin",
@@ -1390,7 +1390,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "5. What Austrian neurologist is credited with inventing psychoanalysis, a clinical method for treating psychopathology through dialogue between a patient and a psychoanalyst?",
+		"desc": "What Austrian neurologist is credited with inventing psychoanalysis, a clinical method for treating psychopathology through dialogue between a patient and a psychoanalyst?",
 		"text": [
 			"Alfred Adler",
 			"Carl Jung",
@@ -1400,7 +1400,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "6. Name the company that introduced the first commercially available lithium-ion battery in 1991.",
+		"desc": "Name the company that introduced the first commercially available lithium-ion battery in 1991.",
 		"text": [
 			"Panasonic",
 			"Sony",
@@ -1410,7 +1410,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "7. What is the name of the French physicist who invented the electric battery and discovered several elements, including sodium and potassium?",
+		"desc": "What is the name of the French physicist who invented the electric battery and discovered several elements, including sodium and potassium?",
 		"text": [
 			"Joseph-Louis Lagrange",
 			"Jacques Charles",
@@ -1420,7 +1420,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "8. In what year was the World Wide Web invented, revolutionizing the way information is shared on the internet?",
+		"desc": "In what year was the World Wide Web invented, revolutionizing the way information is shared on the internet?",
 		"text": [
 			"1979",
 			"1984",
@@ -1430,7 +1430,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "9. What scientist developed the first successful polio vaccine in the 1950s?",
+		"desc": "What scientist developed the first successful polio vaccine in the 1950s?",
 		"text": [
 			"Jonas Salk",
 			"Albert Sabin",
@@ -1440,7 +1440,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "10. What inventor is credited with the discovery of penicillin in 1928?",
+		"desc": "What inventor is credited with the discovery of penicillin in 1928?",
 		"text": [
 			"Alexander Fleming",
 			"Louis Pasteur",
@@ -1450,7 +1450,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "1. In the song \"Stairway to Heaven,\" what mystical object is mentioned that is said to be bought with a \"bustle in your hedgerow\"?",
+		"desc": "In the song \"Stairway to Heaven,\" what mystical object is mentioned that is said to be bought with a \"bustle in your hedgerow\"?",
 		"text": [
 			"May Queen",
 			"Crystal Ball",
@@ -1460,7 +1460,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "2. In the song \"Born to Run\" by Bruce Springsteen, what is the name of the main character's partner who says \"I wanna die with you, Wendy, on the street tonight\"?",
+		"desc": "In the song \"Born to Run\" by Bruce Springsteen, what is the name of the main character's partner who says \"I wanna die with you, Wendy, on the street tonight\"?",
 		"text": [
 			"Mary",
 			"Jenny",
@@ -1470,7 +1470,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "3. What is the real name of the guitarist known as Slash, famous for his work with Guns N' Roses?",
+		"desc": "What is the real name of the guitarist known as Slash, famous for his work with Guns N' Roses?",
 		"text": [
 			"Saul Hudson",
 			"Angus Young",
@@ -1480,7 +1480,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "4. Which iconic musician is better known by the stage name \"Meat Loaf\"?",
+		"desc": "Which iconic musician is better known by the stage name \"Meat Loaf\"?",
 		"text": [
 			"David Coverdale",
 			"Michael Lee Aday",
@@ -1490,7 +1490,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "5. In what year did Jimi Hendrix pass away at the age of 27?",
+		"desc": "In what year did Jimi Hendrix pass away at the age of 27?",
 		"text": [
 			"1967",
 			"1969",
@@ -1500,7 +1500,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "6. Which legendary guitarist, known for his work with the bands Cream and The Yardbirds, was famously referred to as the \"Godfather of Rock Guitar\"?",
+		"desc": "Which legendary guitarist, known for his work with the bands Cream and The Yardbirds, was famously referred to as the \"Godfather of Rock Guitar\"?",
 		"text": [
 			"Eric Clapton",
 			"Jimmy Page",
@@ -1510,7 +1510,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "7. In which year did The Beatles release their iconic album \"Sgt. Pepper's Lonely Hearts Club Band\"?",
+		"desc": "In which year did The Beatles release their iconic album \"Sgt. Pepper's Lonely Hearts Club Band\"?",
 		"text": [
 			"1965",
 			"1966",
@@ -1520,7 +1520,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "8. Who was the lead vocalist of the band Led Zeppelin, known for his powerful voice and charismatic stage presence?",
+		"desc": "Who was the lead vocalist of the band Led Zeppelin, known for his powerful voice and charismatic stage presence?",
 		"text": [
 			"Roger Daltrey",
 			"Freddie Mercury",
@@ -1530,7 +1530,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "9. What is the title of the debut studio album by the American rock band Nirvana, released in 1989?",
+		"desc": "What is the title of the debut studio album by the American rock band Nirvana, released in 1989?",
 		"text": [
 			"In Utero",
 			"Nevermind",
@@ -1540,7 +1540,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "10. What is the name of the lead guitarist of the band Queen, known for his unique playing style and flamboyant stage persona?",
+		"desc": "What is the name of the lead guitarist of the band Queen, known for his unique playing style and flamboyant stage persona?",
 		"text": [
 			"Eddie Van Halen",
 			"Brian May",
@@ -1550,7 +1550,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "2. Which planet in our solar system has the most moons?",
+		"desc": "Which planet in our solar system has the most moons?",
 		"text": [
 			"Jupiter",
 			"Saturn",
@@ -1560,7 +1560,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "3. What is the name of the largest volcano in our solar system, located on Mars?",
+		"desc": "What is the name of the largest volcano in our solar system, located on Mars?",
 		"text": [
 			"Mount Etna",
 			"Mauna Kea",
@@ -1570,7 +1570,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "4. Which space mission successfully landed humans on the Moon for the first time?",
+		"desc": "Which space mission successfully landed humans on the Moon for the first time?",
 		"text": [
 			"Apollo 11",
 			"Mercury-Atlas 6",
@@ -1580,7 +1580,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "5. What is the term for the point in a planet's orbit around the Sun where it is closest to the star?",
+		"desc": "What is the term for the point in a planet's orbit around the Sun where it is closest to the star?",
 		"text": [
 			"Aphelion",
 			"Perihelion",
@@ -1590,7 +1590,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "6. What is the name of the spacecraft launched by NASA in 2006 to study Pluto and the Kuiper Belt objects?",
+		"desc": "What is the name of the spacecraft launched by NASA in 2006 to study Pluto and the Kuiper Belt objects?",
 		"text": [
 			"Galileo",
 			"Juno",
@@ -1600,7 +1600,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "7. In the movie \"Deep Impact,\" what was the name of the meteor headed towards Earth?",
+		"desc": "In the movie \"Deep Impact,\" what was the name of the meteor headed towards Earth?",
 		"text": [
 			"Messiah",
 			"Wolf-Biederman",
@@ -1610,7 +1610,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "8. What is the largest known planet outside our solar system?",
+		"desc": "What is the largest known planet outside our solar system?",
 		"text": [
 			"Kepler-22b",
 			"WASP-17b",
@@ -1620,7 +1620,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "9. Which spacecraft conducted the first flyby of Jupiter and Saturn, providing crucial data and images of these gas giants?",
+		"desc": "Which spacecraft conducted the first flyby of Jupiter and Saturn, providing crucial data and images of these gas giants?",
 		"text": [
 			"Voyager 1",
 			"Voyager 2",
@@ -1630,7 +1630,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "10. What is the approximate age of the universe, according to current scientific estimates?",
+		"desc": "What is the approximate age of the universe, according to current scientific estimates?",
 		"text": [
 			"4.6 billion years",
 			"13.8 billion years",
@@ -1640,7 +1640,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "2. In the \"Star Wars\" saga, who is the Sith Lord, ruling with an iron fist and seeking to eradicate the Jedi Order?",
+		"desc": "In the \"Star Wars\" saga, who is the Sith Lord, ruling with an iron fist and seeking to eradicate the Jedi Order?",
 		"text": [
 			"Darth Vader",
 			"Darth Sidious",
@@ -1650,7 +1650,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "3. What government does villain Dominic Greene intend to influence in \"Quantum of Solace\"?",
+		"desc": "What government does villain Dominic Greene intend to influence in \"Quantum of Solace\"?",
 		"text": [
 			"Belarus",
 			"Ecuador",
@@ -1660,7 +1660,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "4. In Marvel Comics, who is the powerful mutant telepath who often serves as the primary adversary of the X-Men?",
+		"desc": "In Marvel Comics, who is the powerful mutant telepath who often serves as the primary adversary of the X-Men?",
 		"text": [
 			"Mystique",
 			"Apocalypse",
@@ -1670,7 +1670,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "5. Which supervillain, created by Frank Miller, is a highly skilled marksman and the arch-nemesis of the vigilante known as Daredevil?",
+		"desc": "Which supervillain, created by Frank Miller, is a highly skilled marksman and the arch-nemesis of the vigilante known as Daredevil?",
 		"text": [
 			"Bullseye",
 			"Elektra",
@@ -1680,7 +1680,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "6. What is the villainous alter ego of Norman Osborn, a wealthy industrialist and Spider-Man's archenemy in Marvel Comics?",
+		"desc": "What is the villainous alter ego of Norman Osborn, a wealthy industrialist and Spider-Man's archenemy in Marvel Comics?",
 		"text": [
 			"The Riddler",
 			"Venom",
@@ -1690,7 +1690,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "7. Name the iconic villainess from the \"Wonder Woman\" comics who can best be described as a “wicked sorceress”.",
+		"desc": "Name the iconic villainess from the \"Wonder Woman\" comics who can best be described as a “wicked sorceress”.",
 		"text": [
 			"Circe",
 			"Cheetah",
@@ -1700,7 +1700,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "8. What is the name of Saruman's stronghold, where he plots against the forces of good?",
+		"desc": "What is the name of Saruman's stronghold, where he plots against the forces of good?",
 		"text": [
 			"Minis Tirith",
 			"Isengard",
@@ -1710,7 +1710,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "9. What is Elliot Carver's ultimate goal in engineering conflicts in \"Tomorrow Never Dies\"?",
+		"desc": "What is Elliot Carver's ultimate goal in engineering conflicts in \"Tomorrow Never Dies\"?",
 		"text": [
 			"To destabilize governments and gain power.",
 			"To gain control over the world's energy resources.",
@@ -1720,7 +1720,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "10. In \"Die Hard,\" which building becomes the site of Hans Gruber's hostage situation?",
+		"desc": "In \"Die Hard,\" which building becomes the site of Hans Gruber's hostage situation?",
 		"text": [
 			"Nakamoto Plaza",
 			"Nakatomi Plaza",
@@ -1730,7 +1730,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "1. In which century did the Hundred Years' War take place?",
+		"desc": "In which century did the Hundred Years' War take place?",
 		"text": [
 			"14th century",
 			"17th century",
@@ -1740,7 +1740,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "2. Which two ancient civilizations fought in the Punic Wars?",
+		"desc": "Which two ancient civilizations fought in the Punic Wars?",
 		"text": [
 			"Rome and Persia",
 			"Rome and Sparta",
@@ -1750,7 +1750,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "3. Which battle marked the final defeat of Napoleon Bonaparte in 1815?",
+		"desc": "Which battle marked the final defeat of Napoleon Bonaparte in 1815?",
 		"text": [
 			"The Battle of Austerlitz",
 			"The Battle of Borodino",
@@ -1760,7 +1760,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "4. Who was the Roman general responsible for the conquest of Gaul and later became dictator of Rome?",
+		"desc": "Who was the Roman general responsible for the conquest of Gaul and later became dictator of Rome?",
 		"text": [
 			"Augustus Caesar",
 			"Marcus Aurelius",
@@ -1770,7 +1770,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "5. In which war was The Battle of Fredericksburg fought?",
+		"desc": "In which war was The Battle of Fredericksburg fought?",
 		"text": [
 			"The War of 1812",
 			"The American Civil War",
@@ -1780,7 +1780,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "6. Who's assassination was said to spark World War I?",
+		"desc": "Who's assassination was said to spark World War I?",
 		"text": [
 			"Archduke Maximilian",
 			"Kaiser Wilhelm II",
@@ -1790,7 +1790,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "8. In what decade was The Six-Day War fought?",
+		"desc": "In what decade was The Six-Day War fought?",
 		"text": [
 			"1950s",
 			"1960s",
@@ -1800,7 +1800,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "9. Who was the Supreme Commander of the Allied Forces in Europe during World War II?",
+		"desc": "Who was the Supreme Commander of the Allied Forces in Europe during World War II?",
 		"text": [
 			"George S. Patton",
 			"Winston Churchill",
@@ -1810,7 +1810,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "10. What was the name of the diplomatic strategy notably pursued by Western democracies toward Nazi Germany before World War II?",
+		"desc": "What was the name of the diplomatic strategy notably pursued by Western democracies toward Nazi Germany before World War II?",
 		"text": [
 			"Appeasement",
 			"Deterrence",
@@ -1820,7 +1820,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "2. Which former chairman of Enron Corporation was convicted of multiple counts of fraud and conspiracy related to the company's collapse?",
+		"desc": "Which former chairman of Enron Corporation was convicted of multiple counts of fraud and conspiracy related to the company's collapse?",
 		"text": [
 			"Martha Stewart",
 			"Kenneth Lay",
@@ -1830,7 +1830,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "3. What infamous American fraudster and stock market manipulator was convicted of numerous offenses related to his investment firm, Stratton Oakmont?",
+		"desc": "What infamous American fraudster and stock market manipulator was convicted of numerous offenses related to his investment firm, Stratton Oakmont?",
 		"text": [
 			"Frank Abagnale",
 			"Charles Ponzi",
@@ -1840,7 +1840,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "4. Who was the mastermind behind the largest insider trading scandal in U.S. history, involving illegal activities at the hedge fund SAC Capital Advisors?",
+		"desc": "Who was the mastermind behind the largest insider trading scandal in U.S. history, involving illegal activities at the hedge fund SAC Capital Advisors?",
 		"text": [
 			"Michael Milken",
 			"Bernard Madoff",
@@ -1850,7 +1850,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "5. Which American businesswoman was convicted of conspiracy, fraud, and obstruction of justice related to the collapse of her company, Theranos?",
+		"desc": "Which American businesswoman was convicted of conspiracy, fraud, and obstruction of justice related to the collapse of her company, Theranos?",
 		"text": [
 			"Elizabeth Holmes",
 			"Martha Stewart",
@@ -1860,7 +1860,7 @@
 		"correct": 0
 	},
 	{
-		"desc": "6. What former CEO of WorldCom was convicted of orchestrating one of the largest accounting frauds in U.S. history, resulting in the company's bankruptcy?",
+		"desc": "What former CEO of WorldCom was convicted of orchestrating one of the largest accounting frauds in U.S. history, resulting in the company's bankruptcy?",
 		"text": [
 			"Richard Scrushy",
 			"Bernard Ebbers",
@@ -1870,7 +1870,7 @@
 		"correct": 1
 	},
 	{
-		"desc": "7. Who was the American businesswoman convicted of multiple charges related to the collapse of her energy trading company, Enron Corporation?",
+		"desc": "Who was the American businesswoman convicted of multiple charges related to the collapse of her energy trading company, Enron Corporation?",
 		"text": [
 			"Michelle Malkin",
 			"Elizabeth Holmes",
@@ -1880,7 +1880,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "8. Who was the American con artist who posed as an airline pilot, doctor, and lawyer, among other professions, in the 1960s and 1970s, inspiring the movie \"Catch Me If You Can\"?",
+		"desc": "Who was the American con artist who posed as an airline pilot, doctor, and lawyer, among other professions, in the 1960s and 1970s, inspiring the movie \"Catch Me If You Can\"?",
 		"text": [
 			"Gregor MacGregor",
 			"Victor Lustig",
@@ -1890,7 +1890,7 @@
 		"correct": 2
 	},
 	{
-		"desc": "9. What American mobster, known as \"Scarface,\" was the leader of the Chicago Outfit during the Prohibition era and was eventually convicted of tax evasion in 1931?",
+		"desc": "What American mobster, known as \"Scarface,\" was the leader of the Chicago Outfit during the Prohibition era and was eventually convicted of tax evasion in 1931?",
 		"text": [
 			"John Gotti",
 			"Lucky Luciano",
@@ -1900,7 +1900,7 @@
 		"correct": 3
 	},
 	{
-		"desc": "10. In 1971, a group of thieves tunneled into the headquarters of the Lloyds Bank in London's Marylebone district and stole valuables worth millions of pounds. What was the nickname given to this notorious heist?",
+		"desc": "In 1971, a group of thieves tunneled into the headquarters of the Lloyds Bank in London's Marylebone district and stole valuables worth millions of pounds. What was the nickname given to this notorious heist?",
 		"text": [
 			"The Hatton Garden Heist",
 			"The Baker Street Robbery",

@@ -36,7 +36,7 @@ for (q, a, b, c, d) in m:
 	o += '\n\t}'
 
 f = open('page2.html', mode='r', encoding='utf-8').read()
-m = re.findall('<strong>(.*)</strong></p>\\s*<p>(<strong>.*</strong>)?Answer:(&nbsp;)?(.*)</p>\\s*<p>a\\) (.*)</p>\\s*<p>b\\) (.*)</p>\\s*<p>c\\) (.*)</p>\\s*<p>d\\) (.*)</p>', f)
+m = re.findall('<strong>\\d+\\.(.*)</strong></p>\\s*<p>(<strong>.*</strong>)?Answer:(&nbsp;)?(.*)</p>\\s*<p>a\\) (.*)</p>\\s*<p>b\\) (.*)</p>\\s*<p>c\\) (.*)</p>\\s*<p>d\\) (.*)</p>', f)
 
 for (q, _, _, s, a, b, c, d) in m:
 	qt = q.strip().replace('"', '\\"')
