@@ -39,11 +39,11 @@ f = open('page2.html', mode='r', encoding='utf-8').read()
 m = re.findall('<strong>\\d+\\.(.*)</strong></p>\\s*<p>(<strong>.*</strong>)?Answer:(&nbsp;)?(.*)</p>\\s*<p>a\\) (.*)</p>\\s*<p>b\\) (.*)</p>\\s*<p>c\\) (.*)</p>\\s*<p>d\\) (.*)</p>', f)
 
 for (q, _, _, s, a, b, c, d) in m:
-	qt = q.strip().replace('"', '\\"')
-	at = a.strip().replace('"', '\\"')
-	bt = b.strip().replace('"', '\\"')
-	ct = c.strip().replace('"', '\\"')
-	dt = d.strip().replace('"', '\\"')
+	qt = q.strip().replace('"', '\\"').replace('&amp;', '&')
+	at = a.strip().replace('"', '\\"').replace('&amp;', '&')
+	bt = b.strip().replace('"', '\\"').replace('&amp;', '&')
+	ct = c.strip().replace('"', '\\"').replace('&amp;', '&')
+	dt = d.strip().replace('"', '\\"').replace('&amp;', '&')
 	st = s.strip()
 
 	ac, bc, cc, dc = (st.lower() in at.lower() or at.lower() in st.lower(), st.lower() in bt.lower() or bt.lower() in st.lower(), st.lower() in ct.lower() or ct.lower() in st.lower(), st.lower() in dt.lower() or dt.lower() in st.lower())

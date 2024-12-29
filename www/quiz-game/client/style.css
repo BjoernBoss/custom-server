@@ -14,21 +14,34 @@ body {
 }
 
 .header {
-	min-height: 6em;
 	background-color: rgb(158, 158, 158);
-	flex: 0 1 auto;
+	flex-grow: 0;
+	flex-direction: column;
 	padding: 1em;
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	font-size: 1em;
+	font-weight: bold;
+	text-align: center;
+	color: black;
 }
 
-.header .text {
+.header .details:not(.hidden) {
+	display: flex;
+	flex-direction: row;
 	margin: 0;
-	color: black;
-	font-size: 2em;
-	font-weight: bolder;
-	text-align: center;
+	border-style: solid;
+	border-width: 0 0 2px 0;
+}
+
+.header .large {
+	font-size: 1.5em;
+	margin-top: 1em;
+}
+
+.header .question {
+	margin-top: 1em;
 }
 
 .core-separator {
@@ -37,23 +50,23 @@ body {
 	background-color: #404040;
 }
 
-.options {
-	padding: 2em;
-	background-color: rgb(212, 212, 212);
+.footer {
+	flex-grow: 0;
+	flex-flow: row;
+	background-color: rgb(158, 158, 158);
+	padding: 1em;
 	display: flex;
-	flex-flow: column;
+	justify-content: end;
 }
 
-.options .selected {
-	background-color: #4095ff;
+.description {
+	text-align: center;
+	margin-top: 1em;
+	font-size: 2em;
+	font-weight: bold;
 }
 
-.separator {
-	height: 2em;
-	min-height: 2em;
-}
-
-.option {
+.button {
 	overflow: clip;
 	background-color: #ffffff;
 	border-radius: 2em;
@@ -65,33 +78,24 @@ body {
 	align-items: center;
 }
 
-.score {
-	background-color: rgb(212, 212, 212);
-	margin: 0;
-	padding: 1em 1em 0 1em;
-	font-size: 2em;
-	font-weight: bold;
-	text-align: center;
+.button.correct {
+	border-color: rgb(89, 214, 89);
 }
 
-.interact {
+.button.invalid {
+	border-color: rgb(214, 104, 89);
+}
+
+.clickable {
 	width: 100%;
 	height: 100%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	flex-direction: column;
 }
 
-.options .interact {
-	background-color: #ffffff30;
-}
-
-.options .interact.disabled {
-	background-color: #00000040;
-	color: #d0d0d0;
-}
-
-.interact p {
+.clickable p {
 	margin: 0.3em;
 	color: black;
 	font-size: 2em;
@@ -100,30 +104,109 @@ body {
 	padding: 0 1em;
 }
 
-.interact:active {
+.clickable .sub {
+	font-size: 1em;
+}
+
+.clickable:active {
 	background-color: #00000080;
 }
 
-@media (hover: hover),
-(-ms-high-contrast:none) {
-	.interact:hover {
+@media (hover: hover) {
+	.clickable:hover {
 		background-color: #00000080;
 	}
 }
 
-.overlay {
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	left: 0;
-	top: 0;
-	background-color: #000000a0;
+.disabled .clickable {
+	background-color: #00000060;
+	color: #d0d0d0;
+}
+
+.selected .clickable {
+	background-color: #4095ff;
+}
+
+.disabled.selected .clickable {
+	background-color: #0055bd;
+}
+
+.selected:not(.disabled) .clickable:active {
+	background-color: #0055bd;
+}
+
+@media (hover: hover) {
+	.selected .clickable:hover {
+		background-color: #0055bd;
+	}
+}
+
+.slider {
+	margin-top: 1em;
+	overflow: clip;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 }
 
-.config {
+.slider p {
+	margin: 0.3em;
+	color: black;
+	font-size: 2em;
+	font-weight: bolder;
+	text-align: center;
+	padding: 0 1em;
+}
+
+.slidebar {
+	appearance: none;
+	width: 100%;
+	height: 2em;
+	border-radius: 1em;
+	outline: none;
+	margin: 1em 0;
+}
+
+.value0 .slidebar {
+	background-color: #ffffff;
+}
+
+.value1 .slidebar {
+	background-color: #48ff30;
+}
+
+.value2 .slidebar {
+	background-color: #ffec46;
+}
+
+.value3 .slidebar {
+	background-color: #ffa238;
+}
+
+.value4 .slidebar {
+	background-color: #ff2f2f;
+}
+
+.slidebar::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 2.5em;
+	height: 2.5em;
+	border-radius: 50%;
+	background: black;
+	cursor: pointer;
+}
+
+.slidebar::-moz-range-thumb {
+	width: 2.5em;
+	height: 2.5em;
+	border-radius: 50%;
+	background: black;
+	cursor: pointer;
+}
+
+.login {
 	width: 100%;
 	height: 100%;
 	background-color: #c0c0c0;
@@ -132,7 +215,7 @@ body {
 	align-items: center;
 }
 
-.config .content {
+.login .content {
 	width: 80%;
 	background-color: white;
 	border-radius: 1em;
@@ -146,13 +229,13 @@ body {
 	padding: 1em;
 }
 
-.config .content .title {
+.login .content .title {
 	color: black;
 	font-size: 3em;
 	margin: 0;
 }
 
-.config .content .name {
+.login .content .name {
 	background-color: #d0d0d0;
 	width: 100%;
 	height: 1em;
@@ -160,34 +243,34 @@ body {
 	border-width: 0 0 0.1em 0;
 	border-style: solid;
 	border-color: #303030;
-	font-size: 2em;
+	font-size: 1.5em;
 	font-weight: bold;
 	padding: 0.15em;
 	outline-style: none;
 }
 
-.config .content .name::placeholder {
+.login .content .name::placeholder {
 	font-style: italic;
 	font-weight: normal;
 	color: #b0b0b0;
 }
 
-.config .content .name:focus {
+.login .content .name:focus {
 	border-color: #5050ff;
 	border-width: 0 0 0.15em 0;
 }
 
-.confirm {
+.login .confirm {
 	width: 100%;
 	display: flex;
 	flex-direction: column;
 }
 
-.confirm .button .interact p {
+.login .confirm .button .interact p {
 	font-size: 2.5em;
 }
 
-.confirm .button {
+.login .confirm .button {
 	background-color: #a0a0a0;
 	border-radius: 1em;
 	border-width: 0.3em;
@@ -198,13 +281,13 @@ body {
 	margin: 0.2em 0;
 }
 
-.warning {
+.login .warning:not(.hidden) {
 	width: 100%;
 	display: flex;
 	flex-direction: column;
 }
 
-.warning .text {
+.login .warning p {
 	margin: 0;
 	width: 100%;
 	color: #ff4040;
@@ -213,14 +296,69 @@ body {
 	font-weight: bold;
 }
 
+.splash-screen {
+	overflow: auto;
+	flex-grow: 1;
+	font-size: 3.5em;
+	font-weight: bold;
+	color: #404040;
+	justify-content: center;
+	align-items: center;
+	padding: 1em;
+	text-align: center;
+	display: flex;
+}
+
+.splash-screen p {
+	margin: 0;
+}
+
+.scroll-screen {
+	overflow: auto;
+	flex-grow: 1;
+}
+
+.scrollable {
+	position: relative;
+	padding: 0 2em 2em 2em;
+	background-color: rgb(212, 212, 212);
+	display: flex;
+	flex-flow: column;
+	overflow: hidden;
+}
+
+.scrollable .button {
+	margin-top: 2em;
+}
+
+.ready-overlay {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	background-color: #00000080;
+}
+
+.score {
+	margin-top: 1em;
+	border-style: solid;
+	border-color: black;
+	border-width: 0.1em 0;
+}
+
+.score .name {
+	margin: 0;
+	font-size: 2em;
+	font-weight: bold;
+}
+
+.score .detail {
+	margin: 0 1em 0 0;
+	font-size: 1em;
+	font-weight: bold;
+}
+
 .hidden {
 	display: none;
-}
-
-.correct {
-	border-color: rgb(89, 214, 89);
-}
-
-.invalid {
-	border-color: rgb(214, 104, 89);
 }

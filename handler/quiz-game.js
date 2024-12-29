@@ -9,14 +9,11 @@ let GameGlobal = {};
 class GameSync {
 	constructor() {
 		this.nextId = 0;
-		this.players = {};
-		this.scores = {};
-		this.admin = null;
+		this.listener = {};
 	}
 
 	accept(ws, type) {
 		let obj = {
-			name: '',
 			ws: ws,
 			uniqueId: ++this.nextId
 		};
@@ -27,251 +24,158 @@ class GameSync {
 			obj.err = function (msg) { libLog.Error(`WS-admin[${obj.uniqueId}]: ${msg}`); };
 		}
 		else if (type == 'client') {
-			obj.log = function (msg) { libLog.Log(`WS-client[${obj.uniqueId}: ${obj.name}]: ${msg}`); };
-			obj.err = function (msg) { libLog.Error(`WS-client[${obj.uniqueId}: ${obj.name}]: ${msg}`); };
+			obj.log = function (msg) { libLog.Log(`WS-client[${obj.uniqueId}]: ${msg}`); };
+			obj.err = function (msg) { libLog.Error(`WS-client[${obj.uniqueId}]: ${msg}`); };
 		}
 		else {
 			obj.log = function (msg) { libLog.Log(`WS-score[${obj.uniqueId}]: ${msg}`); };
 			obj.err = function (msg) { libLog.Error(`WS-score[${obj.uniqueId}]: ${msg}`); };
 		}
 
-		/* immediately register the scores */
-		if (type == 'score')
-			this.scores[obj.uniqueId] = obj;
+		/* register the listener */
+		this.listener[obj.uniqueId] = obj;
 		return obj;
 	}
-	close(obj, type) {
-		switch (type) {
-			case 'admin':
-				if (this.admin == obj) {
-					this.admin.log('logged admin off');
-					this.admin = null;
-				}
-				break;
-			case 'client':
-				if ((obj.name in this.players) && this.players[obj.name] == obj) {
-					this.players[obj.name].log('logged client off');
-					this.players[obj.name] = null;
-					obj.name += '$offline';
-				}
-				break;
-			case 'score':
-				if (obj.uniqueId in this.scores)
-					this.scores[obj.uniqueId] = null;
-				break;
+	close(obj) {
+		if (this.listener[obj.uniqueId] == obj) {
+			obj.log('logged off');
+			this.listener[obj.uniqueId] = null;
 		}
 	}
+	syncGameState(state) {
+		let msg = JSON.stringify(state);
 
-	addPlayer(obj, name, takeOwnership, reset) {
-		obj.name = '';
-
-		/* check if the current owner should be logged off */
-		if (name in this.players) {
-			if (!takeOwnership)
-				return { code: (this.players[name] != null ? 'inUse' : 'alreadyExists') };
-			if (this.players[name] != null) {
-				this.players[name].ws.send(JSON.stringify({ code: 'loggedOff' }));
-				this.players[name].log('force-logged client off');
-				this.players[name].name += '$offline';
-			}
-		}
-
-		/* configure the new active client and setup the playerstate */
-		obj.name = name;
-		this.players[name] = obj;
-		GameGlobal.state.createPlayer(obj, reset);
-		this.players[name].log('logged client on');
-		return { code: 'ok' };
-	}
-	addAdmin(obj) {
-		/* log the current admin off */
-		if (this.admin != null) {
-			this.admin.ws.send(JSON.stringify({ code: 'loggedOff' }));
-			this.admin.log('force-logged admin off');
-		}
-		this.admin = obj;
-		this.admin.log(`logged admin on`);
-		return { code: 'ok' };
-	}
-	isPlayer(obj) {
-		if (obj.name == '')
-			return false;
-		return ((obj.name in this.players) && this.players[obj.name] == obj);
-	}
-	isAdmin(obj) {
-		return (this.admin == obj);
-	}
-
-	stateChanged(obj) {
-		/* notify the player */
-		if (obj != null)
-			this.players[obj.name].ws.send(JSON.stringify({ code: 'dirty' }));
-	}
-	allStatesChanged() {
-		/* notify all active players */
-		for (const key in this.players) {
-			if (this.players[key] != null)
-				this.players[key].ws.send(JSON.stringify({ code: 'dirty' }));
-		}
-
-		/* notify the active admin */
-		if (this.admin != null)
-			this.admin.ws.send(JSON.stringify({ code: 'dirty' }));
-	}
-	disconnectAll() {
-		for (const key in this.players) {
-			if (this.players[key] != null) {
-				this.players[key].ws.send(JSON.stringify({ code: 'loggedOff' }));
-				this.players[key].log('force-logged client off');
-			}
-		}
-		this.players = {};
-	}
-	scoreChanged() {
-		for (const id in this.scores) {
-			if (this.scores[id] != null)
-				this.scores[id].ws.send(JSON.stringify({ code: 'dirty' }));
+		/* notify all listeners */
+		for (const key in this.listener) {
+			if (this.listener[key] != null)
+				this.listener[key].ws.send(msg);
 		}
 	}
 };
 class GameState {
-	constructor() {
-		this.state = 'start'; //start, open, closed, resolved
-		this.correct = -1;
-		this.options = [];
-		this.description = '';
+	resetGame() {
+		this.phase = 'start'; //start,category,answer,resolved,done
+		this.question = 0;
+		this.remaining = [];
 		this.players = {};
-	}
+		this.round = 0;
 
-	createPlayer(obj, reset) {
-		if (reset || !(obj.name in this.players))
-			this.players[obj.name] = { score: 0, choice: -1 };
-
-		/* notify the listener about the changed state */
-		GameGlobal.sync.stateChanged(null);
-		GameGlobal.sync.scoreChanged();
+		for (let i = 0; i < 191; ++i)
+			this.remaining.push(i);
+		GameGlobal.sync.syncGameState(this.makeState());
 	}
+	resetPlayersForPhase(partial) {
+		/* reset the player states for the next phase */
+		for (const key in this.players) {
+			let player = this.players[key];
+			player.ready = false;
 
-	/* called by client/admin */
-	makeChoice(obj, index) {
-		/* check if the choice can be made and is valid */
-		if (this.state != 'open')
-			return { code: 'noChoicePossible' };
-		if (index < 0 || index >= this.options.length)
-			return { code: 'outOfRange' };
-		if (this.players[obj.name].choice == index)
-			return { code: 'ok' };
-		obj.log(`made choice [${index}]`);
-
-		/* update the choice of the player and notify the listener */
-		this.players[obj.name].choice = index;
-		GameGlobal.sync.stateChanged(obj);
-		return { code: 'ok' };
-	}
-	getClient(obj) {
-		return {
-			code: 'ok',
-			description: this.description,
-			options: this.options,
-			open: (this.state == 'open'),
-			score: this.players[obj.name].score,
-			choice: this.players[obj.name].choice,
-			correct: this.correct
-		};
-	}
-	getAdmin() {
-		return {
-			code: 'ok',
-			current: this.description,
-			state: this.state
-		};
-	}
-	getScore() {
-		let resp = {
-			code: 'ok',
-			scores: {}
-		};
-		for (const name in this.players)
-			resp.scores[name] = this.players[name].score;
-		return resp;
-	}
-
-	/* called by admin */
-	resetAll(obj, resetPlayers) {
-		if (this.state == 'start')
-			return { code: 'ok' };
-		this.state = 'start';
-		obj.log(resetPlayers ? 'reset game and players' : 'reset game');
-
-		/* reset all players */
-		if (resetPlayers) {
-			this.players = {};
-			GameGlobal.sync.disconnectAll();
+			if (partial)
+				continue;
+			player.actual = player.score;
+			player.confidence = 1;
+			player.choice = -1;
+			player.exposed = false;
+			player.skipping = null;
+			player.forcing = null;
+			player.correct = false;
 		}
-		else for (const name in this.players)
-			this.players[name].choice = -1;
-		this.correct = -1;
-
-		/* reset the current round */
-		this.description = '';
-		this.options = [];
-
-		/* notify the listener */
-		GameGlobal.sync.allStatesChanged();
-		GameGlobal.sync.scoreChanged();
-		return { code: 'ok' };
 	}
-	startNext(obj, desc, opt) {
-		if (this.state != 'start' && this.state != 'resolved')
-			return { code: 'seqError' };
-		this.state = 'open';
-		obj.log('starting next game');
 
-		/* reset the choices */
-		for (const name in this.players)
-			this.players[name].choice = -1;
-		this.correct = -1;
+	advanceStage() {
+		/* check if all players are valid */
+		for (const key in this.players) {
+			if (!this.players[key].ready)
+				return;
+		}
+		if (this.players.length < 2)
+			return;
 
-		/* setup the next game */
-		this.description = desc;
-		this.options = opt;
+		/* check if the next stage needs to be picked */
+		if (this.phase == 'start' || this.phase == 'resolved') {
+			if (this.remaining.length == 0) {
+				this.phase = 'done';
+				this.resetPlayersForPhase(false);
+				return;
+			}
 
-		/* notify the listener */
-		GameGlobal.sync.allStatesChanged();
-		return { code: 'ok' };
-	}
-	closeRound(obj) {
-		if (this.state != 'open')
-			return { code: 'seqError' };
-		obj.log('closed game');
-
-		/* update the state and notify the listener */
-		this.state = 'closed';
-		GameGlobal.sync.allStatesChanged();
-		return { code: 'ok' };
-	}
-	resolveRound(obj, result) {
-		if (this.state != 'closed')
-			return { code: 'seqError' };
-		this.state = 'resolved';
-		obj.log('resolved game');
-
-		/* update the player scores */
-		this.correct = result;
-		for (const name in this.players) {
-			if (this.players[name].choice == this.correct)
-				this.players[name].score += 1;
+			/* advance the round and select the next question */
+			if (this.phase != 'start')
+				this.round += 1;
+			let index = Math.floor(Math.random() * this.remaining.length);
+			this.question = this.remaining[index];
+			this.remaining.splice(index, 1);
+			this.phase = 'category';
+			this.resetPlayersForPhase(false);
+			return;
 		}
 
-		/* notify the listener */
-		GameGlobal.sync.allStatesChanged();
-		GameGlobal.sync.scoreChanged();
-		return { code: 'ok' };
+		/* check if the answer-round can be started */
+		if (this.phase == 'category') {
+			this.phase = 'answer';
+			this.resetPlayersForPhase(true);
+			return;
+		}
+
+		for (const key in this.players) {
+			let player = this.players[key];
+
+			libLog.Info(`Player: ${key}: ${JSON.stringify(player)}`);
+		}
+
+		/* apply the force-steps */
+		for (const key in this.players) {
+			let force = this.players[key].forcing;
+			if (force != null && (force in this.players))
+				this.players[force].confidence = 4;
+		}
+
+		/* apply the skip-steps */
+		for (const key in this.players) {
+			let skip = this.players[key].skipping;
+			if (skip != null && (skip in this.players))
+				this.players[skip].confidence = 0;
+		}
+
+		/* apply the points and reset the remaining player states and advance the phase */
+		for (const key in this.players) {
+			let player = this.players[key];
+			if (player.correct)
+				player.delta = player.confidence;
+			else
+				player.delta = Math.max(-player.actual, -player.confidence);
+			player.actual = player.score + player.delta;
+			player.score = player.actual;
+		}
+		this.resetPlayersForPhase(true);
+		this.phase = 'resolved';
+	}
+
+	makeState() {
+		return {
+			code: 'state',
+			phase: this.phase,
+			question: this.question,
+			players: this.players,
+			round: this.round
+		};
+	}
+	updatePlayer(name, state) {
+		if (state == undefined || state == null)
+			delete this.players[name];
+		else
+			this.players[name] = state;
+
+		libLog.Info(`Player: ${name}: ${JSON.stringify(state)}`);
+
+		this.advanceStage();
+		GameGlobal.sync.syncGameState(this.makeState());
 	}
 };
 
 GameGlobal.sync = new GameSync();
 GameGlobal.state = new GameState();
+GameGlobal.state.resetGame();
 
 function AcceptWebSocket(ws, type) {
 	/* setup the obj-state */
@@ -282,11 +186,7 @@ function AcceptWebSocket(ws, type) {
 	ws.on('message', function (msg) {
 		try {
 			let parsed = JSON.parse(msg);
-			let response = {
-				admin: HandleAdminMessage,
-				client: HandleClientMessage,
-				score: HandleScoreMessage
-			}[type](parsed, obj);
+			let response = HandleMessage(parsed, obj);
 			if (typeof (parsed.cmd) == 'string')
 				obj.log(`handling command [${parsed.cmd}]: ${response.code}`);
 			else
@@ -298,82 +198,27 @@ function AcceptWebSocket(ws, type) {
 		}
 	});
 	ws.on('close', function () {
-		GameGlobal.sync.close(obj, type);
+		GameGlobal.sync.close(obj);
 		obj.log(`websocket closed`);
 		ws.close();
 	});
 }
-function HandleClientMessage(msg, client) {
+function HandleMessage(msg) {
 	if (typeof (msg.cmd) != 'string' || msg.cmd == '')
 		return { code: 'malformed' };
-
-	/* check if its the login command */
-	if (msg.cmd == 'login') {
-		if (typeof (msg.name) != 'string' || msg.name == '')
-			return { code: 'malformed' };
-		return GameGlobal.sync.addPlayer(client, msg.name, msg.takeOwnership === true, msg.resetState === true);
-	}
-
-	/* check if the client is valid */
-	if (!GameGlobal.sync.isPlayer(client))
-		return { code: 'notLoggedIn' };
 
 	/* handle the command */
 	switch (msg.cmd) {
 		case 'state':
-			return GameGlobal.state.getClient(client);
-		case 'choice':
-			if (typeof (msg.index) != 'number')
-				return { code: 'malformed' };
-			return GameGlobal.state.makeChoice(client, msg.index);
-		default:
-			return { code: 'malformed' };
-	}
-}
-function HandleAdminMessage(msg, admin) {
-	if (typeof (msg.cmd) != 'string' || msg.cmd == '')
-		return { code: 'malformed' };
-
-	/* check if the admin requests activation */
-	if (msg.cmd == 'login')
-		return GameGlobal.sync.addAdmin(admin);
-
-	/* check if the admin is valid */
-	if (!GameGlobal.sync.isAdmin(admin))
-		return { code: 'notLoggedIn' };
-
-	/* handle the command */
-	switch (msg.cmd) {
-		case 'state':
-			return GameGlobal.state.getAdmin();
+			return GameGlobal.state.makeState();
 		case 'reset':
-			return GameGlobal.state.resetAll(admin, msg.total === true);
-		case 'next':
-			if (typeof (msg.description) != 'string' || msg.description.length == 0 || typeof (msg.options) != 'object' || typeof (msg.options.length) != 'number')
+			GameGlobal.state.resetGame();
+			return GameGlobal.state.makeState();
+		case 'update':
+			if (typeof (msg.name) != 'string')
 				return { code: 'malformed' };
-			for (let i = 0; i < msg.options.length; ++i) {
-				if (typeof (msg.options[i]) != 'string' || msg.options[i].length == 0)
-					return { code: 'malformed' };
-			}
-			return GameGlobal.state.startNext(admin, msg.description, msg.options);
-		case 'close':
-			return GameGlobal.state.closeRound(admin);
-		case 'resolve':
-			if (typeof (msg.value) != 'number' || msg.value < 0 || msg.value >= GameGlobal.state.options.length)
-				return { code: 'malformed' };
-			return GameGlobal.state.resolveRound(admin, msg.value);
-		default:
-			return { code: 'malformed' };
-	}
-}
-function HandleScoreMessage(msg, score) {
-	if (typeof (msg.cmd) != 'string' || msg.cmd == '')
-		return { code: 'malformed' };
-
-	/* handle the command */
-	switch (msg.cmd) {
-		case 'state':
-			return GameGlobal.state.getScore();
+			GameGlobal.state.updatePlayer(msg.name, msg.value);
+			return { code: 'ok' };
 		default:
 			return { code: 'malformed' };
 	}

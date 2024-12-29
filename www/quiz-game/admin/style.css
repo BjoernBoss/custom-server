@@ -14,7 +14,7 @@ body {
 }
 
 .state {
-	min-height: 6em;
+	/* min-height: 6em; */
 	background-color: rgb(158, 158, 158);
 	flex: 0 1 auto;
 	padding: 1em;

@@ -10,52 +10,153 @@
 </head>
 
 <body contenteditable="false">
-	<div class="overlay" id="initial">
-		<div class="config">
-			<div class="content">
-				<p class="title">Whats your Name/Team?</p>
+
+	<!-- initial/error login screen -->
+	<div class="login" id="login">
+		<div class="content">
+			<p class="title">Whats your Name/Team?</p>
+			<div style="height:1.5em;"></div>
+			<input class="name" type="text" placeholder="Name..." id="name">
+			<input class="name" type="text" style="margin-top: 1em;" placeholder="Team... (Empty = No Team)" id="team">
+			<div style="height:1.5em;"></div>
+			<div class="warning hidden" id="warning">
+				<p id="warning-text" class="text">A Warning!</p>
 				<div style="height:1.5em;"></div>
-				<input class="name" type="text" placeholder="Name..." id="name" oninput="_game.nameChanged();">
-				<div style="height:1.5em;"></div>
-				<div class="warning hidden" id="warning">
-					<p id="warningText" class="text">Eine Warnung!</p>
-					<div style="height:1.5em;"></div>
-				</div>
-				<div class="confirm" id="loginBasic">
-					<div class="button">
-						<div class="interact" onclick="_game.login(false, false);">
-							<p>Start Playing!</p>
-						</div>
-					</div>
-				</div>
-				<div class="confirm hidden" id="loginTakeOwnership">
-					<div class="button">
-						<div class="interact" onclick="_game.login(true, false);">
-							<p>That's me, continue playing!</p>
-						</div>
-					</div>
-					<div style="width:1.5em;height:1.5em;"></div>
-					<div class="button">
-						<div class="interact" onclick="_game.login(true, true);">
-							<p>This is my first game, reset the score!</p>
-						</div>
+			</div>
+			<div class="confirm">
+				<div class="button">
+					<div class="clickable" onclick="_game.login();">
+						<p>Start Playing!</p>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="overlay hidden" id="not-ready">
-	</div>
-	<div class="core">
+
+	<!-- active game screen (contains header/footer and active-body) -->
+	<div class="core hidden" id="main">
+		<!-- header: visible at all times and contains: score/name/category/question -->
 		<div class="header">
-			<p class="text" id="header">Question...</p>
+			<div class="details">
+				<div style="margin: 0 1em;" id="self-name">Name: Test</div>
+				<div style="margin: 0 1em;" id="score">Team-Score: 50</div>
+			</div>
+			<div class="details" id="team-details">
+				<div style="margin: 0 1em;" id="self-team">Team: Test</div>
+				<div style="margin: 0 1em;" id="team-score">Team-Score: 50</div>
+			</div>
+			<div class="details" style="border-style: none;">
+				<div style="margin: 0 1em;" id="round">Round: 50</div>
+				<div style="margin: 0 1em;" id="confidence">Confidence: 0</div>
+			</div>
+			<div class="large" id="category">Category: Test</div>
+			<div class="question" id="question">Question...</div>
+			<div class="large" id="delta">Points: Delta</div>
 		</div>
 		<div class="core-separator"></div>
-		<div style="overflow: auto;">
-			<p class="score" id="score">
-				Score: ...
-			</p>
-			<div class="options" id="options">
+
+		<!-- splash-screen to display start/game-over -->
+		<div class="splash-screen hidden" id="splash-screen">
+			<p id="splash-message">Some Message</p>
+		</div>
+
+		<!-- setup-screen to select confidence and jokers -->
+		<div class="scroll-screen hidden" id="setup-screen">
+			<div class="scrollable">
+				<!-- toggled whenver the player has logged his result -->
+				<div class="ready-overlay" id="setup-lock"></div>
+
+				<!-- confidence slider -->
+				<div class="slider value0" id="confidence-select">
+					<p id="confidence-value">Confidence: 0</p>
+					<input type="range" min="0" max="4" value="0" class="slidebar" id="confidence-slider"
+						oninput="_game.confidence(this.value)">
+				</div>
+
+				<!-- expose button (expose the question, once every five rounds) -->
+				<div class="button" id="expose">
+					<div class="clickable" onclick="_game.expose()">
+						<p>Show Qustion</p>
+						<p class="sub" id="expose-text">Every Five Rounds</p>
+					</div>
+				</div>
+
+				<!-- skip button (force the enemy to skip this round - confidence = 0) -->
+				<div class="button" id="skip">
+					<div class="clickable" onclick="_game.skip()">
+						<p>Force to Skip Enemy</p>
+						<p class="sub" id="skip-text">Costs 3 Points</p>
+					</div>
+				</div>
+
+				<!-- force button (force enemy to be confident - confidence = 5) -->
+				<div class="button" id="force">
+					<div class="clickable" onclick="_game.force()">
+						<p>Force Enemy to be Fully Confident</p>
+						<p class="sub" id="force-text">Costs 3 Points</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- select-screen to select a player for an effect -->
+		<div class="scroll-screen hidden" id="select-screen">
+			<div class="scrollable" id="select-content">
+				<!-- description of type of selection -->
+				<div class="description" id="select-text">
+					Select Text...
+				</div>
+
+				<!-- return button (No-one selected) -->
+				<div class="button">
+					<div class="clickable" onclick="_game.pick(null)">
+						<p>Cancel</p>
+						<p class="sub">Nobody will be selected</p>
+					</div>
+				</div>
+
+				<!-- here the list of options will be added -->
+			</div>
+		</div>
+
+		<!-- game-screen to select a game/option and present the solution -->
+		<div class="scroll-screen hidden" id="game-screen">
+			<div class="scrollable" id="game-content">
+				<!-- toggled whenver the player has logged his result -->
+				<div class="ready-overlay" id="game-lock"></div>
+
+				<!-- here the list of options will be added -->
+			</div>
+		</div>
+
+		<!-- score-screen to view the current score-board -->
+		<div class="scroll-screen hidden" id="score-screen">
+			<div class="scrollable">
+				<div id="score-content">
+					<!-- here the list of players will be added -->
+				</div>
+			</div>
+
+			<div class="button" style="margin: 0 2em 2em 2em;">
+				<div class="clickable" onclick="confirm('Remove from game?') ? _game.remove() : null">
+					<p>Remove Me!</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- footer: contains button to toggle ready/board -->
+		<div class="core-separator"></div>
+		<div class="footer">
+			<div class="button" style="flex-grow: 1;" id="ready">
+				<div class="clickable" onclick="_game.ready()">
+					<p style="font-size: 1.5em;">Ready</p>
+				</div>
+			</div>
+			<div style="width: 2em;"></div>
+			<div class="button">
+				<div class="clickable" onclick="_game.toggleScore()">
+					<p style="font-size: 1.5em;" id="toggle-board">Board</p>
+				</div>
 			</div>
 		</div>
 	</div>
