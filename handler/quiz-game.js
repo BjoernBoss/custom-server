@@ -5,6 +5,7 @@ export const SubPath = '/quiz-game';
 const ActualPath = libPath.resolve('./www/quiz-game');
 
 let GameGlobal = {};
+let TotalQuestionCount = 190;
 
 class GameSync {
 	constructor() {
@@ -12,25 +13,15 @@ class GameSync {
 		this.listener = {};
 	}
 
-	accept(ws, type) {
+	accept(ws) {
 		let obj = {
 			ws: ws,
 			uniqueId: ++this.nextId
 		};
 
 		/* setup the logging function */
-		if (type == 'admin') {
-			obj.log = function (msg) { libLog.Log(`WS-admin[${obj.uniqueId}]: ${msg}`); };
-			obj.err = function (msg) { libLog.Error(`WS-admin[${obj.uniqueId}]: ${msg}`); };
-		}
-		else if (type == 'client') {
-			obj.log = function (msg) { libLog.Log(`WS-client[${obj.uniqueId}]: ${msg}`); };
-			obj.err = function (msg) { libLog.Error(`WS-client[${obj.uniqueId}]: ${msg}`); };
-		}
-		else {
-			obj.log = function (msg) { libLog.Log(`WS-score[${obj.uniqueId}]: ${msg}`); };
-			obj.err = function (msg) { libLog.Error(`WS-score[${obj.uniqueId}]: ${msg}`); };
-		}
+		obj.log = function (msg) { libLog.Log(`WS[${obj.uniqueId}]: ${msg}`); };
+		obj.err = function (msg) { libLog.Error(`WS[${obj.uniqueId}]: ${msg}`); };
 
 		/* register the listener */
 		this.listener[obj.uniqueId] = obj;
@@ -60,7 +51,7 @@ class GameState {
 		this.players = {};
 		this.round = 0;
 
-		for (let i = 0; i < 191; ++i)
+		for (let i = 0; i < TotalQuestionCount; ++i)
 			this.remaining.push(i);
 		GameGlobal.sync.syncGameState(this.makeState());
 	}
@@ -75,10 +66,14 @@ class GameState {
 			player.actual = player.score;
 			player.confidence = 1;
 			player.choice = -1;
-			player.exposed = false;
-			player.skipping = null;
-			player.forcing = null;
 			player.correct = false;
+			player.effect = {
+				doubleOrNothing: false,
+				exposed: false,
+				skipping: null,
+				forcing: null,
+				inverting: null,
+			};
 		}
 	}
 
@@ -117,40 +112,49 @@ class GameState {
 			return;
 		}
 
-		for (const key in this.players) {
-			let player = this.players[key];
+		/* initialize the actual confidences to be used */
+		let confidence = {};
+		for (const key in this.players)
+			confidence[key] = this.players[key].confidence;
 
-			libLog.Info(`Player: ${key}: ${JSON.stringify(player)}`);
+		/* apply the skip-steps */
+		for (const key in this.players) {
+			let skip = this.players[key].effect.skipping;
+			if (skip != null && (skip in this.players))
+				confidence[skip] = 0;
 		}
 
 		/* apply the force-steps */
 		for (const key in this.players) {
-			let force = this.players[key].forcing;
+			let force = this.players[key].effect.forcing;
 			if (force != null && (force in this.players))
-				this.players[force].confidence = 4;
+				confidence[force] = 4;
 		}
 
-		/* apply the skip-steps */
+		/* apply the invert-steps */
 		for (const key in this.players) {
-			let skip = this.players[key].skipping;
-			if (skip != null && (skip in this.players))
-				this.players[skip].confidence = 0;
+			let invert = this.players[key].effect.inverting;
+			if (invert != null && (invert in this.players))
+				confidence[invert] = 4 - confidence[invert];
 		}
 
-		/* apply the points and reset the remaining player states and advance the phase */
+		/* apply the points and the double-or-nothing and reset the remaining player states and advance the phase */
 		for (const key in this.players) {
 			let player = this.players[key];
 			if (player.correct)
-				player.delta = player.confidence;
+				player.delta = confidence[key];
 			else
-				player.delta = Math.max(-player.actual, -player.confidence);
-			player.actual = player.score + player.delta;
+				player.delta = -confidence[key];
+			player.actual = Math.max(0, player.score + player.delta);
+
+			if (player.effect.doubleOrNothing)
+				player.actual = (player.correct ? player.actual * 2 : 0);
+
 			player.score = player.actual;
 		}
 		this.resetPlayersForPhase(true);
 		this.phase = 'resolved';
 	}
-
 	makeState() {
 		return {
 			code: 'state',
@@ -161,8 +165,11 @@ class GameState {
 		};
 	}
 	updatePlayer(name, state) {
-		if (state == undefined || state == null)
+		if (state == undefined || state == null) {
 			delete this.players[name];
+			if (Object.keys(this.players).length == 0)
+				this.resetGame();
+		}
 		else
 			this.players[name] = state;
 
@@ -177,9 +184,9 @@ GameGlobal.sync = new GameSync();
 GameGlobal.state = new GameState();
 GameGlobal.state.resetGame();
 
-function AcceptWebSocket(ws, type) {
+function AcceptWebSocket(ws) {
 	/* setup the obj-state */
-	let obj = GameGlobal.sync.accept(ws, type);
+	let obj = GameGlobal.sync.accept(ws);
 	obj.log('websocket accepted');
 
 	/* register the callbacks */
@@ -193,7 +200,7 @@ function AcceptWebSocket(ws, type) {
 				obj.log(`response: ${response.code}`);
 			ws.send(JSON.stringify(response));
 		} catch (err) {
-			obj.err(`exception while handling ${type}: [${err}]`);
+			obj.err(`exception while message: [${err}]`);
 			ws.close();
 		}
 	});
@@ -239,21 +246,14 @@ export function Handle(msg) {
 
 	/* check if its a web-socket request */
 	if (msg.relative == '/ws-client') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'client')))
+		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws)))
 			return;
 		libLog.Log(`Invalid request for client web-socket point`);
 		this.respondNotFound();
 		return;
 	}
-	if (msg.relative == '/ws-admin') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'admin')))
-			return;
-		libLog.Log(`Invalid request for admin web-socket point`);
-		this.respondNotFound();
-		return;
-	}
 	if (msg.relative == '/ws-score') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'score')))
+		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws)))
 			return;
 		libLog.Log(`Invalid request for score web-socket point`);
 		this.respondNotFound();

@@ -330,16 +330,6 @@
 		"correct": 2
 	},
 	{
-		"desc": "What part of the brain is responsible for memory and learning?",
-		"text": [
-			"Cerebellum",
-			"Hypothalamus",
-			"Hippocampus ",
-			"Medulla oblongata"
-		],
-		"correct": 2
-	},
-	{
 		"desc": "The Heimlich maneuver is used to help someone who is:",
 		"text": [
 			"Having a seizure",

@@ -73,27 +73,75 @@
 						oninput="_game.confidence(this.value)">
 				</div>
 
-				<!-- expose button (expose the question, once every five rounds) -->
-				<div class="button" id="expose">
-					<div class="clickable" onclick="_game.expose()">
-						<p>Show Qustion</p>
-						<p class="sub" id="expose-text">Every Five Rounds</p>
+				<!-- double-or-nothing button (double points or reset) -->
+				<div class="button" id="double-or-nothing">
+					<div class="clickable" onclick="_game.effect('doubleOrNothing', false)">
+						<p>Double Or Nothing Points</p>
+						<p class="sub">Rounds...</p>
 					</div>
 				</div>
 
-				<!-- skip button (force the enemy to skip this round - confidence = 0) -->
-				<div class="button" id="skip">
-					<div class="clickable" onclick="_game.skip()">
-						<p>Force to Skip Enemy</p>
-						<p class="sub" id="skip-text">Costs 3 Points</p>
+				<!-- expose button - timeout (expose the question) -->
+				<div class="button" id="expose-round">
+					<div class="clickable" onclick="_game.effect('exposed', false)">
+						<p>Show Question (Timeout)</p>
+						<p class="sub">Rounds...</p>
 					</div>
 				</div>
 
-				<!-- force button (force enemy to be confident - confidence = 5) -->
-				<div class="button" id="force">
-					<div class="clickable" onclick="_game.force()">
-						<p>Force Enemy to be Fully Confident</p>
-						<p class="sub" id="force-text">Costs 3 Points</p>
+				<!-- expose button - buy (expose the question) -->
+				<div class="button" id="expose-buy">
+					<div class="clickable" onclick="_game.effect('exposed', true)">
+						<p>Show Question (Buy)</p>
+						<p class="sub">Cost...</p>
+					</div>
+				</div>
+
+				<!-- skip button - timeout (force the enemy to skip this round - confidence = 0) -->
+				<div class="button" id="skip-round">
+					<div class="clickable" onclick="_game.effect('skipping', false)">
+						<p>Force to Skip Enemy (Timeout)</p>
+						<p class="sub">Rounds...</p>
+					</div>
+				</div>
+
+				<!-- skip button - buy (force the enemy to skip this round - confidence = 0) -->
+				<div class="button" id="skip-buy">
+					<div class="clickable" onclick="_game.effect('skipping', true)">
+						<p>Force to Skip Enemy (Buy)</p>
+						<p class="sub">Cost...</p>
+					</div>
+				</div>
+
+				<!-- force button - timeout (force enemy to be confident - confidence = 4) -->
+				<div class="button" id="force-round">
+					<div class="clickable" onclick="_game.effect('forcing', false)">
+						<p>Force Enemy to be Fully Confident (Timeout)</p>
+						<p class="sub">Rounds...</p>
+					</div>
+				</div>
+
+				<!-- force button - buy (force enemy to be confident - confidence = 4) -->
+				<div class="button" id="force-buy">
+					<div class="clickable" onclick="_game.effect('forcing', true)">
+						<p>Force Enemy to be Fully Confident (Buy)</p>
+						<p class="sub">Cost...</p>
+					</div>
+				</div>
+
+				<!-- invert button - timeout (invert enemy confidence) -->
+				<div class="button" id="invert-round">
+					<div class="clickable" onclick="_game.effect('inverting', false)">
+						<p>Invert Enemy Confidence (Timeout)</p>
+						<p class="sub">Rounds...</p>
+					</div>
+				</div>
+
+				<!-- invert button - buy (invert enemy confidence) -->
+				<div class="button" id="invert-buy">
+					<div class="clickable" onclick="_game.effect('inverting', true)">
+						<p>Invert Enemy Confidence (Buy)</p>
+						<p class="sub">Cost...</p>
 					</div>
 				</div>
 			</div>

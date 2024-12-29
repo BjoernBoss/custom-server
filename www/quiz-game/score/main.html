@@ -4,19 +4,31 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Scoreboard</title>
+	<title>Scoreboard!</title>
 	<link rel="stylesheet" type="text/css" href="/quiz-game/score/style.css">
 	<script src="/quiz-game/score/script.js"></script>
 </head>
 
 <body contenteditable="false">
+	<!-- active game screen (contains header/footer and active-body) -->
 	<div class="core">
+		<!-- header: visible at all times and contains: score/name/category/question -->
 		<div class="header">
-			<p class="text">Scoreboard</p>
+			<div class="details">
+				<div style="margin: 0 1em;" id="round">Round: 50</div>
+			</div>
+			<div style="margin: 0 1em;" id="phase">Phase: ...</div>
+			<div class="large" id="category">Category: Test</div>
+			<div class="question" id="question">Question...</div>
 		</div>
 		<div class="core-separator"></div>
-		<div style="overflow: auto;">
-			<div class="scores" id="scores">
+
+		<!-- score-screen to view the current score-board -->
+		<div class="scroll-screen">
+			<div class="scrollable">
+				<div id="score-content">
+					<!-- here the list of players will be added -->
+				</div>
 			</div>
 		</div>
 	</div>
