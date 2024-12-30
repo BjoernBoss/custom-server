@@ -173,8 +173,6 @@ class GameState {
 		else
 			this.players[name] = state;
 
-		libLog.Info(`Player: ${name}: ${JSON.stringify(state)}`);
-
 		this.advanceStage();
 		GameGlobal.sync.syncGameState(this.makeState());
 	}
