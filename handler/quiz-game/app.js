@@ -2,11 +2,12 @@
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
 import * as libPath from "path";
-import jsonQuestions from "./categorized-questions.json" with { type: "json" };
+import * as libFs from "fs";
 
 export const SubPath = '/quiz-game';
 const ActualPath = libPath.resolve('./www/quiz-game');
 
+let JsonQuestions = JSON.parse(libFs.readFileSync('./handler/quiz-game/categorized-questions.json', 'utf8'));
 let Sync = null;
 let State = null;
 
@@ -54,7 +55,7 @@ class GameState {
 		this.players = {};
 		this.round = null;
 
-		for (let i = 0; i < jsonQuestions.length; ++i)
+		for (let i = 0; i < JsonQuestions.length; ++i)
 			this.remaining.push(i);
 		Sync.syncGameState(this.makeState());
 	}
@@ -104,7 +105,7 @@ class GameState {
 			else
 				this.round += 1;
 			let index = Math.floor(Math.random() * this.remaining.length);
-			this.question = jsonQuestions[this.remaining[index]];
+			this.question = JsonQuestions[this.remaining[index]];
 			this.remaining.splice(index, 1);
 			this.phase = 'category';
 			this.resetPlayersForPhase(false);
@@ -164,7 +165,7 @@ class GameState {
 			cmd: 'state',
 			phase: this.phase,
 			question: this.question,
-			totalQuestions: jsonQuestions.length,
+			totalQuestions: JsonQuestions.length,
 			players: this.players,
 			round: this.round
 		};
