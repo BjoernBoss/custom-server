@@ -113,17 +113,6 @@ _game.fetchState = function () {
 _game.applyState = function () {
 	console.log('Applying received state');
 
-	/* fetch the team-score */
-	let teamScores = {};
-	for (const key in _game.state.players) {
-		let team = _game.state.players[key].team;
-		if (team.length == 0)
-			continue;
-		if (!(team in teamScores))
-			teamScores[team] = 0;
-		teamScores[team] += _game.state.players[key].score;
-	}
-
 	/* update the current score and category */
 	if (_game.state.round == null)
 		_game.htmlRound.innerText = `Round: None / ${_game.state.totalQuestions}`;
@@ -181,8 +170,8 @@ _game.applyState = function () {
 		};
 
 		/* add the name and score and ready-flag (first has always name-style) */
-		makeNext().innerText = `Name: ${list[i][0]}` + (player.team.length == 0 ? '' : ` (Team: ${player.team})`);
-		makeNext().innerText = `Score: ${player.score}` + (player.team.length == 0 ? '' : ` (Team-Score: ${teamScores[player.team]})`);
+		makeNext().innerText = `Name: ${list[i][0]}`;
+		makeNext().innerText = `Score: ${player.score}`;
 		makeNext().innerText = `Ready: ${player.ready ? 'True' : 'False'}`;
 
 		/* add the result */

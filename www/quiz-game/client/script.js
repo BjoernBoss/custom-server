@@ -6,19 +6,15 @@ window.onload = function () {
 	/* login-screen html components */
 	_game.htmlLogin = document.getElementById('login');
 	_game.htmlName = document.getElementById('name');
-	_game.htmlTeam = document.getElementById('team');
 	_game.htmlWarning = document.getElementById('warning');
 	_game.htmlWarningText = document.getElementById('warning-text');
 
 	/* caption/footer components */
 	_game.htmlMain = document.getElementById('main');
 	_game.htmlSelfName = document.getElementById('self-name');
-	_game.htmlSelfTeam = document.getElementById('self-team');
 	_game.htmlCategory = document.getElementById('category');
 	_game.htmlQuestion = document.getElementById('question');
 	_game.htmlScore = document.getElementById('score');
-	_game.htmlTeamScore = document.getElementById('team-score');
-	_game.htmlTeamDetails = document.getElementById('team-details');
 	_game.htmlRound = document.getElementById('round');
 	_game.htmlReady = document.getElementById('ready');
 	_game.htmlConfidence = document.getElementById('confidence');
@@ -62,7 +58,6 @@ window.onload = function () {
 	/* setup the overall state */
 	_game.state = {};
 	_game.name = '';
-	_game.team = '';
 	_game.self = null;
 	_game.selectDescription = '';
 	_game.selectCallback = null;
@@ -220,26 +215,16 @@ _game.applyState = function () {
 		return;
 	console.log('Applying received state');
 
-	/* fetch the total playercount and team-score */
+	/* fetch the total playercount */
 	_game.totalPlayerCount = 0;
-	let teamScores = {};
-	for (const key in _game.state.players) {
+	for (const _ in _game.state.players)
 		++_game.totalPlayerCount;
-		let team = _game.state.players[key].team;
-		if (team.length == 0)
-			continue;
-		if (!(team in teamScores))
-			teamScores[team] = 0;
-		teamScores[team] += _game.state.players[key].score;
-	}
 
 	/* check if the player has started to play or has been reset or update the state */
-	let syncRequired = false;
 	if (_game.name in _game.state.players)
 		_game.self = _game.state.players[_game.name];
 	else if (_game.self == null) {
 		_game.self = {
-			team: _game.team,
 			score: 0,
 			actual: 0,
 			ready: false,
@@ -262,27 +247,19 @@ _game.applyState = function () {
 				inverting: null,
 			},
 		};
-		syncRequired = true;
+		_game.syncState(false, false);
 	}
 	else {
 		_game.failed('Player has been reset');
 		return;
 	}
 
-	/* check if the team needs to be updated */
-	if (_game.team != _game.self.team) {
-		_game.self.team = _game.team;
-		syncRequired = true;
-	}
-	if (syncRequired)
-		_game.syncState(false, false);
-
 	/* construct the header and footer */
-	_game.applyHeaderAndFooter(teamScores);
+	_game.applyHeaderAndFooter();
 
 	/* check if the scoreboard is currently being viewed */
 	if (_game.viewScore) {
-		_game.applyScore(teamScores);
+		_game.applyScore();
 		return;
 	}
 	_game.htmlToggleBoard.innerText = 'Board';
@@ -328,17 +305,10 @@ _game.doEffect = function (name, buy, value) {
 };
 
 /* applying-state functions */
-_game.applyHeaderAndFooter = function (teamScores) {
+_game.applyHeaderAndFooter = function () {
 	/* update the current score and category */
 	_game.htmlSelfName.innerText = `Name: ${_game.name}`;
 	_game.htmlScore.innerText = `Score: ${_game.self.actual}`;
-	if (_game.team.length > 0) {
-		_game.htmlSelfTeam.innerText = `Team: ${_game.team}`;
-		_game.htmlTeamScore.innerText = `Team-Score: ${teamScores[_game.team]}`;
-		_game.htmlTeamDetails.classList.remove('hidden');
-	}
-	else
-		_game.htmlTeamDetails.classList.add('hidden');
 	if (_game.state.round == null)
 		_game.htmlRound.innerText = `Round: None / ${_game.state.totalQuestions}`;
 	else
@@ -385,7 +355,7 @@ _game.applyHeaderAndFooter = function (teamScores) {
 	}
 	_game.htmlReady.children[0].children[0].innerText = `Ready (${readyCount} / ${_game.totalPlayerCount})`;
 };
-_game.applyScore = function (teamScores) {
+_game.applyScore = function () {
 	_game.screen('score');
 	_game.htmlToggleBoard.innerText = 'Return to Game';
 	_game.htmlReady.classList.add('hidden');
@@ -417,8 +387,8 @@ _game.applyScore = function (teamScores) {
 		};
 
 		/* add the name and score and ready-flag (first has always name-style) */
-		makeNext().innerText = `Name: ${list[i][0]}` + (player.team.length == 0 ? '' : ` (Team: ${player.team})`);
-		makeNext().innerText = `Score: ${player.score}` + (player.team.length == 0 ? '' : ` (Team-Score: ${teamScores[player.team]})`);
+		makeNext().innerText = `Name: ${list[i][0]}`;
+		makeNext().innerText = `Score: ${player.score}`;
 		makeNext().innerText = `Ready: ${player.ready ? 'True' : 'False'}`;
 
 		/* add the result */
@@ -474,7 +444,7 @@ _game.applySelection = function () {
 	/* collect the list of all players and sort them by their score */
 	let list = [];
 	for (const key in _game.state.players) {
-		if (key != _game.name && (_game.team.length == 0 || _game.state.players[key].team != _game.team))
+		if (key != _game.name)
 			list.push([key, _game.state.players[key].score]);
 	}
 	list.sort((a, b) => (a[1] < b[1] ? 1 : -1));
@@ -497,8 +467,7 @@ _game.applySelection = function () {
 		let node = _game.htmlSelectContent.children[i + 2];
 
 		/* add the name and score and callback */
-		let player = _game.state.players[list[i][0]];
-		node.children[0].children[0].innerText = list[i][0] + (player.team.length == 0 ? '' : ` (Team: ${player.team})`);
+		node.children[0].children[0].innerText = list[i][0];
 		node.children[0].children[1].innerText = `Score: ${list[i][1]}`;
 		node.children[0].onclick = () => _game.pick(list[i][0]);
 	}
@@ -651,10 +620,9 @@ _game.failed = function (msg) {
 	_game.selectDescription = '';
 	_game.viewScore = false;
 	_game.name = '';
-	_game.team = '';
 };
 _game.login = function () {
-	/* validate the name and the team */
+	/* validate the name */
 	if (_game.htmlName.value == '') {
 		_game.failed('Please Enter a Name');
 		return;
@@ -674,7 +642,6 @@ _game.login = function () {
 
 	/* extract the parameter and sync the game up */
 	_game.name = _game.htmlName.value.trim();
-	_game.team = _game.htmlTeam.value.trim();
 	_game.syncState(false, true);
 };
 _game.ready = function () {
