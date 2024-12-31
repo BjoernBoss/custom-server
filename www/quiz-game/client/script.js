@@ -96,7 +96,7 @@ window.onload = function () {
 	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
 	_game.sock = {
 		ws: null,
-		url: `${protocol}://${url.host}/quiz-game/ws-client`,
+		url: `${protocol}://${url.host}/quiz-game/ws/${_GameSessionId}`,
 		queue: [],
 		dirty: false,
 		state: 'creating', //creating, ready, busy, failed, error, restart
@@ -163,6 +163,9 @@ _game.handleMessage = function (m) {
 		switch (msg.cmd) {
 			case 'ok':
 				break;
+			case 'unknown-session':
+				alert('Unknown session!');
+				return;
 			case 'state':
 				_game.state = msg;
 				_game.applyState();

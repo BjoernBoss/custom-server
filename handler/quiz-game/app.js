@@ -1,54 +1,19 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
+import * as libTemplates from "../../server/templates.js";
 import * as libPath from "path";
 import * as libFs from "fs";
+import * as libCrypto from "crypto";
 
 export const SubPath = '/quiz-game';
 const ActualPath = libPath.resolve('./www/quiz-game');
 
 let JsonQuestions = JSON.parse(libFs.readFileSync('./handler/quiz-game/categorized-questions.json', 'utf8'));
-let Sync = null;
-let State = null;
+let Sessions = {};
 
-class GameSync {
-	constructor() {
-		this.nextId = 0;
-		this.listener = {};
-	}
-
-	accept(ws) {
-		let obj = {
-			ws: ws,
-			uniqueId: ++this.nextId
-		};
-
-		/* setup the logging function */
-		obj.log = function (msg) { libLog.Log(`WS[${obj.uniqueId}]: ${msg}`); };
-		obj.err = function (msg) { libLog.Error(`WS[${obj.uniqueId}]: ${msg}`); };
-
-		/* register the listener */
-		this.listener[obj.uniqueId] = obj;
-		return obj;
-	}
-	close(obj) {
-		if (this.listener[obj.uniqueId] == obj) {
-			obj.log('logged off');
-			this.listener[obj.uniqueId] = null;
-		}
-	}
-	syncGameState(state) {
-		let msg = JSON.stringify(state);
-
-		/* notify all listeners */
-		for (const key in this.listener) {
-			if (this.listener[key] != null)
-				this.listener[key].ws.send(msg);
-		}
-	}
-};
 class GameState {
-	resetGame() {
+	constructor() {
 		this.phase = 'start'; //start,category,answer,resolved,done
 		this.question = null;
 		this.remaining = [];
@@ -57,16 +22,16 @@ class GameState {
 
 		for (let i = 0; i < JsonQuestions.length; ++i)
 			this.remaining.push(i);
-		Sync.syncGameState(this.makeState());
 	}
-	resetPlayersForPhase(partial) {
+	resetPlayerReady() {
+		for (const key in this.players)
+			this.players[key].ready = false;
+	}
+	resetPlayersForPhase() {
 		/* reset the player states for the next phase */
 		for (const key in this.players) {
 			let player = this.players[key];
 			player.ready = false;
-
-			if (partial)
-				continue;
 			player.actual = player.score;
 			player.confidence = 1;
 			player.choice = -1;
@@ -80,7 +45,6 @@ class GameState {
 			};
 		}
 	}
-
 	advanceStage() {
 		/* check if all players are valid */
 		for (const key in this.players) {
@@ -95,7 +59,7 @@ class GameState {
 			if (this.remaining.length == 0) {
 				this.phase = 'done';
 				this.question = null;
-				this.resetPlayersForPhase(false);
+				this.resetPlayersForPhase();
 				return;
 			}
 
@@ -108,14 +72,14 @@ class GameState {
 			this.question = JsonQuestions[this.remaining[index]];
 			this.remaining.splice(index, 1);
 			this.phase = 'category';
-			this.resetPlayersForPhase(false);
+			this.resetPlayersForPhase();
 			return;
 		}
 
 		/* check if the answer-round can be started */
 		if (this.phase == 'category') {
 			this.phase = 'answer';
-			this.resetPlayersForPhase(true);
+			this.resetPlayerReady();
 			return;
 		}
 
@@ -157,7 +121,7 @@ class GameState {
 			player.delta = (player.actual - player.score);
 			player.score = player.actual;
 		}
-		this.resetPlayersForPhase(true);
+		this.resetPlayerReady();
 		this.phase = 'resolved';
 	}
 	makeState() {
@@ -171,70 +135,107 @@ class GameState {
 		};
 	}
 	updatePlayer(name, state) {
-		if (state == undefined || state == null) {
+		if (state == undefined || state == null)
 			delete this.players[name];
-			if (Object.keys(this.players).length == 0)
-				this.resetGame();
-		}
 		else
 			this.players[name] = state;
-
 		this.advanceStage();
-		Sync.syncGameState(this.makeState());
+	}
+};
+class Session {
+	constructor() {
+		this.state = new GameState();
+		this.ws = [];
+		this.alive = true;
+		this.nextId = 0;
+		this.timeout = null;
+	}
+
+	sync() {
+		this.alive = true;
+		let msg = JSON.stringify(this.state.makeState());
+		for (let i = 0; i < this.ws.length; ++i)
+			this.ws[i].send(msg);
+	}
+
+	handle(msg) {
+		if (typeof (msg.cmd) != 'string' || msg.cmd == '')
+			return { cmd: 'malformed' };
+
+		/* handle the command */
+		switch (msg.cmd) {
+			case 'state':
+				return this.state.makeState();
+			case 'update':
+				if (typeof (msg.name) != 'string')
+					return { cmd: 'malformed' };
+				this.state.updatePlayer(msg.name, msg.value);
+				this.sync();
+				return { cmd: 'ok' };
+			default:
+				return { cmd: 'malformed' };
+		}
 	}
 };
 
-Sync = new GameSync();
-State = new GameState();
-State.resetGame();
+function SetupSession() {
+	let id = libCrypto.randomUUID();
+	libLog.Log(`Session created: ${id}`);
+	let session = (Sessions[id] = new Session());
 
-function AcceptWebSocket(ws) {
-	/* setup the obj-state */
-	let obj = Sync.accept(ws);
-	obj.log('websocket accepted');
+	/* setup the session-timeout checker
+	*	(only considered alive when new connections are created or state changes) */
+	session.timeout = setInterval(function () {
+		if (!session.alive) {
+			delete Sessions[id];
+			clearInterval(session.timeout);
+			libLog.Log(`Session deleted: ${id}`);
+			return;
+		}
+		session.alive = false;
+	}, 1000 * 60 * 15);
+	return id;
+}
+function AcceptWebSocket(ws, id) {
+	/* check if the session exists */
+	if (!(id in Sessions)) {
+		libLog.Log(`WebSocket connection for unknown session: ${id}`);
+		ws.send(JSON.stringify({ cmd: 'unknown-session' }));
+		ws.close();
+		return;
+	}
+	let session = Sessions[id];
+
+	/* setup the new listener */
+	session.alive = true;
+	session.ws.push(ws);
+
+	/* setup the socket */
+	let uniqueId = ++session.nextId;
+	ws.log = function (msg) { libLog.Log(`WS[${id}|${uniqueId}]: ${msg}`); };
+	ws.err = function (msg) { libLog.Error(`WS[${id}|${uniqueId}]: ${msg}`); };
+	ws.log(`websocket connected`);
 
 	/* register the callbacks */
 	ws.on('message', function (msg) {
 		try {
 			let parsed = JSON.parse(msg);
+			ws.log(`received: ${parsed.cmd}`);
 
 			/* handle the message accordingly */
-			let response = HandleMessage(parsed, obj);
-			if (typeof (parsed.cmd) == 'string')
-				obj.log(`handling command [${parsed.cmd}]: ${response.cmd}`);
-			else
-				obj.log(`response: ${response.cmd}`);
+			let response = session.handle(parsed);
+			ws.log(`response: ${response.cmd}`);
 			ws.send(JSON.stringify(response));
 		} catch (err) {
-			obj.err(`exception while message: [${err}]`);
+			ws.err(`exception while message: [${err}]`);
 			ws.close();
 		}
 	});
 	ws.on('close', function () {
-		Sync.close(obj);
-		obj.log(`websocket closed`);
+		session.ws = session.ws.filter((s) => (s != ws));
+		ws.log(`websocket disconnected`);
 		ws.close();
 	});
-}
-function HandleMessage(msg) {
-	if (typeof (msg.cmd) != 'string' || msg.cmd == '')
-		return { cmd: 'malformed' };
-
-	/* handle the command */
-	switch (msg.cmd) {
-		case 'state':
-			return State.makeState();
-		case 'reset':
-			State.resetGame();
-			return State.makeState();
-		case 'update':
-			if (typeof (msg.name) != 'string')
-				return { cmd: 'malformed' };
-			State.updatePlayer(msg.name, msg.value);
-			return { cmd: 'ok' };
-		default:
-			return { cmd: 'malformed' };
-	}
 }
 
 export function Handle(msg) {
@@ -242,27 +243,34 @@ export function Handle(msg) {
 
 	/* check if its a root-request and forward it accordingly */
 	if (msg.relative == '/') {
-		msg.tryRespondFile(libPath.join(ActualPath, './client/main.html'), false);
+		msg.tryRespondFile(libPath.join(ActualPath, './base/startup.html'), false);
 		return;
 	}
-	if (msg.relative == '/score') {
-		msg.tryRespondFile(libPath.join(ActualPath, './score/main.html'), false);
+	if (msg.relative == '/new') {
+		let id = SetupSession();
+		msg.respondHtml(libTemplates.LoadExpanded(libPath.join(ActualPath, './base/new-session.html'), { id: id }));
 		return;
 	}
 
 	/* check if its a web-socket request */
-	if (msg.relative == '/ws-client') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws)))
+	if (msg.relative.startsWith('/ws/')) {
+		let id = msg.relative.substring(4);
+		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, id)))
 			return;
-		libLog.Log(`Invalid request for client web-socket point`);
+		libLog.Log(`Invalid request for web-socket point for session: ${id}`);
 		this.respondNotFound();
 		return;
 	}
-	if (msg.relative == '/ws-score') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws)))
-			return;
-		libLog.Log(`Invalid request for score web-socket point`);
-		this.respondNotFound();
+
+	/* check if its a client or score connection */
+	if (msg.relative.startsWith('/client-page/')) {
+		let id = msg.relative.substring(13);
+		msg.respondHtml(libTemplates.LoadExpanded(libPath.join(ActualPath, './client/main.html'), { id: id }));
+		return;
+	}
+	if (msg.relative.startsWith('/score-page/')) {
+		let id = msg.relative.substring(12);
+		msg.respondHtml(libTemplates.LoadExpanded(libPath.join(ActualPath, './score/main.html'), { id: id }));
 		return;
 	}
 

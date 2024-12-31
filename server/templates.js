@@ -74,17 +74,23 @@ function ExpandPlaceholders(content, map) {
 		if (content[i] == '{') {
 			if (!inName)
 				name = '';
-			else
+			else {
 				libLog.Warning('Unescaped opening curly bracket encountered');
+				name += '{';
+			}
 			inName = true;
 			continue;
 		}
 
 		/* check if a name has been completed */
-		if (!inName)
+		if (!inName) {
 			libLog.Warning('Unescaped closing curly bracket encountered');
-		else if (!(name in map))
+			out += '}';
+		}
+		else if (!(name in map)) {
 			libLog.Warning(`Undefined placeholder [${name}] encountered`);
+			out += '{' + name + '}';
+		}
 		else {
 			var value = map[name];
 			if (typeof (value) != 'string')

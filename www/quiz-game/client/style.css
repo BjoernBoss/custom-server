@@ -239,6 +239,7 @@ body {
 	color: black;
 	font-size: 3em;
 	margin: 0;
+	text-align: center;
 }
 
 .login .content .name {
