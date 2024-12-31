@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libLog from "../server/log.js";
 import * as libPath from "path";
 

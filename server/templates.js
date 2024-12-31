@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libLog from "./log.js";
 import * as libConfig from "./config.js";
 import * as libFs from "fs";
