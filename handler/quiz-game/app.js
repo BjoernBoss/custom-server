@@ -193,7 +193,7 @@ function SetupSession() {
 			return;
 		}
 		session.alive = false;
-	}, 1000 * 60 * 15);
+	}, 1000 * 60 * 8);
 	return id;
 }
 function AcceptWebSocket(ws, id) {
