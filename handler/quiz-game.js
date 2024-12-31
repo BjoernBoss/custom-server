@@ -141,15 +141,13 @@ class GameState {
 		/* apply the points and the double-or-nothing and reset the remaining player states and advance the phase */
 		for (const key in this.players) {
 			let player = this.players[key];
-			if (player.correct)
-				player.delta = confidence[key];
-			else
-				player.delta = -confidence[key];
-			player.actual = Math.max(0, player.score + player.delta);
+			let diff = (player.correct ? confidence[key] : -confidence[key]);
+			player.actual = Math.max(0, player.score + diff);
 
 			if (player.effect.doubleOrNothing)
 				player.actual = (player.correct ? player.actual * 2 : 0);
 
+			player.delta = (player.actual - player.score);
 			player.score = player.actual;
 		}
 		this.resetPlayersForPhase(true);
@@ -157,7 +155,7 @@ class GameState {
 	}
 	makeState() {
 		return {
-			code: 'state',
+			cmd: 'state',
 			phase: this.phase,
 			question: this.question,
 			players: this.players,
@@ -191,11 +189,13 @@ function AcceptWebSocket(ws) {
 	ws.on('message', function (msg) {
 		try {
 			let parsed = JSON.parse(msg);
+
+			/* handle the message accordingly */
 			let response = HandleMessage(parsed, obj);
 			if (typeof (parsed.cmd) == 'string')
-				obj.log(`handling command [${parsed.cmd}]: ${response.code}`);
+				obj.log(`handling command [${parsed.cmd}]: ${response.cmd}`);
 			else
-				obj.log(`response: ${response.code}`);
+				obj.log(`response: ${response.cmd}`);
 			ws.send(JSON.stringify(response));
 		} catch (err) {
 			obj.err(`exception while message: [${err}]`);
@@ -210,7 +210,7 @@ function AcceptWebSocket(ws) {
 }
 function HandleMessage(msg) {
 	if (typeof (msg.cmd) != 'string' || msg.cmd == '')
-		return { code: 'malformed' };
+		return { cmd: 'malformed' };
 
 	/* handle the command */
 	switch (msg.cmd) {
@@ -221,11 +221,11 @@ function HandleMessage(msg) {
 			return GameGlobal.state.makeState();
 		case 'update':
 			if (typeof (msg.name) != 'string')
-				return { code: 'malformed' };
+				return { cmd: 'malformed' };
 			GameGlobal.state.updatePlayer(msg.name, msg.value);
-			return { code: 'ok' };
+			return { cmd: 'ok' };
 		default:
-			return { code: 'malformed' };
+			return { cmd: 'malformed' };
 	}
 }
 

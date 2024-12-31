@@ -61,7 +61,7 @@ window.onload = function () {
 	_game.state = {};
 	_game.name = '';
 	_game.team = '';
-	_game.playing = false;
+	_game.self = null;
 	_game.questions = [];
 	_game.selectDescription = '';
 	_game.selectCallback = null;
@@ -167,8 +167,7 @@ _game.handleMessage = function (m) {
 	try {
 		/* parse the message and handle it accordingly */
 		let msg = JSON.parse(m.data);
-
-		switch (msg.code) {
+		switch (msg.cmd) {
 			case 'ok':
 				break;
 			case 'state':
@@ -176,7 +175,7 @@ _game.handleMessage = function (m) {
 				_game.applyState();
 				break;
 			default:
-				console.log(`Unexpected message: ${msg.code}`);
+				console.log(`Unexpected message: ${msg.cmd}`);
 				_game.failed('An unknown error occurred!');
 				break;
 		}
@@ -205,7 +204,7 @@ _game.syncState = function (checking, fetchOnly) {
 	_game.sock.dirty = false;
 
 	/* check if the data only need to be fetched */
-	if (!_game.playing || fetchOnly) {
+	if (_game.self == null || fetchOnly) {
 		console.log('fetching state...');
 		_game.sock.ws.send(JSON.stringify({ cmd: 'state' }));
 	}
@@ -216,7 +215,7 @@ _game.syncState = function (checking, fetchOnly) {
 		_game.sock.ws.send(JSON.stringify({
 			cmd: 'update',
 			name: _game.name,
-			value: _game.state.players[_game.name]
+			value: _game.self
 		}));
 	}
 };
@@ -238,56 +237,55 @@ _game.applyState = function () {
 		teamScores[team] += _game.state.players[key].score;
 	}
 
-	/* check if the player has been reset */
-	if (_game.playing && !(_game.name in _game.state.players)) {
+	/* check if the player has started to play or has been reset or update the state */
+	let syncRequired = false;
+	if (_game.name in _game.state.players)
+		_game.self = _game.state.players[_game.name];
+	else if (_game.self == null) {
+		_game.self = {
+			team: _game.team,
+			score: 0,
+			actual: 0,
+			ready: false,
+			confidence: 1,
+			choice: -1,
+			correct: false,
+			delta: 0,
+			effect: {
+				doubleOrNothing: false,
+				exposed: false,
+				skipping: null,
+				forcing: null,
+				inverting: null,
+			},
+			last: {
+				doubleOrNothing: null,
+				expose: null,
+				skipping: null,
+				forcing: null,
+				inverting: null,
+			},
+		};
+		syncRequired = true;
+	}
+	else {
 		_game.failed('Player has been reset');
 		return;
 	}
 
-	/* check if the player has started to play */
-	if (!_game.playing) {
-		_game.playing = true;
-		if (!(_game.name in _game.state.players)) {
-			_game.state.players[_game.name] = {
-				team: _game.team,
-				score: 0,
-				actual: 0,
-				ready: false,
-				confidence: 1,
-				choice: -1,
-				correct: false,
-				delta: 0,
-				effect: {
-					doubleOrNothing: false,
-					exposed: false,
-					skipping: null,
-					forcing: null,
-					inverting: null,
-				},
-				last: {
-					doubleOrNothing: null,
-					expose: null,
-					skipping: null,
-					forcing: null,
-					inverting: null,
-				},
-			};
-			_game.syncState(false, false);
-		}
-	}
-
 	/* check if the team needs to be updated */
-	if (_game.team != _game.state.players[_game.name].team) {
-		_game.state.players[_game.name].team = _game.team;
-		_game.syncState(false, false);
+	if (_game.team != _game.self.team) {
+		_game.self.team = _game.team;
+		syncRequired = true;
 	}
+	if (syncRequired)
+		_game.syncState(false, false);
 
 	/* fetch the current game-state */
-	let self = _game.state.players[_game.name];
 	let current = ['start', 'done'].includes(_game.state.phase) ? null : _game.questions[_game.state.question];
 
 	/* construct the header and footer */
-	_game.applyHeaderAndFooter(self, current, teamScores);
+	_game.applyHeaderAndFooter(current, teamScores);
 
 	/* check if the scoreboard is currently being viewed */
 	if (_game.viewScore) {
@@ -298,7 +296,7 @@ _game.applyState = function () {
 	_game.htmlReady.classList.remove('hidden');
 
 	/* check if a player is to be selected for an operation */
-	if (self.ready || _game.state.phase != 'category')
+	if (_game.self.ready || _game.state.phase != 'category')
 		_game.selectDescription = '';
 	else if (_game.selectDescription.length > 0) {
 		_game.applySelection();
@@ -311,37 +309,36 @@ _game.applyState = function () {
 
 	/* check if the question-screen needs to be constructed */
 	else if (_game.state.phase == 'answer' || _game.state.phase == 'resolved')
-		_game.applyQuestion(self, current);
+		_game.applyQuestion(current);
 
 	/* setup the category/effect setup screen */
 	else
-		_game.applySetup(self);
+		_game.applySetup();
 };
 _game.doEffect = function (name, buy, value) {
-	let self = _game.state.players[_game.name];
-	if (self.ready || _game.state.phase != 'category')
+	if (_game.self == null || _game.self.ready || _game.state.phase != 'category')
 		return false;
-	if (self.effect[name] !== false && self.effect[name] !== null)
+	if (_game.self.effect[name] !== false && _game.self.effect[name] !== null)
 		return false;
-	if (!buy && self.last[name] != null && (_game.state.round - self.last[name]) < _game.cost[name].rounds)
+	if (!buy && _game.self.last[name] != null && (_game.state.round - _game.self.last[name]) < _game.cost[name].rounds)
 		return false;
-	if (buy && self.actual < _game.cost[name].cost)
+	if (buy && _game.self.actual < _game.cost[name].cost)
 		return false;
 
 	if (value != null) {
-		self.last[name] = _game.state.round;
+		_game.self.last[name] = _game.state.round;
 		if (buy)
-			self.actual -= _game.cost[name].cost;
-		self.effect[name] = value;
+			_game.self.actual -= _game.cost[name].cost;
+		_game.self.effect[name] = value;
 	}
 	return true;
 };
 
 /* applying-state functions */
-_game.applyHeaderAndFooter = function (self, current, teamScores) {
+_game.applyHeaderAndFooter = function (current, teamScores) {
 	/* update the current score and category */
 	_game.htmlSelfName.innerText = `Name: ${_game.name}`;
-	_game.htmlScore.innerText = `Score: ${self.actual}`;
+	_game.htmlScore.innerText = `Score: ${_game.self.actual}`;
 	if (_game.team.length > 0) {
 		_game.htmlSelfTeam.innerText = `Team: ${_game.team}`;
 		_game.htmlTeamScore.innerText = `Team-Score: ${teamScores[_game.team]}`;
@@ -350,7 +347,7 @@ _game.applyHeaderAndFooter = function (self, current, teamScores) {
 	else
 		_game.htmlTeamDetails.classList.add('hidden');
 	_game.htmlRound.innerText = `Round: ${_game.state.round + 1}`;
-	_game.htmlConfidence.innerText = `Confidence: ${self.confidence}`;
+	_game.htmlConfidence.innerText = `Confidence: ${_game.self.confidence}`;
 	if (current == null) {
 		_game.htmlCategory.classList.add('hidden');
 		_game.htmlQuestion.classList.add('hidden');
@@ -359,7 +356,7 @@ _game.applyHeaderAndFooter = function (self, current, teamScores) {
 		_game.htmlCategory.classList.remove('hidden');
 		_game.htmlCategory.innerText = `Category: ${current.category}`;
 
-		if (_game.state.phase != 'category' || self.effect.exposed) {
+		if (_game.state.phase != 'category' || _game.self.effect.exposed) {
 			_game.htmlQuestion.classList.remove('hidden');
 			_game.htmlQuestion.innerText = current.desc;
 		}
@@ -370,16 +367,16 @@ _game.applyHeaderAndFooter = function (self, current, teamScores) {
 	/* update the points-delta */
 	if (_game.state.phase == 'resolved') {
 		_game.htmlDelta.classList.remove('hidden');
-		if (self.delta < 0)
-			_game.htmlDelta.innerText = `Points: ${self.delta}`;
+		if (_game.self.delta < 0)
+			_game.htmlDelta.innerText = `Points: ${_game.self.delta}`;
 		else
-			_game.htmlDelta.innerText = `Points: +${self.delta}`;
+			_game.htmlDelta.innerText = `Points: +${_game.self.delta}`;
 	}
 	else
 		_game.htmlDelta.classList.add('hidden');
 
 	/* update the ready-state of the ready-button */
-	if (self.ready || _game.state.phase == 'done' || _game.totalPlayerCount < 2)
+	if (_game.self.ready || _game.state.phase == 'done' || _game.totalPlayerCount < 2)
 		_game.htmlReady.classList.add('disabled');
 	else
 		_game.htmlReady.classList.remove('disabled');
@@ -437,13 +434,13 @@ _game.applyScore = function (current, teamScores) {
 				next.innerText = `Result: ${current.text[player.choice]} (${player.correct ? 'Correct' : 'Incorrect'})`;
 		}
 
-		/* add the delta */
-		if (_game.state.phase == 'resolved')
-			makeNext().innerText = `Delta: ${player.delta < 0 ? '' : '+'}${player.delta}`;
-
 		/* add the confidence */
 		if (_game.state.phase == 'resolved')
 			makeNext().innerText = `Confidence: ${player.confidence}`;
+
+		/* add the delta */
+		if (_game.state.phase == 'resolved')
+			makeNext().innerText = `Delta: ${player.delta < 0 ? '' : '+'}${player.delta}`;
 
 		/* add the double-or-nothing */
 		if (_game.state.phase == 'resolved' && player.effect.doubleOrNothing)
@@ -521,11 +518,11 @@ _game.applySplashScreen = function () {
 	else
 		_game.htmlSplashMessage.innerText = 'Game Over!';
 };
-_game.applyQuestion = function (self, current) {
+_game.applyQuestion = function (current) {
 	_game.screen('game');
 
 	/* update the ready-visibility */
-	if (self.ready)
+	if (_game.self.ready)
 		_game.htmlGameLock.classList.remove('hidden');
 	else
 		_game.htmlGameLock.classList.add('hidden');
@@ -546,7 +543,7 @@ _game.applyQuestion = function (self, current) {
 		let node = _game.htmlGameContent.children[i + 1];
 
 		/* setup the selection-index */
-		if (self.choice == i)
+		if (_game.self.choice == i)
 			node.classList.add('selected');
 		else
 			node.classList.remove('selected');
@@ -579,21 +576,21 @@ _game.applyQuestion = function (self, current) {
 	while (_game.htmlGameContent.children.length > 1 + current.text.length)
 		_game.htmlGameContent.lastChild.remove();
 };
-_game.applySetup = function (self) {
+_game.applySetup = function () {
 	_game.screen('setup');
 
 	/* update the setup ready-screen */
-	if (self.ready)
+	if (_game.self.ready)
 		_game.htmlSetupLock.classList.remove('hidden');
 	else
 		_game.htmlSetupLock.classList.add('hidden');
 
 	/* update the confidence slider */
-	_game.htmlConfidenceValue.innerText = `Confidence: ${self.confidence}`;
+	_game.htmlConfidenceValue.innerText = `Confidence: ${_game.self.confidence}`;
 	for (let i = 0; i < 5; ++i)
 		_game.htmlConfidenceSelect.classList.remove(`value${i}`);
-	_game.htmlConfidenceSelect.classList.add(`value${self.confidence}`);
-	_game.htmlConfidenceSlider.value = self.confidence;
+	_game.htmlConfidenceSelect.classList.add(`value${_game.self.confidence}`);
+	_game.htmlConfidenceSlider.value = _game.self.confidence;
 
 	/* update the exposed button */
 	_game._applyEffect('doubleOrNothing', false, _game.htmlDoubleOrNothing);
@@ -614,15 +611,14 @@ _game._applyEffect = function (name, buy, html) {
 	else
 		html.classList.add('disabled');
 
-	let self = _game.state.players[_game.name];
-	if (typeof (self.effect[name]) == 'string')
-		html.children[0].children[1].innerText = `Selected: ${self.effect[name]}`;
+	if (typeof (_game.self.effect[name]) == 'string')
+		html.children[0].children[1].innerText = `Selected: ${_game.self.effect[name]}`;
 	else if (buy)
 		html.children[0].children[1].innerText = `Costs ${_game.cost[name].cost} Points`;
 	else if (can)
 		html.children[0].children[1].innerText = `Every ${_game.cost[name].rounds} Rounds`;
 	else
-		html.children[0].children[1].innerText = `Again in ${self.last[name] + _game.cost[name].rounds - _game.state.round} Rounds`;
+		html.children[0].children[1].innerText = `Again in ${_game.self.last[name] + _game.cost[name].rounds - _game.state.round} Rounds`;
 };
 
 /* called from/for html */
@@ -655,7 +651,7 @@ _game.failed = function (msg) {
 	_game.screen('login');
 	_game.htmlWarning.classList.remove('hidden');
 	_game.htmlWarningText.innerText = msg;
-	_game.playing = false;
+	_game.self = null;
 	_game.selectDescription = '';
 	_game.viewScore = false;
 	_game.name = '';
@@ -686,34 +682,31 @@ _game.login = function () {
 	_game.syncState(false, true);
 };
 _game.ready = function () {
-	let self = _game.state.players[_game.name];
-	if (self.ready || _game.state.phase == 'done' || _game.totalPlayerCount < 2)
+	if (_game.self == null || _game.self.ready || _game.state.phase == 'done' || _game.totalPlayerCount < 2)
 		return;
 
-	self.ready = true;
+	_game.self.ready = true;
 	_game.selfChanged();
 };
 _game.toggleScore = function () {
-	if (_game.name == '')
+	if (_game.self == null)
 		return;
 	_game.viewScore = !_game.viewScore;
 	_game.applyState();
 };
 _game.confidence = function (v) {
-	let self = _game.state.players[_game.name];
-	if (self.ready || _game.state.phase != 'category')
+	if (_game.self == null || _game.self.ready || _game.state.phase != 'category')
 		return;
 
-	self.confidence = Number(v);
+	_game.self.confidence = Number(v);
 	_game.selfChanged();
 };
 _game.choose = function (v) {
-	let self = _game.state.players[_game.name];
-	if (self.ready || _game.state.phase != 'answer')
+	if (_game.self == null || _game.self.ready || _game.state.phase != 'answer')
 		return;
 
-	self.choice = v;
-	self.correct = (self.choice == _game.questions[_game.state.question].correct);
+	_game.self.choice = v;
+	_game.self.correct = (_game.self.choice == _game.questions[_game.state.question].correct);
 	_game.selfChanged();
 };
 _game.effect = function (name, buy) {

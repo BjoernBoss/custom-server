@@ -89,8 +89,7 @@ _game.handleMessage = function (m) {
 	try {
 		/* parse the message and handle it accordingly */
 		let msg = JSON.parse(m.data);
-
-		switch (msg.code) {
+		switch (msg.cmd) {
 			case 'ok':
 				break;
 			case 'state':
@@ -98,8 +97,7 @@ _game.handleMessage = function (m) {
 				_game.applyState();
 				break;
 			default:
-				console.log(`Unexpected message: ${msg.code}`);
-				_game.failed('An unknown error occurred!');
+				console.log(`Unexpected message: ${msg.cmd}`);
 				break;
 		}
 	} catch (e) {
@@ -191,13 +189,13 @@ _game.applyState = function () {
 				next.innerText = `Result: ${current.text[player.choice]} (${player.correct ? 'Correct' : 'Incorrect'})`;
 		}
 
-		/* add the delta */
-		if (_game.state.phase == 'resolved')
-			makeNext().innerText = `Delta: ${player.delta < 0 ? '' : '+'}${player.delta}`;
-
 		/* add the confidence */
 		if (_game.state.phase == 'resolved')
 			makeNext().innerText = `Confidence: ${player.confidence}`;
+
+		/* add the delta */
+		if (_game.state.phase == 'resolved')
+			makeNext().innerText = `Delta: ${player.delta < 0 ? '' : '+'}${player.delta}`;
 
 		/* add the double-or-nothing */
 		if (_game.state.phase == 'resolved' && player.effect.doubleOrNothing)
