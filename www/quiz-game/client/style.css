@@ -328,6 +328,10 @@ body {
 	min-height: calc(100% - 2em);
 }
 
+.reduced {
+	min-height: unset;
+}
+
 .scrollable .button {
 	margin-top: 2em;
 }
