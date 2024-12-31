@@ -183,7 +183,7 @@ function SetupSession() {
 	let session = (Sessions[id] = new Session());
 
 	/* setup the session-timeout checker
-	*	(only considered alive when new connections are created or state changes) */
+	*	(only considered alive when the state changes) */
 	session.timeout = setInterval(function () {
 		if (!session.alive) {
 			delete Sessions[id];
@@ -205,8 +205,7 @@ function AcceptWebSocket(ws, id) {
 	}
 	let session = Sessions[id];
 
-	/* setup the new listener */
-	session.alive = true;
+	/* setup the new listener (does not keep session alive) */
 	session.ws.push(ws);
 
 	/* setup the socket */
@@ -258,7 +257,6 @@ export function Handle(msg) {
 		msg.tryRespondFile(libPath.join(ActualPath, '.' + msg.relative), false);
 		return;
 	}
-	libLog.Log(`Debug: ${msg.relative}`);
 
 	/* check if a session-dependent page has been requested */
 	if (msg.relative.startsWith('/s/session')) {
