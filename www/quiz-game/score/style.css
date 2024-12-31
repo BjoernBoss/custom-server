@@ -34,11 +34,22 @@ body {
 	margin: 0;
 	border-style: solid;
 	border-width: 0 0 2px 0;
+	font-size: 1.5em;
 }
 
 .header .small {
 	margin-top: 0.5em;
-	font-size: 1.3em;
+	font-size: 1.8em;
+}
+
+@media (max-width: 640px) {
+	.header .small {
+		font-size: 1.2em;
+	}
+
+	.header .details {
+		font-size: 1em;
+	}
 }
 
 .core-separator {

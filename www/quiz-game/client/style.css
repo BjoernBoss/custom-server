@@ -34,6 +34,7 @@ body {
 	margin: 0;
 	border-style: solid;
 	border-width: 0 0 2px 0;
+	font-size: 1.5em;
 }
 
 .header .small {
@@ -123,13 +124,17 @@ body {
 	}
 
 	.header .small {
-		margin-top: 1em;
 		font-size: 1.2em;
 	}
 
 	.footer .button p {
 		font-size: 1.2em;
 	}
+
+	.header .details:not(.hidden) {
+		font-size: 1em;
+	}
+
 }
 
 .clickable:active {

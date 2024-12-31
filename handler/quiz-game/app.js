@@ -145,13 +145,13 @@ class Session {
 	constructor() {
 		this.state = new GameState();
 		this.ws = [];
-		this.alive = true;
+		this.dead = 0;
 		this.nextId = 0;
 		this.timeout = null;
 	}
 
 	sync() {
-		this.alive = true;
+		this.dead = 0;
 		let msg = JSON.stringify(this.state.makeState());
 		for (let i = 0; i < this.ws.length; ++i)
 			this.ws[i].send(msg);
@@ -185,14 +185,14 @@ function SetupSession() {
 	/* setup the session-timeout checker
 	*	(only considered alive when the state changes) */
 	session.timeout = setInterval(function () {
-		if (!session.alive) {
-			delete Sessions[id];
-			clearInterval(session.timeout);
-			libLog.Log(`Session deleted: ${id}`);
+		if (session.dead++ < 16)
 			return;
-		}
-		session.alive = false;
-	}, 1000 * 60 * 8);
+		for (let i = 0; i < session.ws.length; ++i)
+			session.ws[i].close();
+		delete Sessions[id];
+		clearInterval(session.timeout);
+		libLog.Log(`Session deleted: ${id}`);
+	}, 1000 * 60);
 	return id;
 }
 function AcceptWebSocket(ws, id) {
@@ -205,7 +205,7 @@ function AcceptWebSocket(ws, id) {
 	}
 	let session = Sessions[id];
 
-	/* setup the new listener (does not keep session alive) */
+	/* register the listener */
 	session.ws.push(ws);
 
 	/* setup the socket */

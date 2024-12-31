@@ -71,7 +71,7 @@ _game.setupConnection = function () {
 	};
 };
 _game.restartConnection = function () {
-	if (_game.sock.state == 'creating' || _game.sock.state == 'restart')
+	if (_game.sock.state == 'creating' || _game.sock.state == 'restart' || _game.sock.state == 'failed')
 		return;
 	_game.sock.ws.close();
 	_game.sock.ws = null;
@@ -88,6 +88,7 @@ _game.handleMessage = function (m) {
 			case 'ok':
 				break;
 			case 'unknown-session':
+				_game.sock.state = 'failed';
 				alert('Unknown session!');
 				return;
 			case 'state':
