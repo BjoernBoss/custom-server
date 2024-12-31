@@ -7,6 +7,18 @@ import * as libPath from "path";
 
 /*	Defines:
 *		{path}: requested path
+*		{new}: new destination
+*/
+export const PermanentlyMoved = libPath.join(libConfig.TemplatePath, '301.html');
+
+/*	Defines:
+*		{path}: requested path
+*		{new}: new destination
+*/
+export const TemporaryRedirect = libPath.join(libConfig.TemplatePath, '307.html');
+
+/*	Defines:
+*		{path}: requested path
 *		{reason}: description of issue
 */
 export const ErrorBadRequest = libPath.join(libConfig.TemplatePath, '400.html');
@@ -74,23 +86,17 @@ function ExpandPlaceholders(content, map) {
 		if (content[i] == '{') {
 			if (!inName)
 				name = '';
-			else {
+			else
 				libLog.Warning('Unescaped opening curly bracket encountered');
-				name += '{';
-			}
 			inName = true;
 			continue;
 		}
 
 		/* check if a name has been completed */
-		if (!inName) {
+		if (!inName)
 			libLog.Warning('Unescaped closing curly bracket encountered');
-			out += '}';
-		}
-		else if (!(name in map)) {
+		else if (!(name in map))
 			libLog.Warning(`Undefined placeholder [${name}] encountered`);
-			out += '{' + name + '}';
-		}
 		else {
 			var value = map[name];
 			if (typeof (value) != 'string')

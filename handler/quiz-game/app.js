@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
-import * as libTemplates from "../../server/templates.js";
 import * as libPath from "path";
 import * as libFs from "fs";
 import * as libCrypto from "crypto";
@@ -243,37 +242,44 @@ export function Handle(msg) {
 
 	/* check if its a root-request and forward it accordingly */
 	if (msg.relative == '/') {
-		msg.tryRespondFile(libPath.join(ActualPath, './base/startup.html'), false);
+		msg.respondFile(libPath.join(ActualPath, './base/startup.html'), false);
 		return;
 	}
+
+	/* check if a new session has been requested and create it */
 	if (msg.relative == '/new') {
 		let id = SetupSession();
-		msg.respondHtml(libTemplates.LoadExpanded(libPath.join(ActualPath, './base/new-session.html'), { id: id }));
+		msg.respondRedirect(libPath.join(SubPath, `./s/session/${id}`));
 		return;
 	}
 
-	/* check if its a web-socket request */
-	if (msg.relative.startsWith('/ws/')) {
-		let id = msg.relative.substring(4);
+	/* check if its not a session-dependent page and respond to the request by trying to server the file */
+	if (!msg.relative.startsWith('/s/')) {
+		msg.tryRespondFile(libPath.join(ActualPath, '.' + msg.relative), false);
+		return;
+	}
+	libLog.Log(`Debug: ${msg.relative}`);
+
+	/* check if a session-dependent page has been requested */
+	if (msg.relative.startsWith('/s/session')) {
+		msg.respondFile(libPath.join(ActualPath, './base/session.html'), false);
+		return
+	}
+	if (msg.relative.startsWith('/s/client')) {
+		msg.respondFile(libPath.join(ActualPath, './client/main.html'), false);
+		return;
+	}
+	if (msg.relative.startsWith('/s/score')) {
+		msg.respondFile(libPath.join(ActualPath, './score/main.html'), false);
+		return;
+	}
+
+	/* check if the websocket has been requested */
+	if (msg.relative.startsWith('/s/ws/')) {
+		let id = msg.relative.substring(6);
 		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, id)))
 			return;
-		libLog.Log(`Invalid request for web-socket point for session: ${id}`);
-		this.respondNotFound();
-		return;
+		libLog.Log(`Invalid request for web-socket point for session: [${id}]`);
 	}
-
-	/* check if its a client or score connection */
-	if (msg.relative.startsWith('/client-page/')) {
-		let id = msg.relative.substring(13);
-		msg.respondHtml(libTemplates.LoadExpanded(libPath.join(ActualPath, './client/main.html'), { id: id }));
-		return;
-	}
-	if (msg.relative.startsWith('/score-page/')) {
-		let id = msg.relative.substring(12);
-		msg.respondHtml(libTemplates.LoadExpanded(libPath.join(ActualPath, './score/main.html'), { id: id }));
-		return;
-	}
-
-	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(libPath.join(ActualPath, '.' + msg.relative), false);
+	msg.respondNotFound();
 }

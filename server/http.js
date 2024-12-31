@@ -15,6 +15,8 @@ const WebSocketServer = new libWs.WebSocketServer({ noServer: true });
 export const StatusCode = {
 	Ok: 200,
 	PartialContent: 206,
+	PermanentlyMoved: 301,
+	TemporaryRedirect: 307,
 	BadRequest: 400,
 	NotFound: 404,
 	MethodNotAllowed: 405,
@@ -95,7 +97,7 @@ export class HttpMessage {
 	}
 	static _contentTypeMap = {
 		'.html': 'text/html; charset=utf-8',
-		'.css':'text/css; charset=utf-8',
+		'.css': 'text/css; charset=utf-8',
 		'.js': 'text/javascript; charset=utf-8',
 		'.txt': 'text/plain; charset=utf-8',
 		'.mp4': 'video/mp4',
@@ -163,6 +165,18 @@ export class HttpMessage {
 		libLog.Log(`Responded with Not-Found`);
 		const content = (msg != undefined ? msg : libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this.url.pathname }));
 		this._responseString(StatusCode.NotFound, 'f.html', content);
+	}
+	respondMoved(target, msg = undefined) {
+		libLog.Log(`Responded with Permanently-Moved to [${target}]`);
+		const content = (msg != undefined ? msg : libTemplates.LoadExpanded(libTemplates.PermanentlyMoved, { path: this.url.pathname, new: target }));
+		this.response.setHeader('Location', target);
+		this._responseString(StatusCode.PermanentlyMoved, 'f.html', content);
+	}
+	respondRedirect(target, msg = undefined) {
+		libLog.Log(`Responded with Redirect to [${target}]`);
+		const content = (msg != undefined ? msg : libTemplates.LoadExpanded(libTemplates.TemporaryRedirect, { path: this.url.pathname, new: target }));
+		this.response.setHeader('Location', target);
+		this._responseString(StatusCode.TemporaryRedirect, 'f.html', content);
 	}
 	respondHtml(content) {
 		this._responseString(StatusCode.Ok, 'f.html', content);

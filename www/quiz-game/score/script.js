@@ -13,13 +13,14 @@ window.onload = function () {
 
 	/* setup the overall state */
 	_game.state = {};
+	_game.sessionId = location.pathname.substring('/quiz-game/s/score/'.length);
 
 	/* setup the web-socket */
 	let url = new URL(document.URL);
 	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
 	_game.sock = {
 		ws: null,
-		url: `${protocol}://${url.host}/quiz-game/ws/${_GameSessionId}`,
+		url: `${protocol}://${url.host}/quiz-game/s/ws/${_game.sessionId}`,
 		queue: [],
 		dirty: false,
 		state: 'creating', //creating, ready, busy, failed, error, restart
@@ -147,7 +148,7 @@ _game.applyState = function () {
 	let list = [];
 	for (const key in _game.state.players)
 		list.push([key, _game.state.players[key].score]);
-	list.sort((a, b) => (a[1] < b[1] ? 1 : -1));
+	list.sort((a, b) => ((a[1] < b[1] || (a[1] == b[1] && a[0] > b[0])) ? 1 : -1));
 
 	/* add the list of players */
 	for (let i = 0; i < list.length; ++i) {
