@@ -35,13 +35,9 @@ body {
 	border-width: 0 0 2px 0;
 }
 
-.header .large {
-	font-size: 1.5em;
-	margin-top: 1em;
-}
-
-.header .question {
-	margin-top: 1em;
+.header .small {
+	margin-top: 0.5em;
+	font-size: 1.3em;
 }
 
 .core-separator {

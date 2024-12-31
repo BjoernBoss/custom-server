@@ -169,22 +169,26 @@ body {
 }
 
 .value0 .slidebar {
-	background-color: #ffffff;
+	background-color: #00e1ff;
 }
 
 .value1 .slidebar {
-	background-color: #48ff30;
+	background-color: #ffffff;
 }
 
 .value2 .slidebar {
-	background-color: #ffec46;
+	background-color: #48ff30;
 }
 
 .value3 .slidebar {
-	background-color: #ffa238;
+	background-color: #ffec46;
 }
 
 .value4 .slidebar {
+	background-color: #ffa238;
+}
+
+.value5 .slidebar {
 	background-color: #ff2f2f;
 }
 

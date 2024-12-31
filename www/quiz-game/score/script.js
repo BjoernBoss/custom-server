@@ -4,21 +4,13 @@ window.onload = function () {
 	/* caption/body components */
 	_game.htmlCategory = document.getElementById('category');
 	_game.htmlQuestion = document.getElementById('question');
+	_game.htmlCorrect = document.getElementById('correct');
 	_game.htmlRound = document.getElementById('round');
 	_game.htmlScoreContent = document.getElementById('score-content');
 	_game.htmlPhase = document.getElementById('phase');
 
 	/* setup the overall state */
 	_game.state = {};
-	_game.questions = [];
-
-	/* download the questions */
-	fetch('/quiz-game/categorized-questions.json')
-		.then((resp) => resp.json())
-		.then(function (resp) {
-			_game.questions = resp;
-			_game.applyState();
-		});
 
 	/* setup the web-socket */
 	let url = new URL(document.URL);
@@ -127,26 +119,34 @@ _game.applyState = function () {
 		teamScores[team] += _game.state.players[key].score;
 	}
 
-	/* fetch the current game-state */
-	let current = ['start', 'done'].includes(_game.state.phase) ? null : _game.questions[_game.state.question];
-
 	/* update the current score and category */
-	_game.htmlRound.innerText = `Round: ${_game.state.round + 1}`;
+	if (_game.state.round == null)
+		_game.htmlRound.innerText = `Round: None / ${_game.state.totalQuestions}`;
+	else
+		_game.htmlRound.innerText = `Round: ${_game.state.round + 1} / ${_game.state.totalQuestions}`;
 	_game.htmlPhase.innerText = `Phase: ${_game.state.phase}`;
-	if (current == null) {
+	if (_game.state.question == null) {
 		_game.htmlCategory.classList.add('hidden');
 		_game.htmlQuestion.classList.add('hidden');
+		_game.htmlCorrect.classList.add('hidden');
 	}
 	else {
 		_game.htmlCategory.classList.remove('hidden');
-		_game.htmlCategory.innerText = `Category: ${current.category}`;
+		_game.htmlCategory.innerText = `Category: ${_game.state.question.category}`;
 
-		if (_game.state.phase != 'category' || self.exposed) {
+		if (_game.state.phase != 'category') {
 			_game.htmlQuestion.classList.remove('hidden');
-			_game.htmlQuestion.innerText = current.desc;
+			_game.htmlQuestion.innerText = `Question: ${_game.state.question.text}`;
 		}
 		else
 			_game.htmlQuestion.classList.add('hidden');
+
+		if (_game.state.phase == 'resolved') {
+			_game.htmlCorrect.classList.remove('hidden');
+			_game.htmlCorrect.innerText = `Correct: ${_game.state.question.options[_game.state.question.correct]}`;
+		}
+		else
+			_game.htmlCorrect.classList.add('hidden');
 	}
 
 	/* collect the list of all players and sort them by their score */
@@ -186,7 +186,7 @@ _game.applyState = function () {
 			if (_game.choice == -1)
 				next.innerText = `Result: None`;
 			else
-				next.innerText = `Result: ${current.text[player.choice]} (${player.correct ? 'Correct' : 'Incorrect'})`;
+				next.innerText = `Result: ${_game.state.question.options[player.choice]} (${player.correct ? 'Correct' : 'Incorrect'})`;
 		}
 
 		/* add the confidence */

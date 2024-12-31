@@ -62,7 +62,6 @@ window.onload = function () {
 	_game.name = '';
 	_game.team = '';
 	_game.self = null;
-	_game.questions = [];
 	_game.selectDescription = '';
 	_game.selectCallback = null;
 	_game.viewScore = false;
@@ -73,7 +72,7 @@ window.onload = function () {
 			rounds: 5
 		},
 		exposed: {
-			cost: 3,
+			cost: 2,
 			rounds: 2
 		},
 		skipping: {
@@ -89,14 +88,6 @@ window.onload = function () {
 			rounds: 4,
 		}
 	};
-
-	/* download the questions */
-	fetch('/quiz-game/categorized-questions.json')
-		.then((resp) => resp.json())
-		.then(function (resp) {
-			_game.questions = resp;
-			_game.applyState();
-		});
 
 	/* setup the web-socket */
 	let url = new URL(document.URL);
@@ -281,15 +272,12 @@ _game.applyState = function () {
 	if (syncRequired)
 		_game.syncState(false, false);
 
-	/* fetch the current game-state */
-	let current = ['start', 'done'].includes(_game.state.phase) ? null : _game.questions[_game.state.question];
-
 	/* construct the header and footer */
-	_game.applyHeaderAndFooter(current, teamScores);
+	_game.applyHeaderAndFooter(teamScores);
 
 	/* check if the scoreboard is currently being viewed */
 	if (_game.viewScore) {
-		_game.applyScore(current, teamScores);
+		_game.applyScore(teamScores);
 		return;
 	}
 	_game.htmlToggleBoard.innerText = 'Board';
@@ -304,12 +292,12 @@ _game.applyState = function () {
 	}
 
 	/* check if the splash-screen needs to be shown */
-	if (current == null)
+	if (_game.state.question == null)
 		_game.applySplashScreen();
 
 	/* check if the question-screen needs to be constructed */
 	else if (_game.state.phase == 'answer' || _game.state.phase == 'resolved')
-		_game.applyQuestion(current);
+		_game.applyQuestion();
 
 	/* setup the category/effect setup screen */
 	else
@@ -320,7 +308,7 @@ _game.doEffect = function (name, buy, value) {
 		return false;
 	if (_game.self.effect[name] !== false && _game.self.effect[name] !== null)
 		return false;
-	if (!buy && _game.self.last[name] != null && (_game.state.round - _game.self.last[name]) < _game.cost[name].rounds)
+	if (!buy && _game.self.last[name] != null && (_game.state.round - _game.self.last[name]) <= _game.cost[name].rounds)
 		return false;
 	if (buy && _game.self.actual < _game.cost[name].cost)
 		return false;
@@ -335,7 +323,7 @@ _game.doEffect = function (name, buy, value) {
 };
 
 /* applying-state functions */
-_game.applyHeaderAndFooter = function (current, teamScores) {
+_game.applyHeaderAndFooter = function (teamScores) {
 	/* update the current score and category */
 	_game.htmlSelfName.innerText = `Name: ${_game.name}`;
 	_game.htmlScore.innerText = `Score: ${_game.self.actual}`;
@@ -346,19 +334,22 @@ _game.applyHeaderAndFooter = function (current, teamScores) {
 	}
 	else
 		_game.htmlTeamDetails.classList.add('hidden');
-	_game.htmlRound.innerText = `Round: ${_game.state.round + 1}`;
+	if (_game.state.round == null)
+		_game.htmlRound.innerText = `Round: None / ${_game.state.totalQuestions}`;
+	else
+		_game.htmlRound.innerText = `Round: ${_game.state.round + 1} / ${_game.state.totalQuestions}`;
 	_game.htmlConfidence.innerText = `Confidence: ${_game.self.confidence}`;
-	if (current == null) {
+	if (_game.state.question == null) {
 		_game.htmlCategory.classList.add('hidden');
 		_game.htmlQuestion.classList.add('hidden');
 	}
 	else {
 		_game.htmlCategory.classList.remove('hidden');
-		_game.htmlCategory.innerText = `Category: ${current.category}`;
+		_game.htmlCategory.innerText = `Category: ${_game.state.question.category}`;
 
 		if (_game.state.phase != 'category' || _game.self.effect.exposed) {
 			_game.htmlQuestion.classList.remove('hidden');
-			_game.htmlQuestion.innerText = current.desc;
+			_game.htmlQuestion.innerText = _game.state.question.text;
 		}
 		else
 			_game.htmlQuestion.classList.add('hidden');
@@ -389,7 +380,7 @@ _game.applyHeaderAndFooter = function (current, teamScores) {
 	}
 	_game.htmlReady.children[0].children[0].innerText = `Ready (${readyCount} / ${_game.totalPlayerCount})`;
 };
-_game.applyScore = function (current, teamScores) {
+_game.applyScore = function (teamScores) {
 	_game.screen('score');
 	_game.htmlToggleBoard.innerText = 'Return to Game';
 	_game.htmlReady.classList.add('hidden');
@@ -431,7 +422,7 @@ _game.applyScore = function (current, teamScores) {
 			if (_game.choice == -1)
 				next.innerText = `Result: None`;
 			else
-				next.innerText = `Result: ${current.text[player.choice]} (${player.correct ? 'Correct' : 'Incorrect'})`;
+				next.innerText = `Result: ${_game.state.question.options[player.choice]} (${player.correct ? 'Correct' : 'Incorrect'})`;
 		}
 
 		/* add the confidence */
@@ -518,7 +509,7 @@ _game.applySplashScreen = function () {
 	else
 		_game.htmlSplashMessage.innerText = 'Game Over!';
 };
-_game.applyQuestion = function (current) {
+_game.applyQuestion = function () {
 	_game.screen('game');
 
 	/* update the ready-visibility */
@@ -528,7 +519,7 @@ _game.applyQuestion = function (current) {
 		_game.htmlGameLock.classList.add('hidden');
 
 	/* add the options based on the selection and result */
-	for (let i = 0; i < current.text.length; ++i) {
+	for (let i = 0; i < _game.state.question.options.length; ++i) {
 		/* check if the element already exists or needs to be created ([0] is lock-overlay) */
 		if (1 + i >= _game.htmlGameContent.children.length) {
 			let node = document.createElement('div');
@@ -559,7 +550,7 @@ _game.applyQuestion = function (current) {
 			node.classList.remove('invalid');
 			node.classList.remove('correct');
 		}
-		else if (current.correct == i) {
+		else if (_game.state.question.correct == i) {
 			node.classList.remove('invalid');
 			node.classList.add('correct');
 		}
@@ -569,11 +560,11 @@ _game.applyQuestion = function (current) {
 		}
 
 		/* add the actual text content */
-		node.children[0].children[0].innerText = current.text[i];
+		node.children[0].children[0].innerText = _game.state.question.options[i];
 	}
 
 	/* remove the remaining children */
-	while (_game.htmlGameContent.children.length > 1 + current.text.length)
+	while (_game.htmlGameContent.children.length > 1 + _game.state.question.options.length)
 		_game.htmlGameContent.lastChild.remove();
 };
 _game.applySetup = function () {
@@ -587,9 +578,9 @@ _game.applySetup = function () {
 
 	/* update the confidence slider */
 	_game.htmlConfidenceValue.innerText = `Confidence: ${_game.self.confidence}`;
-	for (let i = 0; i < 5; ++i)
+	for (let i = 0; i < 6; ++i)
 		_game.htmlConfidenceSelect.classList.remove(`value${i}`);
-	_game.htmlConfidenceSelect.classList.add(`value${_game.self.confidence}`);
+	_game.htmlConfidenceSelect.classList.add(`value${_game.self.confidence + 1}`);
 	_game.htmlConfidenceSlider.value = _game.self.confidence;
 
 	/* update the exposed button */
@@ -616,9 +607,9 @@ _game._applyEffect = function (name, buy, html) {
 	else if (buy)
 		html.children[0].children[1].innerText = `Costs ${_game.cost[name].cost} Points`;
 	else if (can)
-		html.children[0].children[1].innerText = `Every ${_game.cost[name].rounds} Rounds`;
+		html.children[0].children[1].innerText = `Timed Out for ${_game.cost[name].rounds} Rounds`;
 	else
-		html.children[0].children[1].innerText = `Again in ${_game.self.last[name] + _game.cost[name].rounds - _game.state.round} Rounds`;
+		html.children[0].children[1].innerText = `Again in ${_game.self.last[name] + _game.cost[name].rounds - _game.state.round + 1} Rounds`;
 };
 
 /* called from/for html */
@@ -694,7 +685,7 @@ _game.toggleScore = function () {
 	_game.viewScore = !_game.viewScore;
 	_game.applyState();
 };
-_game.confidence = function (v) {
+_game.slide = function (v) {
 	if (_game.self == null || _game.self.ready || _game.state.phase != 'category')
 		return;
 
@@ -706,7 +697,7 @@ _game.choose = function (v) {
 		return;
 
 	_game.self.choice = v;
-	_game.self.correct = (_game.self.choice == _game.questions[_game.state.question].correct);
+	_game.self.correct = (_game.self.choice == _game.state.question.correct);
 	_game.selfChanged();
 };
 _game.effect = function (name, buy) {

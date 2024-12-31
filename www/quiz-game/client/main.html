@@ -69,8 +69,8 @@
 				<!-- confidence slider -->
 				<div class="slider value0" id="confidence-select">
 					<p id="confidence-value">Confidence: 0</p>
-					<input type="range" min="0" max="4" value="0" class="slidebar" id="confidence-slider"
-						oninput="_game.confidence(this.value)">
+					<input type="range" min="-1" max="4" value="0" class="slidebar" id="confidence-slider"
+						oninput="_game.slide(this.value)">
 				</div>
 
 				<!-- double-or-nothing button (double points or reset) -->

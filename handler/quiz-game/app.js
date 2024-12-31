@@ -1,11 +1,12 @@
-import * as libLog from "../server/log.js";
+import * as libLog from "../../server/log.js";
 import * as libPath from "path";
+import jsonQuestions from "./categorized-questions.json" with { type: "json" };
 
 export const SubPath = '/quiz-game';
 const ActualPath = libPath.resolve('./www/quiz-game');
 
-let GameGlobal = {};
-let TotalQuestionCount = 190;
+let Sync = null;
+let State = null;
 
 class GameSync {
 	constructor() {
@@ -46,14 +47,14 @@ class GameSync {
 class GameState {
 	resetGame() {
 		this.phase = 'start'; //start,category,answer,resolved,done
-		this.question = 0;
+		this.question = null;
 		this.remaining = [];
 		this.players = {};
-		this.round = 0;
+		this.round = null;
 
-		for (let i = 0; i < TotalQuestionCount; ++i)
+		for (let i = 0; i < jsonQuestions.length; ++i)
 			this.remaining.push(i);
-		GameGlobal.sync.syncGameState(this.makeState());
+		Sync.syncGameState(this.makeState());
 	}
 	resetPlayersForPhase(partial) {
 		/* reset the player states for the next phase */
@@ -90,15 +91,18 @@ class GameState {
 		if (this.phase == 'start' || this.phase == 'resolved') {
 			if (this.remaining.length == 0) {
 				this.phase = 'done';
+				this.question = null;
 				this.resetPlayersForPhase(false);
 				return;
 			}
 
 			/* advance the round and select the next question */
-			if (this.phase != 'start')
+			if (this.phase == 'start')
+				this.round = 0;
+			else
 				this.round += 1;
 			let index = Math.floor(Math.random() * this.remaining.length);
-			this.question = this.remaining[index];
+			this.question = jsonQuestions[this.remaining[index]];
 			this.remaining.splice(index, 1);
 			this.phase = 'category';
 			this.resetPlayersForPhase(false);
@@ -135,7 +139,7 @@ class GameState {
 		for (const key in this.players) {
 			let invert = this.players[key].effect.inverting;
 			if (invert != null && (invert in this.players))
-				confidence[invert] = 4 - confidence[invert];
+				confidence[invert] = 3 - confidence[invert];
 		}
 
 		/* apply the points and the double-or-nothing and reset the remaining player states and advance the phase */
@@ -158,6 +162,7 @@ class GameState {
 			cmd: 'state',
 			phase: this.phase,
 			question: this.question,
+			totalQuestions: jsonQuestions.length,
 			players: this.players,
 			round: this.round
 		};
@@ -172,17 +177,17 @@ class GameState {
 			this.players[name] = state;
 
 		this.advanceStage();
-		GameGlobal.sync.syncGameState(this.makeState());
+		Sync.syncGameState(this.makeState());
 	}
 };
 
-GameGlobal.sync = new GameSync();
-GameGlobal.state = new GameState();
-GameGlobal.state.resetGame();
+Sync = new GameSync();
+State = new GameState();
+State.resetGame();
 
 function AcceptWebSocket(ws) {
 	/* setup the obj-state */
-	let obj = GameGlobal.sync.accept(ws);
+	let obj = Sync.accept(ws);
 	obj.log('websocket accepted');
 
 	/* register the callbacks */
@@ -203,7 +208,7 @@ function AcceptWebSocket(ws) {
 		}
 	});
 	ws.on('close', function () {
-		GameGlobal.sync.close(obj);
+		Sync.close(obj);
 		obj.log(`websocket closed`);
 		ws.close();
 	});
@@ -215,14 +220,14 @@ function HandleMessage(msg) {
 	/* handle the command */
 	switch (msg.cmd) {
 		case 'state':
-			return GameGlobal.state.makeState();
+			return State.makeState();
 		case 'reset':
-			GameGlobal.state.resetGame();
-			return GameGlobal.state.makeState();
+			State.resetGame();
+			return State.makeState();
 		case 'update':
 			if (typeof (msg.name) != 'string')
 				return { cmd: 'malformed' };
-			GameGlobal.state.updatePlayer(msg.name, msg.value);
+			State.updatePlayer(msg.name, msg.value);
 			return { cmd: 'ok' };
 		default:
 			return { cmd: 'malformed' };

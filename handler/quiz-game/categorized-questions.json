@@ -1,7 +1,7 @@
 [
     {
-        "desc": "What is the primary ingredient in traditional French béchamel sauce?",
-        "text": [
+        "text": "What is the primary ingredient in traditional French béchamel sauce?",
+        "options": [
             "Chicken broth",
             "Fish stock",
             "Milk",
@@ -11,8 +11,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "What platform is the most often used for video game live streaming?",
-        "text": [
+        "text": "What platform is the most often used for video game live streaming?",
+        "options": [
             "Twitch",
             "YouTube",
             "Facebook Live",
@@ -22,8 +22,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "In which novel does the character Atticus Finch appear?",
-        "text": [
+        "text": "In which novel does the character Atticus Finch appear?",
+        "options": [
             "Catcher in the Rye",
             "To Kill a Mockingbird",
             "The Great Gatsby",
@@ -33,8 +33,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What feature did Instagram introduce in 2016 to compete with Snapchat?",
-        "text": [
+        "text": "What feature did Instagram introduce in 2016 to compete with Snapchat?",
+        "options": [
             "Stories",
             "Reels",
             "IGTV",
@@ -44,8 +44,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "What does the Yoga term ‘Pranayama’ refer to?",
-        "text": [
+        "text": "What does the Yoga term ‘Pranayama’ refer to?",
+        "options": [
             "Physical postures",
             "Breathing exercises",
             "Meditation techniques",
@@ -55,8 +55,8 @@
         "category": "Yoga and Wellness"
     },
     {
-        "desc": "What is the gestation period of a rabbit?",
-        "text": [
+        "text": "What is the gestation period of a rabbit?",
+        "options": [
             "28-31 days",
             "40-45 days",
             "50-55 days",
@@ -66,8 +66,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which spice is known as \"queen of spices\"?",
-        "text": [
+        "text": "Which spice is known as \"queen of spices\"?",
+        "options": [
             "Cinnamon",
             "Cardamom",
             "Nutmeg",
@@ -77,8 +77,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "What is a 'raid' on Twitch?",
-        "text": [
+        "text": "What is a 'raid' on Twitch?",
+        "options": [
             "A content type",
             "A channel takeover",
             "Practice group gaming",
@@ -88,8 +88,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "What is the main ingredient in traditional Japanese miso soup?",
-        "text": [
+        "text": "What is the main ingredient in traditional Japanese miso soup?",
+        "options": [
             "Soy sauce",
             "Tofu",
             "Miso paste",
@@ -99,8 +99,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "Which breed of dog is known for its excellent sense of smell and tracking abilities?",
-        "text": [
+        "text": "Which breed of dog is known for its excellent sense of smell and tracking abilities?",
+        "options": [
             "Golden Retriever",
             "German Shepherd",
             "Bloodhound",
@@ -110,8 +110,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In \"To Kill a Mockingbird,\" what is the name of Atticus Finch's daughter?",
-        "text": [
+        "text": "In \"To Kill a Mockingbird,\" what is the name of Atticus Finch's daughter?",
+        "options": [
             "Mayella",
             "Scout",
             "Jem",
@@ -121,8 +121,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What part of the brain is responsible for memory and learning?",
-        "text": [
+        "text": "What part of the brain is responsible for memory and learning?",
+        "options": [
             "Cerebellum",
             "Hypothalamus",
             "Hippocampus",
@@ -132,8 +132,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In which ancient text is Yoga primarily outlined?",
-        "text": [
+        "text": "In which ancient text is Yoga primarily outlined?",
+        "options": [
             "Bhagavad Gita",
             "Vedas",
             "Yoga Sutras of Patanjali",
@@ -143,8 +143,8 @@
         "category": "Yoga and Wellness"
     },
     {
-        "desc": "What part of the body does an otolaryngologist specialize in?",
-        "text": [
+        "text": "What part of the body does an otolaryngologist specialize in?",
+        "options": [
             "Heart",
             "Brain",
             "Ear, nose, and throat",
@@ -154,8 +154,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is a traditional serving size of an Italian espresso?",
-        "text": [
+        "text": "What is a traditional serving size of an Italian espresso?",
+        "options": [
             "1 oz",
             "2 oz",
             "3 oz",
@@ -165,8 +165,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "What parent company owns both Instagram and WhatsApp?",
-        "text": [
+        "text": "What parent company owns both Instagram and WhatsApp?",
+        "options": [
             "Google",
             "Apple",
             "Facebook (now Meta)",
@@ -176,8 +176,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "What is the main function of red blood cells?",
-        "text": [
+        "text": "What is the main function of red blood cells?",
+        "options": [
             "Carrying oxygen",
             "Fighting infections",
             "Clotting blood",
@@ -187,8 +187,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the purpose of blanching vegetables?",
-        "text": [
+        "text": "What is the purpose of blanching vegetables?",
+        "options": [
             "To cook them thoroughly",
             "To retain color and halt enzymatic processes",
             "To add flavor",
@@ -198,8 +198,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "What is the medical term for high blood pressure?",
-        "text": [
+        "text": "What is the medical term for high blood pressure?",
+        "options": [
             "Hypotension",
             "Hypertension",
             "Hyperglycemia",
@@ -209,8 +209,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "The medical term for white blood cells is:",
-        "text": [
+        "text": "The medical term for white blood cells is:",
+        "options": [
             "Erythrocytes",
             "Thrombocytes",
             "Leukocytes",
@@ -220,8 +220,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the purpose of ‘Savasana’?",
-        "text": [
+        "text": "What is the purpose of ‘Savasana’?",
+        "options": [
             "Energy boost",
             "Muscle strengthening",
             "Deep relaxation",
@@ -231,8 +231,8 @@
         "category": "Yoga and Wellness"
     },
     {
-        "desc": "Which novel starts with the line: \"Call me Ishmael.\"?",
-        "text": [
+        "text": "Which novel starts with the line: \"Call me Ishmael.\"?",
+        "options": [
             "Moby-Dick",
             "The Old Man and the Sea",
             "Treasure Island",
@@ -242,8 +242,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the title of the first Harry Potter book in the UK?",
-        "text": [
+        "text": "What is the title of the first Harry Potter book in the UK?",
+        "options": [
             "Harry Potter and the Chamber of Secrets",
             "Harry Potter and the Philosopher's Stone",
             "Harry Potter and the Sorcerer’s Stone",
@@ -253,8 +253,8 @@
         "category": "Literature"
     },
     {
-        "desc": "Which herb is typically paired with lamb in Mediterranean cuisine?",
-        "text": [
+        "text": "Which herb is typically paired with lamb in Mediterranean cuisine?",
+        "options": [
             "Basil",
             "Rosemary",
             "Cilantro",
@@ -264,8 +264,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "What type of pastry is used to create a traditional French Croissant?",
-        "text": [
+        "text": "What type of pastry is used to create a traditional French Croissant?",
+        "options": [
             "Puff pastry",
             "Choux pastry",
             "Shortcrust pastry",
@@ -275,8 +275,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "What is an otoscope used for?",
-        "text": [
+        "text": "What is an otoscope used for?",
+        "options": [
             "Examining the mouth",
             "Looking into the ear",
             "Checking blood pressure",
@@ -286,8 +286,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Who created the fictional detective \"Sherlock Holmes\"?",
-        "text": [
+        "text": "Who created the fictional detective \"Sherlock Holmes\"?",
+        "options": [
             "Agatha Christie",
             "Arthur Conan Doyle",
             "Raymond Chandler",
@@ -297,8 +297,8 @@
         "category": "Literature"
     },
     {
-        "desc": "How many bones are there in the adult human body?",
-        "text": [
+        "text": "How many bones are there in the adult human body?",
+        "options": [
             "186",
             "206",
             "226",
@@ -308,8 +308,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which breed of dog is known for its excellent sense of smell and tracking abilities?",
-        "text": [
+        "text": "Which breed of dog is known for its excellent sense of smell and tracking abilities?",
+        "options": [
             "Golden Retriever",
             "German Shepherd",
             "Bloodhound",
@@ -319,8 +319,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which human bone is the longest and strongest?",
-        "text": [
+        "text": "Which human bone is the longest and strongest?",
+        "options": [
             "Tibia",
             "Femur",
             "Humerus",
@@ -330,8 +330,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the normal range for human body temperature in Celsius?",
-        "text": [
+        "text": "What is the normal range for human body temperature in Celsius?",
+        "options": [
             "34-35",
             "35-36",
             "36-37",
@@ -341,8 +341,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which author created the fictional detective \"Sherlock Holmes\"?",
-        "text": [
+        "text": "Which author created the fictional detective \"Sherlock Holmes\"?",
+        "options": [
             "Agatha Christie",
             "Arthur Conan Doyle",
             "Raymond Chandler",
@@ -352,8 +352,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What type of fish is known for cleaning algae in aquariums?",
-        "text": [
+        "text": "What type of fish is known for cleaning algae in aquariums?",
+        "options": [
             "Betta",
             "Guppy",
             "Pleco",
@@ -363,8 +363,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "The Heimlich maneuver is used to help someone who is:",
-        "text": [
+        "text": "The Heimlich maneuver is used to help someone who is:",
+        "options": [
             "Having a seizure",
             "Choking",
             "Fainting",
@@ -374,8 +374,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which spice is known as \"queen of spices\"?",
-        "text": [
+        "text": "Which spice is known as \"queen of spices\"?",
+        "options": [
             "Cinnamon",
             "Cardamom",
             "Nutmeg",
@@ -385,8 +385,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "What is the primary ingredient in traditional French béchamel sauce?",
-        "text": [
+        "text": "What is the primary ingredient in traditional French béchamel sauce?",
+        "options": [
             "Chicken broth",
             "Fish stock",
             "Milk",
@@ -396,8 +396,8 @@
         "category": "Food and Culinary Arts"
     },
     {
-        "desc": "In which dystopian novel does the government control every aspect of the citizens’ lives, including their thoughts?",
-        "text": [
+        "text": "In which dystopian novel does the government control every aspect of the citizens’ lives, including their thoughts?",
+        "options": [
             "Fahrenheit 451",
             "1984",
             "The Handmaid's Tale",
@@ -407,8 +407,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the function of the alveoli in the lungs?",
-        "text": [
+        "text": "What is the function of the alveoli in the lungs?",
+        "options": [
             "To increase lung volume",
             "To exchange gases (oxygen and carbon dioxide)",
             "To pump blood",
@@ -418,8 +418,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "The medical term for white blood cells is:",
-        "text": [
+        "text": "The medical term for white blood cells is:",
+        "options": [
             "Erythrocytes",
             "Thrombocytes",
             "Leukocytes",
@@ -429,8 +429,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In which ancient text is Yoga primarily outlined?",
-        "text": [
+        "text": "In which ancient text is Yoga primarily outlined?",
+        "options": [
             "Bhagavad Gita",
             "Vedas",
             "Yoga Sutras of Patanjali",
@@ -440,8 +440,8 @@
         "category": "Yoga and Wellness"
     },
     {
-        "desc": "Who is the author of \"The Book Thief\"?",
-        "text": [
+        "text": "Who is the author of \"The Book Thief\"?",
+        "options": [
             "Markus Zusak",
             "Khaled Hosseini",
             "J.K. Rowling",
@@ -451,8 +451,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What does MRI stand for in medical imaging?",
-        "text": [
+        "text": "What does MRI stand for in medical imaging?",
+        "options": [
             "Magnetic Resonance Imaging",
             "Molecular Recon Imaging",
             "Magnetic Resource Imaging",
@@ -462,8 +462,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "How many chambers does the human heart have?",
-        "text": [
+        "text": "How many chambers does the human heart have?",
+        "options": [
             "2",
             "3",
             "4",
@@ -473,8 +473,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which human bone is the longest and strongest?",
-        "text": [
+        "text": "Which human bone is the longest and strongest?",
+        "options": [
             "Tibia",
             "Femur",
             "Humerus",
@@ -484,8 +484,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the main function of red blood cells?",
-        "text": [
+        "text": "What is the main function of red blood cells?",
+        "options": [
             "Carrying oxygen",
             "Fighting infections",
             "Clotting blood",
@@ -495,8 +495,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Who wrote the novel \"Brave New World\"?",
-        "text": [
+        "text": "Who wrote the novel \"Brave New World\"?",
+        "options": [
             "George Orwell",
             "Aldous Huxley",
             "Ray Bradbury",
@@ -506,8 +506,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the gestation period of a rabbit?",
-        "text": [
+        "text": "What is the gestation period of a rabbit?",
+        "options": [
             "28-31 days",
             "40-45 days",
             "50-55 days",
@@ -517,8 +517,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the capital city of Australia?",
-        "text": [
+        "text": "What is the capital city of Australia?",
+        "options": [
             "Sydney",
             "Melbourne",
             "Canberra",
@@ -528,8 +528,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote the novel \"War and Peace\"?",
-        "text": [
+        "text": "Who wrote the novel \"War and Peace\"?",
+        "options": [
             "Leo Tolstoy",
             "Fyodor Dostoevsky",
             "Anton Chekhov",
@@ -539,8 +539,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What part of the brain is associated with emotion and memory?",
-        "text": [
+        "text": "What part of the brain is associated with emotion and memory?",
+        "options": [
             "Cerebellum",
             "Hippocampus",
             "Medulla",
@@ -550,8 +550,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which country is known as the \"Land of the Rising Sun\"?",
-        "text": [
+        "text": "Which country is known as the \"Land of the Rising Sun\"?",
+        "options": [
             "China",
             "South Korea",
             "Japan",
@@ -561,8 +561,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What is cognitive dissonance?",
-        "text": [
+        "text": "What is cognitive dissonance?",
+        "options": [
             "Conflict between attitudes and behaviors",
             "Increased social interaction",
             "Heightened emotional states",
@@ -572,8 +572,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In which book does the character \"Elizabeth Bennet\" appear?",
-        "text": [
+        "text": "In which book does the character \"Elizabeth Bennet\" appear?",
+        "options": [
             "Jane Eyre",
             "Wuthering Heights",
             "Pride and Prejudice",
@@ -583,8 +583,8 @@
         "category": "Literature"
     },
     {
-        "desc": "Which country is the largest by land area?",
-        "text": [
+        "text": "Which country is the largest by land area?",
+        "options": [
             "Canada",
             "China",
             "United States",
@@ -594,8 +594,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who created the hierarchy of needs?",
-        "text": [
+        "text": "Who created the hierarchy of needs?",
+        "options": [
             "Sigmund Freud",
             "B.F. Skinner",
             "Abraham Maslow",
@@ -605,8 +605,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What does the term ‘Asana’ refer to in Yoga?",
-        "text": [
+        "text": "What does the term ‘Asana’ refer to in Yoga?",
+        "options": [
             "Breathing techniques",
             "Meditation postures",
             "Physical postures",
@@ -616,8 +616,8 @@
         "category": "Yoga and Wellness"
     },
     {
-        "desc": "What is the average lifespan of a domestic cat?",
-        "text": [
+        "text": "What is the average lifespan of a domestic cat?",
+        "options": [
             "5-8 years",
             "10-15 years",
             "15-20 years",
@@ -627,8 +627,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In which city is the Eiffel Tower located?",
-        "text": [
+        "text": "In which city is the Eiffel Tower located?",
+        "options": [
             "London",
             "Berlin",
             "Paris",
@@ -638,8 +638,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"The Great Gatsby\"?",
-        "text": [
+        "text": "Who wrote \"The Great Gatsby\"?",
+        "options": [
             "F. Scott Fitzgerald",
             "Ernest Hemingway",
             "John Steinbeck",
@@ -649,8 +649,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What part of the body is the 'Atlas' bone located?",
-        "text": [
+        "text": "What part of the body is the 'Atlas' bone located?",
+        "options": [
             "Wrist",
             "Ankle",
             "Neck",
@@ -660,8 +660,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the primary focus of cognitive behavioral therapy (CBT)?",
-        "text": [
+        "text": "What is the primary focus of cognitive behavioral therapy (CBT)?",
+        "options": [
             "Medication",
             "Exercise",
             "Changing thought patterns",
@@ -671,8 +671,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the average lifespan of a domestic dog?",
-        "text": [
+        "text": "What is the average lifespan of a domestic dog?",
+        "options": [
             "5-7 years",
             "10-13 years",
             "14-16 years",
@@ -682,8 +682,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which is the smallest country in the world by land area?",
-        "text": [
+        "text": "Which is the smallest country in the world by land area?",
+        "options": [
             "Monaco",
             "San Marino",
             "Vatican City",
@@ -693,8 +693,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"The Odyssey\"?",
-        "text": [
+        "text": "Who wrote \"The Odyssey\"?",
+        "options": [
             "Homer",
             "Virgil",
             "Sophocles",
@@ -704,8 +704,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What part of the brain is responsible for voluntary movement?",
-        "text": [
+        "text": "What part of the brain is responsible for voluntary movement?",
+        "options": [
             "Cerebellum",
             "Hippocampus",
             "Medulla",
@@ -715,8 +715,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which country is home to the ancient city of Petra?",
-        "text": [
+        "text": "Which country is home to the ancient city of Petra?",
+        "options": [
             "Egypt",
             "Jordan",
             "Israel",
@@ -726,8 +726,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "How many whiskers does a cat usually have on each side?",
-        "text": [
+        "text": "How many whiskers does a cat usually have on each side?",
+        "options": [
             "6-8",
             "10-12",
             "12-14",
@@ -737,8 +737,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the capital city of Canada?",
-        "text": [
+        "text": "What is the capital city of Canada?",
+        "options": [
             "Toronto",
             "Vancouver",
             "Ottawa",
@@ -748,8 +748,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"Crime and Punishment\"?",
-        "text": [
+        "text": "Who wrote \"Crime and Punishment\"?",
+        "options": [
             "Leo Tolstoy",
             "Fyodor Dostoevsky",
             "Anton Chekhov",
@@ -759,8 +759,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the part of the brain associated with vision?",
-        "text": [
+        "text": "What is the part of the brain associated with vision?",
+        "options": [
             "Frontal lobe",
             "Temporal lobe",
             "Occipital lobe",
@@ -770,8 +770,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which country has the most islands in the world?",
-        "text": [
+        "text": "Which country has the most islands in the world?",
+        "options": [
             "Philippines",
             "Indonesia",
             "Canada",
@@ -781,8 +781,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who developed the theory of operant conditioning?",
-        "text": [
+        "text": "Who developed the theory of operant conditioning?",
+        "options": [
             "Sigmund Freud",
             "B.F. Skinner",
             "Abraham Maslow",
@@ -792,8 +792,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which human organ can regenerate itself if a part of it is removed?",
-        "text": [
+        "text": "Which human organ can regenerate itself if a part of it is removed?",
+        "options": [
             "Heart",
             "Brain",
             "Liver",
@@ -803,8 +803,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which country is known as the \"Emerald Isle\"?",
-        "text": [
+        "text": "Which country is known as the \"Emerald Isle\"?",
+        "options": [
             "Scotland",
             "Ireland",
             "Wales",
@@ -814,8 +814,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"The Iliad\"?",
-        "text": [
+        "text": "Who wrote \"The Iliad\"?",
+        "options": [
             "Homer",
             "Virgil",
             "Sophocles",
@@ -825,8 +825,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the name of the bone in the thigh?",
-        "text": [
+        "text": "What is the name of the bone in the thigh?",
+        "options": [
             "Tibia",
             "Femur",
             "Radius",
@@ -836,8 +836,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the psychological term for mistaken belief in the face of facts?",
-        "text": [
+        "text": "What is the psychological term for mistaken belief in the face of facts?",
+        "options": [
             "Delusion",
             "Hallucination",
             "Illusion",
@@ -847,8 +847,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which animal is considered the largest living terrestrial animal?",
-        "text": [
+        "text": "Which animal is considered the largest living terrestrial animal?",
+        "options": [
             "Giraffe",
             "Elephant",
             "Rhino",
@@ -858,8 +858,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the capital city of Brazil?",
-        "text": [
+        "text": "What is the capital city of Brazil?",
+        "options": [
             "Rio de Janeiro",
             "São Paulo",
             "Brasília",
@@ -869,8 +869,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"Brave New World\"?",
-        "text": [
+        "text": "Who wrote \"Brave New World\"?",
+        "options": [
             "George Orwell",
             "Aldous Huxley",
             "Ray Bradbury",
@@ -880,8 +880,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the primary function of the cerebellum?",
-        "text": [
+        "text": "What is the primary function of the cerebellum?",
+        "options": [
             "Memory storage",
             "Sensory processing",
             "Coordination and balance",
@@ -891,8 +891,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which country is Mount Everest located in?",
-        "text": [
+        "text": "Which country is Mount Everest located in?",
+        "options": [
             "China",
             "Nepal",
             "India",
@@ -902,8 +902,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What is the average lifespan of a guinea pig?",
-        "text": [
+        "text": "What is the average lifespan of a guinea pig?",
+        "options": [
             "2-3 years",
             "4-6 years",
             "7-9 years",
@@ -913,8 +913,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In which continent is the Sahara Desert located?",
-        "text": [
+        "text": "In which continent is the Sahara Desert located?",
+        "options": [
             "Asia",
             "Africa",
             "Australia",
@@ -924,8 +924,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"The Picture of Dorian Gray\"?",
-        "text": [
+        "text": "Who wrote \"The Picture of Dorian Gray\"?",
+        "options": [
             "Oscar Wilde",
             "F. Scott Fitzgerald",
             "Mark Twain",
@@ -935,8 +935,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the part of the brain responsible for regulating sleep?",
-        "text": [
+        "text": "What is the part of the brain responsible for regulating sleep?",
+        "options": [
             "Hippocampus",
             "Medulla",
             "Thalamus",
@@ -946,8 +946,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which country has the most natural lakes in the world?",
-        "text": [
+        "text": "Which country has the most natural lakes in the world?",
+        "options": [
             "Finland",
             "Canada",
             "Russia",
@@ -957,8 +957,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What is the average lifespan of a ferret?",
-        "text": [
+        "text": "What is the average lifespan of a ferret?",
+        "options": [
             "3-5 years",
             "5-7 years",
             "7-10 years",
@@ -968,8 +968,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the capital city of Egypt?",
-        "text": [
+        "text": "What is the capital city of Egypt?",
+        "options": [
             "Cairo",
             "Alexandria",
             "Giza",
@@ -979,8 +979,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"Jane Eyre\"?",
-        "text": [
+        "text": "Who wrote \"Jane Eyre\"?",
+        "options": [
             "Charlotte Brontë",
             "Emily Brontë",
             "Jane Austen",
@@ -990,8 +990,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the primary function of neurotransmitters in the brain?",
-        "text": [
+        "text": "What is the primary function of neurotransmitters in the brain?",
+        "options": [
             "Carrying electrical signals",
             "Chemical communication between neurons",
             "Blood circulation",
@@ -1001,8 +1001,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which country is known for the pyramids and the Sphinx?",
-        "text": [
+        "text": "Which country is known for the pyramids and the Sphinx?",
+        "options": [
             "Israel",
             "Greece",
             "Egypt",
@@ -1012,8 +1012,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What is the term for the deception of the mind's perception of a stimuli?",
-        "text": [
+        "text": "What is the term for the deception of the mind's perception of a stimuli?",
+        "options": [
             "Delusion",
             "Hallucination",
             "Illusion",
@@ -1023,8 +1023,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which animal is known for its ability to regenerate lost limbs?",
-        "text": [
+        "text": "Which animal is known for its ability to regenerate lost limbs?",
+        "options": [
             "Snake",
             "Crab",
             "Starfish",
@@ -1034,8 +1034,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the capital city of Japan?",
-        "text": [
+        "text": "What is the capital city of Japan?",
+        "options": [
             "Kyoto",
             "Osaka",
             "Tokyo",
@@ -1045,8 +1045,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Who wrote \"Moby-Dick\"?",
-        "text": [
+        "text": "Who wrote \"Moby-Dick\"?",
+        "options": [
             "Mark Twain",
             "Herman Melville",
             "Nathaniel Hawthorne",
@@ -1056,8 +1056,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the name of the 1994 film directed by Quentin Tarantino that intertwines the stories of two mob hitmen, a boxer, a gangster's wife, and a pair of bandits?",
-        "text": [
+        "text": "What is the name of the 1994 film directed by Quentin Tarantino that intertwines the stories of two mob hitmen, a boxer, a gangster's wife, and a pair of bandits?",
+        "options": [
             "Reservoir Dogs",
             "Pulp Fiction",
             "Jackie Brown",
@@ -1067,8 +1067,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "In the 1993 movie \"Jurassic Park,\" what type of dinosaur was the first to be cloned and shown to the audience?",
-        "text": [
+        "text": "In the 1993 movie \"Jurassic Park,\" what type of dinosaur was the first to be cloned and shown to the audience?",
+        "options": [
             "Tyrannosaurus Rex",
             "Velociraptor",
             "Triceratops",
@@ -1078,8 +1078,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What is the title of the 1995 crime thriller directed by Bryan Singer, which follows the investigation of a mysterious murder that leads to an intricate web of deceit and corruption?",
-        "text": [
+        "text": "What is the title of the 1995 crime thriller directed by Bryan Singer, which follows the investigation of a mysterious murder that leads to an intricate web of deceit and corruption?",
+        "options": [
             "Reservoir Dogs",
             "The Usual Suspects",
             "Se7en",
@@ -1089,8 +1089,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What is the title of the 1999 science fiction film directed by Lana and Lilly Wachowski that explores the concept of simulated reality?",
-        "text": [
+        "text": "What is the title of the 1999 science fiction film directed by Lana and Lilly Wachowski that explores the concept of simulated reality?",
+        "options": [
             "Inception",
             "The Truman Show",
             "The Matrix",
@@ -1100,8 +1100,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "In the 1996 film \"Fargo,\" directed by Joel and Ethan Coen, what is the name of the pregnant police chief who investigates a series of homicides in Minnesota?",
-        "text": [
+        "text": "In the 1996 film \"Fargo,\" directed by Joel and Ethan Coen, what is the name of the pregnant police chief who investigates a series of homicides in Minnesota?",
+        "options": [
             "Marge Gunderson",
             "Clarice Starling",
             "Jane Craig",
@@ -1111,8 +1111,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "Who directed the 1999 psychological thriller film \"Fight Club,\" based on the novel by Chuck Palahniuk?",
-        "text": [
+        "text": "Who directed the 1999 psychological thriller film \"Fight Club,\" based on the novel by Chuck Palahniuk?",
+        "options": [
             "Quentin Tarantino",
             "David Fincher",
             "Martin Scorsese",
@@ -1122,8 +1122,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "In the 1997 film \"L.A. Confidential,\" which actor played the role of LAPD Sergeant Jack Vincennes, who becomes embroiled in a corruption scandal?",
-        "text": [
+        "text": "In the 1997 film \"L.A. Confidential,\" which actor played the role of LAPD Sergeant Jack Vincennes, who becomes embroiled in a corruption scandal?",
+        "options": [
             "Kevin Spacey",
             "Russell Crowe",
             "Guy Pearce",
@@ -1133,8 +1133,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What is the name of the 1999 film directed by Paul Thomas Anderson that follows the rise and fall of a pornographic filmmaker during the Golden Age of Porn in the 1970s and 1980s?",
-        "text": [
+        "text": "What is the name of the 1999 film directed by Paul Thomas Anderson that follows the rise and fall of a pornographic filmmaker during the Golden Age of Porn in the 1970s and 1980s?",
+        "options": [
             "Punch-Drunk Love",
             "Magnolia",
             "Boogie Nights",
@@ -1144,8 +1144,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "Who directed the 1998 film \"American History X,\" a drama that explores themes of racism and redemption through the story of a former neo-Nazi skinhead?",
-        "text": [
+        "text": "Who directed the 1998 film \"American History X,\" a drama that explores themes of racism and redemption through the story of a former neo-Nazi skinhead?",
+        "options": [
             "Quentin Tarantino",
             "Tony Kaye",
             "David Fincher",
@@ -1155,8 +1155,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "Which 1994 film, directed by Robert Zemeckis and based on a Winston Groom novel, won the Academy Award for Best Picture?",
-        "text": [
+        "text": "Which 1994 film, directed by Robert Zemeckis and based on a Winston Groom novel, won the Academy Award for Best Picture?",
+        "options": [
             "Pulp Fiction",
             "Schindler's List",
             "The Shawshank Redemption",
@@ -1166,8 +1166,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What is the only mammal capable of true flight (not gliding)?",
-        "text": [
+        "text": "What is the only mammal capable of true flight (not gliding)?",
+        "options": [
             "Flying fox",
             "Colugo",
             "Flying squirrel",
@@ -1177,8 +1177,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which animal possesses the largest brain relative to its body size?",
-        "text": [
+        "text": "Which animal possesses the largest brain relative to its body size?",
+        "options": [
             "Elephant",
             "Sperm whale",
             "Dolphin",
@@ -1188,8 +1188,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the name of the smallest species of penguin?",
-        "text": [
+        "text": "What is the name of the smallest species of penguin?",
+        "options": [
             "Little blue penguin",
             "Adélie penguin",
             "Chinstrap penguin",
@@ -1199,8 +1199,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which insect holds the record for the fastest flying insect in the world?",
-        "text": [
+        "text": "Which insect holds the record for the fastest flying insect in the world?",
+        "options": [
             "Dragonfly",
             "Hawk moth",
             "Housefly",
@@ -1210,8 +1210,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the name of the small, elusive mammal native to Australia that is capable of laying eggs?",
-        "text": [
+        "text": "What is the name of the small, elusive mammal native to Australia that is capable of laying eggs?",
+        "options": [
             "Platypus",
             "Kangaroo",
             "Tasmanian devil",
@@ -1221,8 +1221,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which bird species is known for its ability to mimic chainsaws and other mechanical sounds?",
-        "text": [
+        "text": "Which bird species is known for its ability to mimic chainsaws and other mechanical sounds?",
+        "options": [
             "Mockingbird",
             "Lyrebird",
             "Parrot",
@@ -1232,8 +1232,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the only species of bear found in the Southern Hemisphere?",
-        "text": [
+        "text": "What is the only species of bear found in the Southern Hemisphere?",
+        "options": [
             "Polar bear",
             "Brown bear",
             "Spectacled bear",
@@ -1243,8 +1243,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which animal has the most complex eyesight in the animal kingdom?",
-        "text": [
+        "text": "Which animal has the most complex eyesight in the animal kingdom?",
+        "options": [
             "Mantis shrimp",
             "Eagle",
             "Owl",
@@ -1254,8 +1254,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What is the name of the largest living species of turtle, known for its distinctive ridged shell and often found in tropical and subtropical oceans?",
-        "text": [
+        "text": "What is the name of the largest living species of turtle, known for its distinctive ridged shell and often found in tropical and subtropical oceans?",
+        "options": [
             "Loggerhead turtle",
             "Leatherback sea turtle",
             "Green sea turtle",
@@ -1265,8 +1265,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which creature holds the record for the longest migration journey of any animal?",
-        "text": [
+        "text": "Which creature holds the record for the longest migration journey of any animal?",
+        "options": [
             "Sockeye salmon",
             "Monarch butterfly",
             "Humpback whale",
@@ -1276,8 +1276,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Which European city is split by the Bosphorus Strait, separating its European and Asian sectors?",
-        "text": [
+        "text": "Which European city is split by the Bosphorus Strait, separating its European and Asian sectors?",
+        "options": [
             "Budapest",
             "Warsaw",
             "Bucharest",
@@ -1287,8 +1287,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What city holds the title of the oldest continuously inhabited city globally?",
-        "text": [
+        "text": "What city holds the title of the oldest continuously inhabited city globally?",
+        "options": [
             "Athens",
             "Jerusalem",
             "Cairo",
@@ -1298,8 +1298,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Which Asian city earns the moniker \"City of Temples\" due to its plethora of ancient temples and pagodas?",
-        "text": [
+        "text": "Which Asian city earns the moniker \"City of Temples\" due to its plethora of ancient temples and pagodas?",
+        "options": [
             "Bagan",
             "Kyoto",
             "Bangkok",
@@ -1309,8 +1309,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What city is recognized as the northernmost capital city worldwide?",
-        "text": [
+        "text": "What city is recognized as the northernmost capital city worldwide?",
+        "options": [
             "Helsinki",
             "Stockholm",
             "Oslo",
@@ -1320,8 +1320,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What is the capital city of New Zealand?",
-        "text": [
+        "text": "What is the capital city of New Zealand?",
+        "options": [
             "Auckland",
             "Christchurch",
             "Wellington",
@@ -1331,8 +1331,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Which city in India is home to the iconic Taj Mahal?",
-        "text": [
+        "text": "Which city in India is home to the iconic Taj Mahal?",
+        "options": [
             "Delhi",
             "Mumbai",
             "Agra",
@@ -1342,8 +1342,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "Which city is often referred to as the \"Pearl of the Adriatic\" for its stunning coastline and medieval architecture?",
-        "text": [
+        "text": "Which city is often referred to as the \"Pearl of the Adriatic\" for its stunning coastline and medieval architecture?",
+        "options": [
             "Athens",
             "Dubrovnik",
             "Trieste",
@@ -1353,8 +1353,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What is the capital city of Kazakhstan, known for its modern skyline, cultural landmarks, and Eurasian heritage?",
-        "text": [
+        "text": "What is the capital city of Kazakhstan, known for its modern skyline, cultural landmarks, and Eurasian heritage?",
+        "options": [
             "Almaty",
             "Bishkek",
             "Astana",
@@ -1364,8 +1364,8 @@
         "category": "Geography and Places"
     },
     {
-        "desc": "What is the title of the novel by Fyodor Dostoevsky that follows the psychological turmoil of Rodion Raskolnikov, a former student who commits a murder?",
-        "text": [
+        "text": "What is the title of the novel by Fyodor Dostoevsky that follows the psychological turmoil of Rodion Raskolnikov, a former student who commits a murder?",
+        "options": [
             "The Brothers Karamazov",
             "Crime and Punishment",
             "The Idiot",
@@ -1375,8 +1375,8 @@
         "category": "Literature"
     },
     {
-        "desc": "In George Orwell's dystopian novel, what is the ruling entity that governs Oceania in \"1984\"?",
-        "text": [
+        "text": "In George Orwell's dystopian novel, what is the ruling entity that governs Oceania in \"1984\"?",
+        "options": [
             "The Brotherhood",
             "The Regime",
             "The Council",
@@ -1386,8 +1386,8 @@
         "category": "Literature"
     },
     {
-        "desc": "Who is the author of the novel \"To Kill a Mockingbird,\" which explores themes of racial injustice and moral growth in the American South?",
-        "text": [
+        "text": "Who is the author of the novel \"To Kill a Mockingbird,\" which explores themes of racial injustice and moral growth in the American South?",
+        "options": [
             "F. Scott Fitzgerald",
             "Harper Lee",
             "John Steinbeck",
@@ -1397,8 +1397,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the title of the science fiction novel by Stanisław Lem that explores the challenges of communication with an extraterrestrial species?",
-        "text": [
+        "text": "What is the title of the science fiction novel by Stanisław Lem that explores the challenges of communication with an extraterrestrial species?",
+        "options": [
             "The Futurological Congress",
             "Solaris",
             "His Master's Voice",
@@ -1408,8 +1408,8 @@
         "category": "Literature"
     },
     {
-        "desc": "Which novel by Thomas Pynchon follows the journey of Oedipa Maas as she unravels a conspiracy involving a mysterious underground postal system?",
-        "text": [
+        "text": "Which novel by Thomas Pynchon follows the journey of Oedipa Maas as she unravels a conspiracy involving a mysterious underground postal system?",
+        "options": [
             "Gravity's Rainbow",
             "V.",
             "Mason & Dixon",
@@ -1419,8 +1419,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What is the title of Aldous Huxley's dystopian novel that portrays a futuristic society where human beings are genetically engineered and classified into castes?",
-        "text": [
+        "text": "What is the title of Aldous Huxley's dystopian novel that portrays a futuristic society where human beings are genetically engineered and classified into castes?",
+        "options": [
             "Fahrenheit 451",
             "Brave New World",
             "The Handmaid's Tale",
@@ -1430,8 +1430,8 @@
         "category": "Literature"
     },
     {
-        "desc": "Which novel by Franz Kafka tells the story of a man who wakes up one morning to find himself transformed into a giant insect?",
-        "text": [
+        "text": "Which novel by Franz Kafka tells the story of a man who wakes up one morning to find himself transformed into a giant insect?",
+        "options": [
             "The Trial",
             "The Castle",
             "The Metamorphosis",
@@ -1441,8 +1441,8 @@
         "category": "Literature"
     },
     {
-        "desc": "Which classic novel by Mary Shelley follows the story of a scientist who creates a creature from reanimated body parts?",
-        "text": [
+        "text": "Which classic novel by Mary Shelley follows the story of a scientist who creates a creature from reanimated body parts?",
+        "options": [
             "Dracula",
             "Frankenstein",
             "The Strange Case of Dr. Jekyll and Mr. Hyde",
@@ -1452,8 +1452,8 @@
         "category": "Literature"
     },
     {
-        "desc": "In Margaret Atwood's dystopian novel \"The Handmaid's Tale,\" what is the name of the protagonist who serves as a handmaid in the Republic of Gilead?",
-        "text": [
+        "text": "In Margaret Atwood's dystopian novel \"The Handmaid's Tale,\" what is the name of the protagonist who serves as a handmaid in the Republic of Gilead?",
+        "options": [
             "Ofglen",
             "Offred",
             "Serena Joy",
@@ -1463,8 +1463,8 @@
         "category": "Literature"
     },
     {
-        "desc": "In the novel by J.D. Salinger that follows the journey of a disillusioned teenager in New York City, who is the protagonist?",
-        "text": [
+        "text": "In the novel by J.D. Salinger that follows the journey of a disillusioned teenager in New York City, who is the protagonist?",
+        "options": [
             "John Gallagher",
             "Sally Hayes",
             "Holden Caulfield",
@@ -1474,8 +1474,8 @@
         "category": "Literature"
     },
     {
-        "desc": "What British inventor is credited for developing the concept of the world's first programmable computer, the Analytical Engine, in the 1830s?",
-        "text": [
+        "text": "What British inventor is credited for developing the concept of the world's first programmable computer, the Analytical Engine, in the 1830s?",
+        "options": [
             "Alan Turing",
             "Ada Lovelace",
             "Charles Babbage",
@@ -1485,8 +1485,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "Who invented the first mass-produced, practical sewing machine in 1846, revolutionizing the textile industry?",
-        "text": [
+        "text": "Who invented the first mass-produced, practical sewing machine in 1846, revolutionizing the textile industry?",
+        "options": [
             "Isaac Singer",
             "Elias Howe",
             "Walter Hunt",
@@ -1496,8 +1496,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "What French chemist and microbiologist is credited with a namesake discovery that revolutionized food preservation?",
-        "text": [
+        "text": "What French chemist and microbiologist is credited with a namesake discovery that revolutionized food preservation?",
+        "options": [
             "Louis Pasteur",
             "Alexander Fleming",
             "Marie Curie",
@@ -1507,8 +1507,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Known for her pioneering research on radioactivity, who was the first woman to win a Nobel Prize?",
-        "text": [
+        "text": "Known for her pioneering research on radioactivity, who was the first woman to win a Nobel Prize?",
+        "options": [
             "Stephanie Kwolek",
             "Rosalind Franklin",
             "Marie Curie",
@@ -1518,8 +1518,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What Austrian neurologist is credited with inventing psychoanalysis, a clinical method for treating psychopathology through dialogue between a patient and a psychoanalyst?",
-        "text": [
+        "text": "What Austrian neurologist is credited with inventing psychoanalysis, a clinical method for treating psychopathology through dialogue between a patient and a psychoanalyst?",
+        "options": [
             "Alfred Adler",
             "Carl Jung",
             "Wilhelm Reich",
@@ -1529,8 +1529,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "Name the company that introduced the first commercially available lithium-ion battery in 1991.",
-        "text": [
+        "text": "Name the company that introduced the first commercially available lithium-ion battery in 1991.",
+        "options": [
             "Panasonic",
             "Sony",
             "Duracell",
@@ -1540,8 +1540,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "What is the name of the French physicist who invented the electric battery and discovered several elements, including sodium and potassium?",
-        "text": [
+        "text": "What is the name of the French physicist who invented the electric battery and discovered several elements, including sodium and potassium?",
+        "options": [
             "Joseph-Louis Lagrange",
             "Jacques Charles",
             "Antoine Lavoisier",
@@ -1551,8 +1551,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In what year was the World Wide Web invented, revolutionizing the way information is shared on the internet?",
-        "text": [
+        "text": "In what year was the World Wide Web invented, revolutionizing the way information is shared on the internet?",
+        "options": [
             "1979",
             "1984",
             "1989",
@@ -1562,8 +1562,8 @@
         "category": "Technology and Innovations"
     },
     {
-        "desc": "What scientist developed the first successful polio vaccine in the 1950s?",
-        "text": [
+        "text": "What scientist developed the first successful polio vaccine in the 1950s?",
+        "options": [
             "Jonas Salk",
             "Albert Sabin",
             "Edward Jenner",
@@ -1573,8 +1573,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "What inventor is credited with the discovery of penicillin in 1928?",
-        "text": [
+        "text": "What inventor is credited with the discovery of penicillin in 1928?",
+        "options": [
             "Alexander Fleming",
             "Louis Pasteur",
             "Marie Curie",
@@ -1584,8 +1584,8 @@
         "category": "Health and Science"
     },
     {
-        "desc": "In the song \"Stairway to Heaven,\" what mystical object is mentioned that is said to be bought with a \"bustle in your hedgerow\"?",
-        "text": [
+        "text": "In the song \"Stairway to Heaven,\" what mystical object is mentioned that is said to be bought with a \"bustle in your hedgerow\"?",
+        "options": [
             "May Queen",
             "Crystal Ball",
             "Magic Wand",
@@ -1595,8 +1595,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "In the song \"Born to Run\" by Bruce Springsteen, what is the name of the main character's partner who says \"I wanna die with you, Wendy, on the street tonight\"?",
-        "text": [
+        "text": "In the song \"Born to Run\" by Bruce Springsteen, what is the name of the main character's partner who says \"I wanna die with you, Wendy, on the street tonight\"?",
+        "options": [
             "Mary",
             "Jenny",
             "Wendy",
@@ -1606,8 +1606,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What is the real name of the guitarist known as Slash, famous for his work with Guns N' Roses?",
-        "text": [
+        "text": "What is the real name of the guitarist known as Slash, famous for his work with Guns N' Roses?",
+        "options": [
             "Saul Hudson",
             "Angus Young",
             "David Howell Evans",
@@ -1617,8 +1617,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "Which iconic musician is better known by the stage name \"Meat Loaf\"?",
-        "text": [
+        "text": "Which iconic musician is better known by the stage name \"Meat Loaf\"?",
+        "options": [
             "David Coverdale",
             "Michael Lee Aday",
             "Bruce Dickinson",
@@ -1628,8 +1628,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "In what year did Jimi Hendrix pass away at the age of 27?",
-        "text": [
+        "text": "In what year did Jimi Hendrix pass away at the age of 27?",
+        "options": [
             "1967",
             "1969",
             "1970",
@@ -1639,8 +1639,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "Which legendary guitarist, known for his work with the bands Cream and The Yardbirds, was famously referred to as the \"Godfather of Rock Guitar\"?",
-        "text": [
+        "text": "Which legendary guitarist, known for his work with the bands Cream and The Yardbirds, was famously referred to as the \"Godfather of Rock Guitar\"?",
+        "options": [
             "Eric Clapton",
             "Jimmy Page",
             "Jimi Hendrix",
@@ -1650,8 +1650,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "In which year did The Beatles release their iconic album \"Sgt. Pepper's Lonely Hearts Club Band\"?",
-        "text": [
+        "text": "In which year did The Beatles release their iconic album \"Sgt. Pepper's Lonely Hearts Club Band\"?",
+        "options": [
             "1965",
             "1966",
             "1967",
@@ -1661,8 +1661,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "Who was the lead vocalist of the band Led Zeppelin, known for his powerful voice and charismatic stage presence?",
-        "text": [
+        "text": "Who was the lead vocalist of the band Led Zeppelin, known for his powerful voice and charismatic stage presence?",
+        "options": [
             "Roger Daltrey",
             "Freddie Mercury",
             "Mick Jagger",
@@ -1672,8 +1672,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What is the title of the debut studio album by the American rock band Nirvana, released in 1989?",
-        "text": [
+        "text": "What is the title of the debut studio album by the American rock band Nirvana, released in 1989?",
+        "options": [
             "In Utero",
             "Nevermind",
             "Bleach",
@@ -1683,8 +1683,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What is the name of the lead guitarist of the band Queen, known for his unique playing style and flamboyant stage persona?",
-        "text": [
+        "text": "What is the name of the lead guitarist of the band Queen, known for his unique playing style and flamboyant stage persona?",
+        "options": [
             "Eddie Van Halen",
             "Brian May",
             "Jimmy Page",
@@ -1694,8 +1694,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "Which planet in our solar system has the most moons?",
-        "text": [
+        "text": "Which planet in our solar system has the most moons?",
+        "options": [
             "Jupiter",
             "Saturn",
             "Uranus",
@@ -1705,8 +1705,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "What is the name of the largest volcano in our solar system, located on Mars?",
-        "text": [
+        "text": "What is the name of the largest volcano in our solar system, located on Mars?",
+        "options": [
             "Mount Etna",
             "Mauna Kea",
             "Olympus Mons",
@@ -1716,8 +1716,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "Which space mission successfully landed humans on the Moon for the first time?",
-        "text": [
+        "text": "Which space mission successfully landed humans on the Moon for the first time?",
+        "options": [
             "Apollo 11",
             "Mercury-Atlas 6",
             "Voyager 1",
@@ -1727,8 +1727,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "What is the term for the point in a planet's orbit around the Sun where it is closest to the star?",
-        "text": [
+        "text": "What is the term for the point in a planet's orbit around the Sun where it is closest to the star?",
+        "options": [
             "Aphelion",
             "Perihelion",
             "Equinox",
@@ -1738,8 +1738,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "What is the name of the spacecraft launched by NASA in 2006 to study Pluto and the Kuiper Belt objects?",
-        "text": [
+        "text": "What is the name of the spacecraft launched by NASA in 2006 to study Pluto and the Kuiper Belt objects?",
+        "options": [
             "Galileo",
             "Juno",
             "Cassini",
@@ -1749,8 +1749,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "In the movie \"Deep Impact,\" what was the name of the meteor headed towards Earth?",
-        "text": [
+        "text": "In the movie \"Deep Impact,\" what was the name of the meteor headed towards Earth?",
+        "options": [
             "Messiah",
             "Wolf-Biederman",
             "Jensen-Bisach",
@@ -1760,8 +1760,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "What is the largest known planet outside our solar system?",
-        "text": [
+        "text": "What is the largest known planet outside our solar system?",
+        "options": [
             "Kepler-22b",
             "WASP-17b",
             "HD 209458b",
@@ -1771,8 +1771,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "Which spacecraft conducted the first flyby of Jupiter and Saturn, providing crucial data and images of these gas giants?",
-        "text": [
+        "text": "Which spacecraft conducted the first flyby of Jupiter and Saturn, providing crucial data and images of these gas giants?",
+        "options": [
             "Voyager 1",
             "Voyager 2",
             "Juno",
@@ -1782,8 +1782,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "What is the approximate age of the universe, according to current scientific estimates?",
-        "text": [
+        "text": "What is the approximate age of the universe, according to current scientific estimates?",
+        "options": [
             "4.6 billion years",
             "13.8 billion years",
             "20 billion years",
@@ -1793,8 +1793,8 @@
         "category": "Space and Astronomy"
     },
     {
-        "desc": "In the \"Star Wars\" saga, who is the Sith Lord, ruling with an iron fist and seeking to eradicate the Jedi Order?",
-        "text": [
+        "text": "In the \"Star Wars\" saga, who is the Sith Lord, ruling with an iron fist and seeking to eradicate the Jedi Order?",
+        "options": [
             "Darth Vader",
             "Darth Sidious",
             "Darth Maul",
@@ -1804,8 +1804,8 @@
         "category": "Entertainment and Media"
     },
     {
-        "desc": "What government does villain Dominic Greene intend to influence in \"Quantum of Solace\"?",
-        "text": [
+        "text": "What government does villain Dominic Greene intend to influence in \"Quantum of Solace\"?",
+        "options": [
             "Belarus",
             "Ecuador",
             "Bolivia",
@@ -1815,8 +1815,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "In Marvel Comics, who is the powerful mutant telepath who often serves as the primary adversary of the X-Men?",
-        "text": [
+        "text": "In Marvel Comics, who is the powerful mutant telepath who often serves as the primary adversary of the X-Men?",
+        "options": [
             "Mystique",
             "Apocalypse",
             "Magneto",
@@ -1826,8 +1826,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "Which supervillain, created by Frank Miller, is a highly skilled marksman and the arch-nemesis of the vigilante known as Daredevil?",
-        "text": [
+        "text": "Which supervillain, created by Frank Miller, is a highly skilled marksman and the arch-nemesis of the vigilante known as Daredevil?",
+        "options": [
             "Bullseye",
             "Elektra",
             "The Punisher",
@@ -1837,8 +1837,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "What is the villainous alter ego of Norman Osborn, a wealthy industrialist and Spider-Man's archenemy in Marvel Comics?",
-        "text": [
+        "text": "What is the villainous alter ego of Norman Osborn, a wealthy industrialist and Spider-Man's archenemy in Marvel Comics?",
+        "options": [
             "The Riddler",
             "Venom",
             "Green Goblin",
@@ -1848,8 +1848,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "Name the iconic villainess from the \"Wonder Woman\" comics who can best be described as a “wicked sorceress”.",
-        "text": [
+        "text": "Name the iconic villainess from the \"Wonder Woman\" comics who can best be described as a “wicked sorceress”.",
+        "options": [
             "Circe",
             "Cheetah",
             "Poison Ivy",
@@ -1859,8 +1859,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "What is the name of Saruman's stronghold, where he plots against the forces of good?",
-        "text": [
+        "text": "What is the name of Saruman's stronghold, where he plots against the forces of good?",
+        "options": [
             "Minis Tirith",
             "Isengard",
             "Helm's Deep",
@@ -1870,8 +1870,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "What is Elliot Carver's ultimate goal in engineering conflicts in \"Tomorrow Never Dies\"?",
-        "text": [
+        "text": "What is Elliot Carver's ultimate goal in engineering conflicts in \"Tomorrow Never Dies\"?",
+        "options": [
             "To destabilize governments and gain power.",
             "To gain control over the world's energy resources.",
             "To seek revenge for his own government's betrayal.",
@@ -1881,8 +1881,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "In \"Die Hard,\" which building becomes the site of Hans Gruber's hostage situation?",
-        "text": [
+        "text": "In \"Die Hard,\" which building becomes the site of Hans Gruber's hostage situation?",
+        "options": [
             "Nakamoto Plaza",
             "Nakatomi Plaza",
             "Nakamura Tower",
@@ -1892,8 +1892,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "In which century did the Hundred Years' War take place?",
-        "text": [
+        "text": "In which century did the Hundred Years' War take place?",
+        "options": [
             "14th century",
             "17th century",
             "18th century",
@@ -1903,8 +1903,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "Which two ancient civilizations fought in the Punic Wars?",
-        "text": [
+        "text": "Which two ancient civilizations fought in the Punic Wars?",
+        "options": [
             "Rome and Persia",
             "Rome and Sparta",
             "Rome and Carthage",
@@ -1914,8 +1914,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "Which battle marked the final defeat of Napoleon Bonaparte in 1815?",
-        "text": [
+        "text": "Which battle marked the final defeat of Napoleon Bonaparte in 1815?",
+        "options": [
             "The Battle of Austerlitz",
             "The Battle of Borodino",
             "The Battle of Trafalgar",
@@ -1925,8 +1925,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "Who was the Roman general responsible for the conquest of Gaul and later became dictator of Rome?",
-        "text": [
+        "text": "Who was the Roman general responsible for the conquest of Gaul and later became dictator of Rome?",
+        "options": [
             "Augustus Caesar",
             "Marcus Aurelius",
             "Mark Antony",
@@ -1936,8 +1936,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "In which war was The Battle of Fredericksburg fought?",
-        "text": [
+        "text": "In which war was The Battle of Fredericksburg fought?",
+        "options": [
             "The War of 1812",
             "The American Civil War",
             "The American Revolutionary War",
@@ -1947,8 +1947,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "Who's assassination was said to spark World War I?",
-        "text": [
+        "text": "Who's assassination was said to spark World War I?",
+        "options": [
             "Archduke Maximilian",
             "Kaiser Wilhelm II",
             "Emperor Charles I of Austria",
@@ -1958,8 +1958,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "In what decade was The Six-Day War fought?",
-        "text": [
+        "text": "In what decade was The Six-Day War fought?",
+        "options": [
             "1950s",
             "1960s",
             "1970s",
@@ -1969,8 +1969,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "Who was the Supreme Commander of the Allied Forces in Europe during World War II?",
-        "text": [
+        "text": "Who was the Supreme Commander of the Allied Forces in Europe during World War II?",
+        "options": [
             "George S. Patton",
             "Winston Churchill",
             "Douglas MacArthur",
@@ -1980,8 +1980,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "What was the name of the diplomatic strategy notably pursued by Western democracies toward Nazi Germany before World War II?",
-        "text": [
+        "text": "What was the name of the diplomatic strategy notably pursued by Western democracies toward Nazi Germany before World War II?",
+        "options": [
             "Appeasement",
             "Deterrence",
             "Isolationism",
@@ -1991,8 +1991,8 @@
         "category": "History and Wars"
     },
     {
-        "desc": "Which former chairman of Enron Corporation was convicted of multiple counts of fraud and conspiracy related to the company's collapse?",
-        "text": [
+        "text": "Which former chairman of Enron Corporation was convicted of multiple counts of fraud and conspiracy related to the company's collapse?",
+        "options": [
             "Martha Stewart",
             "Kenneth Lay",
             "Jeffrey Skilling",
@@ -2002,8 +2002,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "What infamous American fraudster and stock market manipulator was convicted of numerous offenses related to his investment firm, Stratton Oakmont?",
-        "text": [
+        "text": "What infamous American fraudster and stock market manipulator was convicted of numerous offenses related to his investment firm, Stratton Oakmont?",
+        "options": [
             "Frank Abagnale",
             "Charles Ponzi",
             "Ivan Boesky",
@@ -2013,8 +2013,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "Who was the mastermind behind the largest insider trading scandal in U.S. history, involving illegal activities at the hedge fund SAC Capital Advisors?",
-        "text": [
+        "text": "Who was the mastermind behind the largest insider trading scandal in U.S. history, involving illegal activities at the hedge fund SAC Capital Advisors?",
+        "options": [
             "Michael Milken",
             "Bernard Madoff",
             "Raj Rajaratnam",
@@ -2024,8 +2024,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "Which American businesswoman was convicted of conspiracy, fraud, and obstruction of justice related to the collapse of her company, Theranos?",
-        "text": [
+        "text": "Which American businesswoman was convicted of conspiracy, fraud, and obstruction of justice related to the collapse of her company, Theranos?",
+        "options": [
             "Elizabeth Holmes",
             "Martha Stewart",
             "Sherron Watkins",
@@ -2035,8 +2035,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "What former CEO of WorldCom was convicted of orchestrating one of the largest accounting frauds in U.S. history, resulting in the company's bankruptcy?",
-        "text": [
+        "text": "What former CEO of WorldCom was convicted of orchestrating one of the largest accounting frauds in U.S. history, resulting in the company's bankruptcy?",
+        "options": [
             "Richard Scrushy",
             "Bernard Ebbers",
             "Jeff Skilling",
@@ -2046,8 +2046,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "Who was the American businesswoman convicted of multiple charges related to the collapse of her energy trading company, Enron Corporation?",
-        "text": [
+        "text": "Who was the American businesswoman convicted of multiple charges related to the collapse of her energy trading company, Enron Corporation?",
+        "options": [
             "Michelle Malkin",
             "Elizabeth Holmes",
             "Martha Stewart",
@@ -2057,8 +2057,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "Who was the American con artist who posed as an airline pilot, doctor, and lawyer, among other professions, in the 1960s and 1970s, inspiring the movie \"Catch Me If You Can\"?",
-        "text": [
+        "text": "Who was the American con artist who posed as an airline pilot, doctor, and lawyer, among other professions, in the 1960s and 1970s, inspiring the movie \"Catch Me If You Can\"?",
+        "options": [
             "Gregor MacGregor",
             "Victor Lustig",
             "Frank Abagnale",
@@ -2068,8 +2068,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "What American mobster, known as \"Scarface,\" was the leader of the Chicago Outfit during the Prohibition era and was eventually convicted of tax evasion in 1931?",
-        "text": [
+        "text": "What American mobster, known as \"Scarface,\" was the leader of the Chicago Outfit during the Prohibition era and was eventually convicted of tax evasion in 1931?",
+        "options": [
             "John Gotti",
             "Lucky Luciano",
             "Bugsy Siegel",
@@ -2079,8 +2079,8 @@
         "category": "Criminals and Scandals"
     },
     {
-        "desc": "In 1971, a group of thieves tunneled into the headquarters of the Lloyds Bank in London's Marylebone district and stole valuables worth millions of pounds. What was the nickname given to this notorious heist?",
-        "text": [
+        "text": "In 1971, a group of thieves tunneled into the headquarters of the Lloyds Bank in London's Marylebone district and stole valuables worth millions of pounds. What was the nickname given to this notorious heist?",
+        "options": [
             "The Hatton Garden Heist",
             "The Baker Street Robbery",
             "The Lufthansa Heist",
