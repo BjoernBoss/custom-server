@@ -10,109 +10,33 @@ window.onload = function () {
 	_game.htmlRound = document.getElementById('round');
 	_game.htmlScoreContent = document.getElementById('score-content');
 	_game.htmlPhase = document.getElementById('phase');
+	_game.effects = {
+		expose: 'Exposed',
+		protect: 'Protected',
+		min: 'Minimize',
+		max: 'Maximize',
+		zero: 'No Points',
+		steal: 'Steal',
+		fail: 'Fail',
+		swap: 'Swap Points',
+		double: 'Double or Nothing',
+	};
 
 	/* setup the overall state */
 	_game.state = {};
 	_game.sessionId = new URLSearchParams(location.search).get('id') ?? 'no-session-id';
 
 	/* setup the web-socket */
-	let url = new URL(document.URL);
-	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
-	_game.sock = {
-		ws: null,
-		url: `${protocol}://${url.host}/quiz-game/ws/${_game.sessionId}`,
-		queue: [],
-		dirty: false,
-		state: 'creating', //creating, ready, busy, failed, error, restart
-		connectionFailedDelay: 256
-	};
-	_game.setupConnection();
-};
+	_game.sock = new SyncSocket(`/quiz-game/ws/${_game.sessionId}`);
+	_game.sock.onfailed = (m) => alert(m);
+	_game.sock.onupdate = (s) => _game.applyState(s);
+	_game.sock.onestablished = null;
 
-_game.connectionFailed = function () {
-	if (_game.sock.connectionFailedDelay > 2048) {
-		console.log('Not trying a new connection');
-		_game.sock.state = 'failed';
-		alert('Unable to establish connection to server...');
-	}
-	else {
-		_game.sock.state = 'error';
-		setTimeout(() => _game.restartConnection(), _game.sock.connectionFailedDelay);
-		_game.sock.connectionFailedDelay *= 2;
-	}
+	/* fetch the initial state */
+	_game.sock.fetch();
 };
-_game.setupConnection = function () {
-	console.log('Setting up connection');
-	_game.sock.state = 'creating';
-	try {
-		_game.sock.ws = new WebSocket(_game.sock.url);
-	} catch (e) {
-		console.log(`Error while setting up connection: ${e}`);
-		_game.connectionFailed();
-	}
-
-	_game.sock.ws.onmessage = function (m) {
-		_game.handleMessage(m);
-	};
-	_game.sock.ws.onclose = function () {
-		console.log('Connection to remote side lost');
-		_game.restartConnection();
-	};
-	_game.sock.ws.onopen = function () {
-		console.log('Connection established');
-		_game.sock.state = 'ready';
-		_game.sock.connectionFailedDelay = 256;
-		_game.fetchState();
-	};
-	_game.sock.ws.onerror = function () {
-		console.log('Failed to establish a connection to the server');
-		_game.sock.ws.onclose = function () { };
-		_game.connectionFailed();
-	};
-};
-_game.restartConnection = function () {
-	if (_game.sock.state == 'creating' || _game.sock.state == 'restart' || _game.sock.state == 'failed')
-		return;
-	_game.sock.ws.close();
-	_game.sock.ws = null;
-	_game.sock.state = 'restart';
-	setTimeout(() => _game.setupConnection(), 150);
-};
-_game.handleMessage = function (m) {
-	_game.sock.state = 'ready';
-
-	try {
-		/* parse the message and handle it accordingly */
-		let msg = JSON.parse(m.data);
-		switch (msg.cmd) {
-			case 'ok':
-				break;
-			case 'unknown-session':
-				_game.sock.state = 'failed';
-				alert('Unknown session!');
-				return;
-			case 'state':
-				_game.state = msg;
-				_game.applyState();
-				break;
-			default:
-				console.log(`Unexpected message: ${msg.cmd}`);
-				break;
-		}
-	} catch (e) {
-		console.log(`Error while handling message: ${e}`);
-		_game.restartConnection();
-	}
-};
-_game.fetchState = function () {
-	/* check if the socket is ready to send data */
-	if (_game.sock.state != 'ready')
-		return;
-	_game.sock.state = 'busy';
-	console.log('fetching state...');
-	_game.sock.ws.send(JSON.stringify({ cmd: 'state' }));
-};
-_game.applyState = function () {
+_game.applyState = function (state) {
+	_game.state = state;
 	console.log('Applying received state');
 
 	/* update the current score and category */

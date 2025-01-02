@@ -12,7 +12,7 @@ window.onload = function () {
 	_game.selectCallback = null;
 	_game.viewScore = false;
 	_game.totalPlayerCount = 0;
-	_game.effect = {
+	_game.effects = {
 		expose: {
 			timeout: 2,
 			description: 'Exposed',
@@ -70,8 +70,8 @@ window.onload = function () {
 	};
 
 	/* setup the effect parameter */
-	for (const key in _game.effect) {
-		_game.effect[key].html = document.getElementById(key);
+	for (const key in _game.effects) {
+		_game.effects[key].html = document.getElementById(key);
 		_game.empty.effect[key] = null;
 		_game.empty.applied[key] = null;
 		_game.empty.last[key] = -1;
@@ -121,131 +121,19 @@ window.onload = function () {
 	_game.htmlToggleBoard = document.getElementById('toggle-board');
 
 	/* setup the web-socket */
-	let url = new URL(document.URL);
-	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
-	_game.sock = {
-		ws: null,
-		url: `${protocol}://${url.host}/quiz-game/ws/${_game.sessionId}`,
-		queue: [],
-		dirty: false,
-		state: 'creating', //creating, ready, busy, failed, error, restart
-		connectionFailedDelay: 256
-	};
-	_game.setupConnection();
+	_game.sock = new SyncSocket(`/quiz-game/ws/${_game.sessionId}`);
+	_game.sock.onfailed = (m) => _game.failed(m);
+	_game.sock.onupdate = (s) => _game.applyState(s);
+	_game.sock.onestablished = null;
 };
 
-_game.connectionFailed = function () {
-	if (_game.sock.connectionFailedDelay > 2048) {
-		console.log('Not trying a new connection');
-		_game.sock.state = 'failed';
-		_game.failed('Unable to establish a connection to the server!');
-	}
-	else {
-		_game.sock.state = 'error';
-		setTimeout(() => _game.restartConnection(), _game.sock.connectionFailedDelay);
-		_game.sock.connectionFailedDelay *= 2;
-	}
-};
-_game.setupConnection = function () {
-	console.log('Setting up connection');
-	_game.sock.state = 'creating';
-	try {
-		_game.sock.ws = new WebSocket(_game.sock.url);
-	} catch (e) {
-		console.log(`Error while setting up connection: ${e}`);
-		_game.connectionFailed();
-	}
-
-	_game.sock.ws.onmessage = function (m) {
-		_game.handleMessage(m);
-	};
-	_game.sock.ws.onclose = function () {
-		console.log('Connection to remote side lost');
-		_game.restartConnection();
-	};
-	_game.sock.ws.onopen = function () {
-		console.log('Connection established');
-		_game.sock.state = 'ready';
-		_game.sock.connectionFailedDelay = 256;
-		_game.syncState(false, true);
-	};
-	_game.sock.ws.onerror = function () {
-		console.log('Failed to establish a connection to the server');
-		_game.sock.ws.onclose = function () { };
-		_game.connectionFailed();
-	};
-};
-_game.restartConnection = function () {
-	if (_game.sock.state == 'creating' || _game.sock.state == 'restart' || _game.sock.state == 'failed')
-		return;
-	_game.sock.ws.close();
-	_game.sock.ws = null;
-	_game.sock.state = 'restart';
-	setTimeout(() => _game.setupConnection(), 150);
-};
-_game.handleMessage = function (m) {
-	_game.sock.state = 'ready';
-
-	try {
-		/* parse the message and handle it accordingly */
-		let msg = JSON.parse(m.data);
-		switch (msg.cmd) {
-			case 'ok':
-				break;
-			case 'unknown-session':
-				_game.failed('Unknown session!');
-				_game.sock.state = 'failed';
-				return;
-			case 'state':
-				_game.state = msg;
-				_game.applyState();
-				break;
-			default:
-				console.log(`Unexpected message: ${msg.cmd}`);
-				_game.failed('An unknown error occurred!');
-				break;
-		}
-
-		/* check if the next message should be sent */
-		_game.syncState(true, false);
-	} catch (e) {
-		console.log(`Error while handling message: ${e}`);
-		_game.restartConnection();
-	}
-};
 _game.selfChanged = function () {
-	_game.applyState();
-	_game.syncState(false, false);
+	_game.applyState(null);
+	_game.sock.sync(_game.name, _game.self);
 }
-_game.syncState = function (checking, fetchOnly) {
-	if (!checking)
-		_game.sock.dirty = true;
-	else if (!_game.sock.dirty)
-		return;
-
-	/* check if the socket is ready to send data */
-	if (_game.sock.state != 'ready')
-		return;
-	_game.sock.state = 'busy';
-	_game.sock.dirty = false;
-
-	/* check if the data only need to be fetched */
-	if (_game.self == null || fetchOnly) {
-		console.log('fetching state...');
-		_game.sock.ws.send(JSON.stringify({ cmd: 'state' }));
-	}
-
-	/* upload the current player-state */
-	else {
-		console.log('synchronizing state...');
-		_game.sock.ws.send(JSON.stringify({
-			cmd: 'update',
-			name: _game.name,
-			value: _game.self
-		}));
-	}
-};
-_game.applyState = function () {
+_game.applyState = function (state) {
+	if (state != null)
+		_game.state = state;
 	if (_game.name == '')
 		return;
 	console.log('Applying received state');
@@ -260,7 +148,7 @@ _game.applyState = function () {
 		_game.self = _game.state.players[_game.name];
 	else if (_game.self == null) {
 		_game.self = { ..._game.empty };
-		_game.syncState(false, false);
+		_game.sock.sync(_game.name, _game.self);
 	}
 	else {
 		_game.failed('Player has been reset');
@@ -301,7 +189,7 @@ _game.applyState = function () {
 _game.canEffect = function (name, full) {
 	if (full && (_game.self == null || _game.self.ready || _game.state.phase != 'Category'))
 		return false;
-	if ((_game.state.round - _game.self.last[name]) <= _game.effect[name].timeout)
+	if ((_game.state.round - _game.self.last[name]) <= _game.effects[name].timeout)
 		return false;
 	if (_game.self.effect[name] != null)
 		return false;
@@ -421,7 +309,7 @@ _game.applyScore = function () {
 		for (const key in player.effect) {
 			if (player.applied[key] == null)
 				continue;
-			makeNext().innerText = `${_game.effect[key].description}: ${player.applied[key]}`;
+			makeNext().innerText = `${_game.effects[key].description}: ${player.applied[key]}`;
 		}
 
 		/* remove any remaining children */
@@ -554,24 +442,24 @@ _game.applySetup = function () {
 	_game.htmlConfidenceSlider.value = _game.self.confidence;
 
 	/* update the effect buttons */
-	for (const key in _game.effect)
+	for (const key in _game.effects)
 		_game._applyEffect(key);
 };
 _game._applyEffect = function (name) {
 	let can = _game.canEffect(name, false);
-	let html = _game.effect[name].html;
+	let html = _game.effects[name].html;
 
 	if (can)
 		html.classList.remove('disabled');
 	else
 		html.classList.add('disabled');
 
-	if (_game.self.effect[name] != null && ('select' in _game.effect[name]))
+	if (_game.self.effect[name] != null && ('select' in _game.effects[name]))
 		html.children[0].children[2].innerText = `Selected: ${_game.self.effect[name]}`;
 	else if (can)
-		html.children[0].children[2].innerText = `Timed Out for ${_game.effect[name].timeout} Rounds`;
+		html.children[0].children[2].innerText = `Timed Out for ${_game.effects[name].timeout} Rounds`;
 	else
-		html.children[0].children[2].innerText = `Available in ${_game.self.last[name] + _game.effect[name].timeout - _game.state.round + 1} Rounds`;
+		html.children[0].children[2].innerText = `Available in ${_game.self.last[name] + _game.effects[name].timeout - _game.state.round + 1} Rounds`;
 };
 
 /* called from/for html */
@@ -617,20 +505,25 @@ _game.login = function () {
 	}
 
 	/* check if the server connection exists */
-	if (_game.sock.state != 'ready' && _game.sock.state != 'busy') {
-		if (_game.sock.state == 'failed') {
-			_game.failed('Retrying to connect to server. Try again later...');
-			_game.sock.connectionFailedDelay = 256;
-			_game.setupConnection();
+	if (!_game.sock.connected()) {
+		if (_game.sock.connecting())
+			_game.failed('Connecting to server...');
+		else {
+			_game.failed('Retrying to connect to server...');
+			_game.sock.retry();
 		}
-		else
-			_game.failed('Connecting to server. Try again later...');
+
+		/* register the callback to auto-log in */
+		_game.sock.onestablished = function () {
+			_game.sock.onestablished = null;
+			_game.login();
+		};
 		return;
 	}
 
 	/* extract the parameter and sync the game up */
 	_game.name = _game.htmlName.value.trim();
-	_game.syncState(false, true);
+	_game.sock.fetch();
 };
 _game.ready = function () {
 	if (_game.self == null || _game.self.ready || _game.state.phase == 'done' || _game.totalPlayerCount < 2)
@@ -643,7 +536,7 @@ _game.toggleScore = function () {
 	if (_game.self == null)
 		return;
 	_game.viewScore = !_game.viewScore;
-	_game.applyState();
+	_game.applyState(null);
 };
 _game.slide = function (v) {
 	if (_game.self == null || _game.self.ready || _game.state.phase != 'category')
@@ -663,17 +556,17 @@ _game.choose = function (v) {
 _game.activate = function (name) {
 	if (!_game.canEffect(name, true))
 		return;
-	if (!('select' in _game.effect[name])) {
+	if (!('select' in _game.effects[name])) {
 		_game.doEffect(name, _game.name);
 		return;
 	}
 
-	_game.selectDescription = _game.effect[name].select;
+	_game.selectDescription = _game.effects[name].select;
 	_game.selectCallback = function (v) {
 		if (_game.canEffect(name, true))
 			_game.doEffect(name, v);
 	};
-	_game.applyState();
+	_game.applyState(null);
 };
 _game.pick = function (v) {
 	/* select-callback will automatically apply state */
@@ -681,12 +574,12 @@ _game.pick = function (v) {
 	_game.selectCallback(v);
 };
 _game.remove = function () {
-	if (_game.sock.state != 'ready' && _game.sock.state != 'busy') {
+	if (!_game.sock.connected()) {
 		_game.failed('Network issue while removing player');
 	}
 	else {
-		_game.sock.ws.send(JSON.stringify({ cmd: 'update', name: _game.name }));
-		_game.state.players[_game.name] = undefined;
+		delete _game.state.players[_game.name];
+		_game.sock.sync(_game.name, null);
 		_game.failed('Player has been removed');
 	}
 };

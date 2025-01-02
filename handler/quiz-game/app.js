@@ -126,11 +126,13 @@ class GameState {
 	makeState() {
 		return {
 			cmd: 'state',
-			phase: this.phase,
-			question: this.question,
-			totalQuestions: JsonQuestions.length,
-			players: this.players,
-			round: this.round
+			state: {
+				phase: this.phase,
+				question: this.question,
+				totalQuestions: JsonQuestions.length,
+				players: this.players,
+				round: this.round,
+			}
 		};
 	}
 	updatePlayer(name, state) {
@@ -170,7 +172,7 @@ class Session {
 					return { cmd: 'malformed' };
 				this.state.updatePlayer(msg.name, msg.value);
 				this.sync();
-				return { cmd: 'ok' };
+				return null;
 			default:
 				return { cmd: 'malformed' };
 		}
@@ -218,12 +220,15 @@ function AcceptWebSocket(ws, id) {
 	ws.on('message', function (msg) {
 		try {
 			let parsed = JSON.parse(msg);
-			ws.log(`received: ${parsed.cmd}`);
 
 			/* handle the message accordingly */
 			let response = session.handle(parsed);
-			ws.log(`response: ${response.cmd}`);
-			ws.send(JSON.stringify(response));
+			if (response != null){
+				ws.log(`received: ${msg.cmd} -> ${response.cmd}`);
+				ws.send(JSON.stringify(response));
+			}
+			else
+				ws.log(`received: ${msg.cmd}`);
 		} catch (err) {
 			ws.err(`exception while message: [${err}]`);
 			ws.close();
