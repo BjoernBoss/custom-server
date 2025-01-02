@@ -108,6 +108,7 @@ body {
 
 .clickable .sub {
 	font-size: 1em;
+	margin: 0 0 0.25em 0;
 }
 
 @media (max-width: 640px) {
@@ -214,10 +215,6 @@ body {
 }
 
 .value4 .slidebar {
-	background-color: #ffa238;
-}
-
-.value5 .slidebar {
 	background-color: #ff2f2f;
 }
 

@@ -13,14 +13,14 @@ window.onload = function () {
 
 	/* setup the overall state */
 	_game.state = {};
-	_game.sessionId = location.pathname.substring('/quiz-game/s/score/'.length);
+	_game.sessionId = new URLSearchParams(location.search).get('id') ?? 'no-session-id';
 
 	/* setup the web-socket */
 	let url = new URL(document.URL);
 	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
 	_game.sock = {
 		ws: null,
-		url: `${protocol}://${url.host}/quiz-game/s/ws/${_game.sessionId}`,
+		url: `${protocol}://${url.host}/quiz-game/ws/${_game.sessionId}`,
 		queue: [],
 		dirty: false,
 		state: 'creating', //creating, ready, busy, failed, error, restart

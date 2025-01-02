@@ -182,10 +182,10 @@ function SetupSession() {
 	libLog.Log(`Session created: ${id}`);
 	let session = (Sessions[id] = new Session());
 
-	/* setup the session-timeout checker
+	/* setup the session-timeout checker (20 minutes)
 	*	(only considered alive when the state changes) */
 	session.timeout = setInterval(function () {
-		if (session.dead++ < 16)
+		if (session.dead++ < 21)
 			return;
 		for (let i = 0; i < session.ws.length; ++i)
 			session.ws[i].close();
@@ -248,36 +248,34 @@ export function Handle(msg) {
 	/* check if a new session has been requested and create it */
 	if (msg.relative == '/new') {
 		let id = SetupSession();
-		msg.respondRedirect(libPath.join(SubPath, `./s/session/${id}`));
-		return;
-	}
-
-	/* check if its not a session-dependent page and respond to the request by trying to server the file */
-	if (!msg.relative.startsWith('/s/')) {
-		msg.tryRespondFile(libPath.join(ActualPath, '.' + msg.relative), false);
+		msg.respondRedirect(libPath.join(SubPath, `./session`) + `?id=${id}`);
 		return;
 	}
 
 	/* check if a session-dependent page has been requested */
-	if (msg.relative.startsWith('/s/session')) {
+	if (msg.relative == '/session') {
 		msg.respondFile(libPath.join(ActualPath, './base/session.html'), false);
 		return
 	}
-	if (msg.relative.startsWith('/s/client')) {
+	if (msg.relative == '/client') {
 		msg.respondFile(libPath.join(ActualPath, './client/main.html'), false);
 		return;
 	}
-	if (msg.relative.startsWith('/s/score')) {
+	if (msg.relative == '/score') {
 		msg.respondFile(libPath.join(ActualPath, './score/main.html'), false);
 		return;
 	}
 
 	/* check if the websocket has been requested */
-	if (msg.relative.startsWith('/s/ws/')) {
-		let id = msg.relative.substring(6);
+	if (msg.relative.startsWith('/ws/')) {
+		let id = msg.relative.substring(4);
 		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, id)))
 			return;
 		libLog.Log(`Invalid request for web-socket point for session: [${id}]`);
+		msg.respondNotFound();
+		return;
 	}
-	msg.respondNotFound();
+
+	/* respond to the request by trying to server the file */
+	msg.tryRespondFile(libPath.join(ActualPath, '.' + msg.relative), false);
 }

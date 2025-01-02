@@ -3,6 +3,80 @@
 let _game = {};
 
 window.onload = function () {
+	/* setup the overall state */
+	_game.state = {};
+	_game.sessionId = new URLSearchParams(location.search).get('id') ?? 'no-session-id';
+	_game.name = '';
+	_game.self = null;
+	_game.selectDescription = '';
+	_game.selectCallback = null;
+	_game.viewScore = false;
+	_game.totalPlayerCount = 0;
+	_game.effect = {
+		expose: {
+			timeout: 2,
+			description: 'Exposed',
+		},
+		protect: {
+			timeout: 4,
+			description: 'Protected',
+		},
+		min: {
+			timeout: 3,
+			select: 'Select opponent to set the confidence to -1 to',
+			description: 'Minimize',
+		},
+		max: {
+			timeout: 3,
+			select: 'Select opponent to set the confidence to 3 to',
+			description: 'Maximize',
+		},
+		zero: {
+			timeout: 4,
+			select: 'Select opponent to not get any points',
+			description: 'No Points',
+		},
+		steal: {
+			timeout: 5,
+			select: 'Select opponent to steal the points from',
+			description: 'Steal',
+		},
+		fail: {
+			timeout: 5,
+			select: 'Select opponent to fail',
+			description: 'Fail',
+		},
+		swap: {
+			timeout: 10,
+			select: 'Select opponent to swap points with',
+			description: 'Swap Points',
+		},
+		double: {
+			timeout: 8,
+			description: 'Double or Nothing',
+		},
+
+	};
+	_game.empty = {
+		score: 0,
+		ready: false,
+		confidence: 1,
+		choice: -1,
+		correct: false,
+		delta: 0,
+		effect: {},
+		last: {},
+		applied: {},
+	};
+
+	/* setup the effect parameter */
+	for (const key in _game.effect) {
+		_game.effect[key].html = document.getElementById(key);
+		_game.empty.effect[key] = null;
+		_game.empty.applied[key] = null;
+		_game.empty.last[key] = -1;
+	}
+
 	/* login-screen html components */
 	_game.htmlLogin = document.getElementById('login');
 	_game.htmlName = document.getElementById('name');
@@ -40,59 +114,18 @@ window.onload = function () {
 	_game.htmlConfidenceSelect = document.getElementById('confidence-select');
 	_game.htmlConfidenceValue = document.getElementById('confidence-value');
 	_game.htmlConfidenceSlider = document.getElementById('confidence-slider');
-	_game.htmlDoubleOrNothing = document.getElementById('double-or-nothing');
-	_game.htmlExposeRound = document.getElementById('expose-round');
-	_game.htmlExposeBuy = document.getElementById('expose-buy');
-	_game.htmlSkipRound = document.getElementById('skip-round');
-	_game.htmlSkipBuy = document.getElementById('skip-buy');
-	_game.htmlForceRound = document.getElementById('force-round');
-	_game.htmlForceBuy = document.getElementById('force-buy');
-	_game.htmlInvertRound = document.getElementById('invert-round');
-	_game.htmlInvertBuy = document.getElementById('invert-buy');
 
 	/* score components */
 	_game.htmlScoreScreen = document.getElementById('score-screen');
 	_game.htmlScoreContent = document.getElementById('score-content');
 	_game.htmlToggleBoard = document.getElementById('toggle-board');
 
-	/* setup the overall state */
-	_game.state = {};
-	_game.sessionId = location.pathname.substring('/quiz-game/s/client/'.length);
-	_game.name = '';
-	_game.self = null;
-	_game.selectDescription = '';
-	_game.selectCallback = null;
-	_game.viewScore = false;
-	_game.totalPlayerCount = 0;
-	_game.cost = {
-		doubleOrNothing: {
-			cost: 5,
-			rounds: 5
-		},
-		exposed: {
-			cost: 2,
-			rounds: 2
-		},
-		skipping: {
-			cost: 2,
-			rounds: 4,
-		},
-		forcing: {
-			cost: 2,
-			rounds: 4,
-		},
-		inverting: {
-			cost: 2,
-			rounds: 4,
-		}
-	};
-
 	/* setup the web-socket */
 	let url = new URL(document.URL);
 	let protocol = (url.protocol.startsWith('https') ? 'wss' : 'ws');
 	_game.sock = {
 		ws: null,
-		url: `${protocol}://${url.host}/quiz-game/s/ws/${_game.sessionId}`,
+		url: `${protocol}://${url.host}/quiz-game/ws/${_game.sessionId}`,
 		queue: [],
 		dirty: false,
 		state: 'creating', //creating, ready, busy, failed, error, restart
@@ -226,29 +259,7 @@ _game.applyState = function () {
 	if (_game.name in _game.state.players)
 		_game.self = _game.state.players[_game.name];
 	else if (_game.self == null) {
-		_game.self = {
-			score: 0,
-			actual: 0,
-			ready: false,
-			confidence: 1,
-			choice: -1,
-			correct: false,
-			delta: 0,
-			effect: {
-				doubleOrNothing: false,
-				exposed: false,
-				skipping: null,
-				forcing: null,
-				inverting: null,
-			},
-			last: {
-				doubleOrNothing: null,
-				exposed: null,
-				skipping: null,
-				forcing: null,
-				inverting: null,
-			},
-		};
+		_game.self = { ..._game.empty };
 		_game.syncState(false, false);
 	}
 	else {
@@ -287,28 +298,26 @@ _game.applyState = function () {
 	else
 		_game.applySetup();
 };
-_game.doEffect = function (name, buy, value) {
-	if (_game.self.effect[name] !== false && _game.self.effect[name] !== null)
+_game.canEffect = function (name, full) {
+	if (full && (_game.self == null || _game.self.ready || _game.state.phase != 'Category'))
 		return false;
-	if (!buy && _game.self.last[name] != null && (_game.state.round - _game.self.last[name]) <= _game.cost[name].rounds)
+	if ((_game.state.round - _game.self.last[name]) <= _game.effect[name].timeout)
 		return false;
-	if (buy && _game.self.actual < _game.cost[name].cost)
+	if (_game.self.effect[name] != null)
 		return false;
-
-	if (value != null) {
-		_game.self.last[name] = _game.state.round;
-		if (buy)
-			_game.self.actual -= _game.cost[name].cost;
-		_game.self.effect[name] = value;
-	}
 	return true;
+};
+_game.doEffect = function (name, value) {
+	_game.self.last[name] = _game.state.round;
+	_game.self.effect[name] = value;
+	_game.selfChanged();
 };
 
 /* applying-state functions */
 _game.applyHeaderAndFooter = function () {
 	/* update the current score and category */
 	_game.htmlSelfName.innerText = `Name: ${_game.name}`;
-	_game.htmlScore.innerText = `Score: ${_game.self.actual}`;
+	_game.htmlScore.innerText = `Score: ${_game.self.score}`;
 	if (_game.state.round == null)
 		_game.htmlRound.innerText = `Round: None / ${_game.state.totalQuestions}`;
 	else
@@ -406,27 +415,14 @@ _game.applyScore = function () {
 
 		/* add the delta */
 		if (_game.state.phase == 'resolved')
-			makeNext().innerText = `Delta: ${player.delta < 0 ? '' : '+'}${player.delta}`;
+			makeNext().innerText = `Points: ${player.delta < 0 ? '' : '+'}${player.delta}`;
 
-		/* add the double-or-nothing */
-		if (_game.state.phase == 'resolved' && player.effect.doubleOrNothing)
-			makeNext().innerText = `Double or Nothing: True`;
-
-		/* add the exposed */
-		if (_game.state.phase == 'resolved' && player.effect.exposed)
-			makeNext().innerText = 'Exposed: True';
-
-		/* add the skipping */
-		if (_game.state.phase == 'resolved' && player.effect.skipping != null)
-			makeNext().innerText = `Skipping: ${player.effect.skipping}`;
-
-		/* add the forcing */
-		if (_game.state.phase == 'resolved' && player.effect.forcing != null)
-			makeNext().innerText = `Forcing Confidence: ${player.effect.forcing}`;
-
-		/* add the inverting */
-		if (_game.state.phase == 'resolved' && player.effect.inverting != null)
-			makeNext().innerText = `Inverting Confidence: ${player.effect.inverting}`;
+		/* add the effects flags */
+		for (const key in player.effect) {
+			if (player.applied[key] == null)
+				continue;
+			makeNext().innerText = `${_game.effect[key].description}: ${player.applied[key]}`;
+		}
 
 		/* remove any remaining children */
 		while (node.children.length > count)
@@ -552,38 +548,30 @@ _game.applySetup = function () {
 
 	/* update the confidence slider */
 	_game.htmlConfidenceValue.innerText = `Confidence: ${_game.self.confidence}`;
-	for (let i = 0; i < 6; ++i)
+	for (let i = 0; i < 5; ++i)
 		_game.htmlConfidenceSelect.classList.remove(`value${i}`);
 	_game.htmlConfidenceSelect.classList.add(`value${_game.self.confidence + 1}`);
 	_game.htmlConfidenceSlider.value = _game.self.confidence;
 
-	/* update the exposed button */
-	_game._applyEffect('doubleOrNothing', false, _game.htmlDoubleOrNothing);
-	_game._applyEffect('exposed', false, _game.htmlExposeRound);
-	_game._applyEffect('exposed', true, _game.htmlExposeBuy);
-	_game._applyEffect('skipping', false, _game.htmlSkipRound);
-	_game._applyEffect('skipping', true, _game.htmlSkipBuy);
-	_game._applyEffect('forcing', false, _game.htmlForceRound);
-	_game._applyEffect('forcing', true, _game.htmlForceBuy);
-	_game._applyEffect('inverting', false, _game.htmlInvertRound);
-	_game._applyEffect('inverting', true, _game.htmlInvertBuy);
+	/* update the effect buttons */
+	for (const key in _game.effect)
+		_game._applyEffect(key);
 };
-_game._applyEffect = function (name, buy, html) {
-	let can = _game.doEffect(name, buy, null);
+_game._applyEffect = function (name) {
+	let can = _game.canEffect(name, false);
+	let html = _game.effect[name].html;
 
 	if (can)
 		html.classList.remove('disabled');
 	else
 		html.classList.add('disabled');
 
-	if (typeof (_game.self.effect[name]) == 'string')
-		html.children[0].children[1].innerText = `Selected: ${_game.self.effect[name]}`;
-	else if (buy)
-		html.children[0].children[1].innerText = `Costs ${_game.cost[name].cost} Points`;
+	if (_game.self.effect[name] != null && ('select' in _game.effect[name]))
+		html.children[0].children[2].innerText = `Selected: ${_game.self.effect[name]}`;
 	else if (can)
-		html.children[0].children[1].innerText = `Timed Out for ${_game.cost[name].rounds} Rounds`;
+		html.children[0].children[2].innerText = `Timed Out for ${_game.effect[name].timeout} Rounds`;
 	else
-		html.children[0].children[1].innerText = `Again in ${_game.self.last[name] + _game.cost[name].rounds - _game.state.round + 1} Rounds`;
+		html.children[0].children[2].innerText = `Available in ${_game.self.last[name] + _game.effect[name].timeout - _game.state.round + 1} Rounds`;
 };
 
 /* called from/for html */
@@ -672,32 +660,18 @@ _game.choose = function (v) {
 	_game.self.correct = (_game.self.choice == _game.state.question.correct);
 	_game.selfChanged();
 };
-_game.effect = function (name, buy) {
-	let value = null;
-	if (name == 'exposed' || name == 'doubleOrNothing')
-		value = true;
-
-	if (_game.self == null || _game.self.ready || _game.state.phase != 'Category')
+_game.activate = function (name) {
+	if (!_game.canEffect(name, true))
 		return;
-	if (!_game.doEffect(name, buy, value))
-		return;
-	if (value != null) {
-		_game.selfChanged();
+	if (!('select' in _game.effect[name])) {
+		_game.doEffect(name, _game.name);
 		return;
 	}
 
-	if (name == 'skipping')
-		_game.selectDescription = 'Select Enemy to be Skipped';
-	else if (name == 'forcing')
-		_game.selectDescription = 'Select Enemy to be Forced to Full Confidence';
-	else if (name == 'inverting')
-		_game.selectDescription = 'Select Enemy to Invert the Confidence Of';
-
+	_game.selectDescription = _game.effect[name].select;
 	_game.selectCallback = function (v) {
-		if (_game.self == null || _game.self.ready || _game.state.phase != 'Category')
-			return;
-		_game.doEffect(name, buy, v);
-		_game.selfChanged();
+		if (_game.canEffect(name, true))
+			_game.doEffect(name, v);
 	};
 	_game.applyState();
 };

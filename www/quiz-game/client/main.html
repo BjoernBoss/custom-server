@@ -66,79 +66,88 @@
 				<!-- confidence slider -->
 				<div class="slider value0" id="confidence-select">
 					<p id="confidence-value">Confidence:</p>
-					<input type="range" min="-1" max="4" value="0" class="slidebar" id="confidence-slider"
+					<input type="range" min="-1" max="3" value="0" class="slidebar" id="confidence-slider"
 						oninput="_game.slide(this.value)">
 				</div>
 
-				<!-- double-or-nothing button (double points or reset) -->
-				<div class="button" id="double-or-nothing">
-					<div class="clickable" onclick="_game.effect('doubleOrNothing', false)">
-						<p>Double Or Nothing Points</p>
-						<p class="sub"></p>
+				<!-- expose button -->
+				<div class="button" id="expose">
+					<div class="clickable" onclick="_game.activate('expose')">
+						<p>Show Question</p>
+						<p class="sub">Show the current question already now</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- expose button - timeout (expose the question) -->
-				<div class="button" id="expose-round">
-					<div class="clickable" onclick="_game.effect('exposed', false)">
-						<p>Show Question (Timeout)</p>
-						<p class="sub">Rounds...</p>
+				<!-- protect button -->
+				<div class="button" id="protect">
+					<div class="clickable" onclick="_game.activate('protect')">
+						<p>Protect</p>
+						<p class="sub">Protect me from any effects</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- expose button - buy (expose the question) -->
-				<div class="button" id="expose-buy">
-					<div class="clickable" onclick="_game.effect('exposed', true)">
-						<p>Show Question (Buy)</p>
-						<p class="sub">Cost...</p>
+				<!-- min button -->
+				<div class="button" id="min">
+					<div class="clickable" onclick="_game.activate('min')">
+						<p>No Confidence</p>
+						<p class="sub">Set the opponents confidence to -1</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- skip button - timeout (force the enemy to skip this round - confidence = 0) -->
-				<div class="button" id="skip-round">
-					<div class="clickable" onclick="_game.effect('skipping', false)">
-						<p>Force to Skip Enemy (Timeout)</p>
-						<p class="sub">Rounds...</p>
+				<!-- max button -->
+				<div class="button" id="max">
+					<div class="clickable" onclick="_game.activate('max')">
+						<p>Absolute Confidence</p>
+						<p class="sub">Set the opponents confidence to 3</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- skip button - buy (force the enemy to skip this round - confidence = 0) -->
-				<div class="button" id="skip-buy">
-					<div class="clickable" onclick="_game.effect('skipping', true)">
-						<p>Force to Skip Enemy (Buy)</p>
-						<p class="sub">Cost...</p>
+				<!-- zero button -->
+				<div class="button" id="zero">
+					<div class="clickable" onclick="_game.activate('zero')">
+						<p>No Points</p>
+						<p class="sub">Prevent the opponent from getting points</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- force button - timeout (force enemy to be confident - confidence = 4) -->
-				<div class="button" id="force-round">
-					<div class="clickable" onclick="_game.effect('forcing', false)">
-						<p>Force Enemy to be Fully Confident (Timeout)</p>
-						<p class="sub">Rounds...</p>
+				<!-- steal button -->
+				<div class="button" id="steal">
+					<div class="clickable" onclick="_game.activate('steal')">
+						<p>Steal Points</p>
+						<p class="sub">Steal all points the opponent earns</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- force button - buy (force enemy to be confident - confidence = 4) -->
-				<div class="button" id="force-buy">
-					<div class="clickable" onclick="_game.effect('forcing', true)">
-						<p>Force Enemy to be Fully Confident (Buy)</p>
-						<p class="sub">Cost...</p>
+				<!-- fail button -->
+				<div class="button" id="fail">
+					<div class="clickable" onclick="_game.activate('fail')">
+						<p>Wrong</p>
+						<p class="sub">Ensure that the opponent fails, no matter his choice</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- invert button - timeout (invert enemy confidence) -->
-				<div class="button" id="invert-round">
-					<div class="clickable" onclick="_game.effect('inverting', false)">
-						<p>Invert Enemy Confidence (Timeout)</p>
-						<p class="sub">Rounds...</p>
+				<!-- swap button -->
+				<div class="button" id="swap">
+					<div class="clickable" onclick="_game.activate('swap')">
+						<p>Swap</p>
+						<p class="sub">Swap all points with opponent if he picks the right answer</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 
-				<!-- invert button - buy (invert enemy confidence) -->
-				<div class="button" id="invert-buy">
-					<div class="clickable" onclick="_game.effect('inverting', true)">
-						<p>Invert Enemy Confidence (Buy)</p>
-						<p class="sub">Cost...</p>
+				<!-- double button -->
+				<div class="button" id="double">
+					<div class="clickable" onclick="_game.activate('double')">
+						<p>Double or Nothing</p>
+						<p class="sub">Double points if you pick right or lose all points</p>
+						<p class="sub">Timeout</p>
 					</div>
 				</div>
 			</div>
