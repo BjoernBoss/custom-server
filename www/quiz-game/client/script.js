@@ -243,7 +243,7 @@ _game.applyState = function () {
 			},
 			last: {
 				doubleOrNothing: null,
-				expose: null,
+				exposed: null,
 				skipping: null,
 				forcing: null,
 				inverting: null,
@@ -288,8 +288,6 @@ _game.applyState = function () {
 		_game.applySetup();
 };
 _game.doEffect = function (name, buy, value) {
-	if (_game.self == null || _game.self.ready || _game.state.phase != 'category')
-		return false;
 	if (_game.self.effect[name] !== false && _game.self.effect[name] !== null)
 		return false;
 	if (!buy && _game.self.last[name] != null && (_game.state.round - _game.self.last[name]) <= _game.cost[name].rounds)
@@ -679,6 +677,8 @@ _game.effect = function (name, buy) {
 	if (name == 'exposed' || name == 'doubleOrNothing')
 		value = true;
 
+	if (_game.self == null || _game.self.ready || _game.state.phase != 'Category')
+		return;
 	if (!_game.doEffect(name, buy, value))
 		return;
 	if (value != null) {
@@ -694,6 +694,8 @@ _game.effect = function (name, buy) {
 		_game.selectDescription = 'Select Enemy to Invert the Confidence Of';
 
 	_game.selectCallback = function (v) {
+		if (_game.self == null || _game.self.ready || _game.state.phase != 'Category')
+			return;
 		_game.doEffect(name, buy, v);
 		_game.selfChanged();
 	};
