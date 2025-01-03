@@ -67,6 +67,9 @@ window.onload = function () {
 		last: {},
 		applied: {},
 	};
+	_game.toScramble = [];
+	_game.fromScramble = [];
+	_game.lastScramble = '';
 
 	/* setup the effect parameter */
 	for (const key in _game.effects) {
@@ -177,13 +180,36 @@ _game.applyState = function (state) {
 	if (_game.state.question == null)
 		_game.applySplashScreen();
 
-	/* check if the question-screen needs to be constructed */
+	/* check if the question-screen needs to be constructed (will ensure for scrambling) */
 	else if (_game.state.phase == 'answer' || _game.state.phase == 'resolved')
 		_game.applyQuestion();
 
 	/* setup the category/effect setup screen */
 	else
 		_game.applySetup();
+};
+_game.setupScramble = function () {
+	if (_game.lastScramble == _game.state.question.text)
+		return;
+	_game.lastScramble = _game.state.question.text;
+
+	/* setup the initial raw mapping */
+	let indices = [];
+	for (let i = 0; i < _game.state.question.options.length; ++i)
+		indices.push(i);
+	_game.toScramble = Array.from(Array(_game.state.question.options.length).keys());
+	_game.fromScramble = Array.from(Array(_game.state.question.options.length).keys());
+
+	/* fetch the indices in random order */
+	let next = 0;
+	while (indices.length > 0) {
+		let index = Math.floor(Math.random() * indices.length);
+		_game.toScramble[next] = indices[index];
+		_game.fromScramble[indices[index]] = next;
+
+		indices.splice(index, 1);
+		++next;
+	}
 };
 _game.canEffect = function (name, full) {
 	if (full && (_game.self == null || _game.self.ready || _game.state.phase != 'category'))
@@ -368,6 +394,9 @@ _game.applySplashScreen = function () {
 _game.applyQuestion = function () {
 	_game.screen('game');
 
+	/* setup the scrambling of the answers */
+	_game.setupScramble();
+
 	/* update the ready-visibility */
 	if (_game.self.ready)
 		_game.htmlGameLock.classList.remove('hidden');
@@ -388,9 +417,10 @@ _game.applyQuestion = function () {
 			inner.appendChild(document.createElement('p'));
 		}
 		let node = _game.htmlGameContent.children[i + 1];
+		let question = _game.state.question;
 
 		/* setup the selection-index */
-		if (_game.self.choice == i)
+		if (_game.toScramble[_game.self.choice] == i)
 			node.classList.add('selected');
 		else
 			node.classList.remove('selected');
@@ -406,7 +436,7 @@ _game.applyQuestion = function () {
 			node.classList.remove('invalid');
 			node.classList.remove('correct');
 		}
-		else if (_game.state.question.correct == i && _game.self.applied.fail == null) {
+		else if (_game.toScramble[question.correct] == i && _game.self.applied.fail == null) {
 			node.classList.remove('invalid');
 			node.classList.add('correct');
 		}
@@ -416,7 +446,7 @@ _game.applyQuestion = function () {
 		}
 
 		/* add the actual text content */
-		node.children[0].children[0].innerText = _game.state.question.options[i];
+		node.children[0].children[0].innerText = question.options[_game.fromScramble[i]];
 	}
 
 	/* remove the remaining children */
@@ -547,7 +577,7 @@ _game.choose = function (v) {
 	if (_game.self == null || _game.self.ready || _game.state.phase != 'answer')
 		return;
 
-	_game.self.choice = v;
+	_game.self.choice = _game.fromScramble[v];
 	_game.self.correct = (_game.self.choice == _game.state.question.correct);
 	_game.selfChanged();
 };
