@@ -127,6 +127,11 @@ window.onload = function () {
 	_game.sock.onfailed = (m) => _game.failed(m);
 	_game.sock.onupdate = (s) => _game.applyState(s);
 	_game.sock.onestablished = null;
+
+	/* initialize the last name from the cookies */
+	let lastName = document.cookie.split('; ').find((v) => v.startsWith('quiz-game-last-name='))?.split('=')[1];
+	if (lastName != null)
+		_game.htmlName.value = lastName;
 };
 
 _game.selfChanged = function () {
@@ -552,6 +557,9 @@ _game.login = function () {
 	/* extract the parameter and sync the game up */
 	_game.name = _game.htmlName.value.trim();
 	_game.sock.fetch();
+
+	/* write the last name as a cookie out (lifetime = 24hrs) */
+	document.cookie = `quiz-game-last-name=${_game.name}; expires=${new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString()};`;
 };
 _game.ready = function () {
 	if (_game.self == null || _game.self.ready || _game.state.phase == 'done' || _game.totalPlayerCount < 2)
