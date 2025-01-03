@@ -21,41 +21,40 @@ window.onload = function () {
 			timeout: 4,
 			description: 'Protected',
 		},
-		min: {
-			timeout: 3,
-			select: 'Select opponent to set the confidence to -1 to',
-			description: 'Minimize',
-		},
-		max: {
-			timeout: 3,
-			select: 'Select opponent to set the confidence to 3 to',
-			description: 'Maximize',
+		fail: {
+			timeout: 5,
+			select: 'Select opponent to fail',
+			description: 'Failed by',
 		},
 		zero: {
 			timeout: 4,
 			select: 'Select opponent to not get any points',
-			description: 'No Points',
+			description: 'No Points because of',
+		},
+		min: {
+			timeout: 3,
+			select: 'Select opponent to set the confidence to -1 to',
+			description: 'Minimum confidence because of',
+		},
+		max: {
+			timeout: 3,
+			select: 'Select opponent to set the confidence to 3 to',
+			description: 'Maximum confidence because of',
+		},
+		double: {
+			timeout: 10,
+			description: 'Double or Nothing',
 		},
 		steal: {
 			timeout: 5,
 			select: 'Select opponent to steal the points from',
-			description: 'Steal',
-		},
-		fail: {
-			timeout: 5,
-			select: 'Select opponent to fail',
-			description: 'Fail',
+			description: 'Stolen by',
 		},
 		swap: {
-			timeout: 10,
-			select: 'Select opponent to swap points with',
-			description: 'Swap Points',
-		},
-		double: {
 			timeout: 8,
-			description: 'Double or Nothing',
+			select: 'Select opponent to swap points with',
+			description: 'Swapped Points with',
 		},
-
 	};
 	_game.empty = {
 		score: 0,
@@ -64,7 +63,7 @@ window.onload = function () {
 		choice: -1,
 		correct: false,
 		delta: 0,
-		effect: {},
+		effects: {},
 		last: {},
 		applied: {},
 	};
@@ -72,9 +71,9 @@ window.onload = function () {
 	/* setup the effect parameter */
 	for (const key in _game.effects) {
 		_game.effects[key].html = document.getElementById(key);
-		_game.empty.effect[key] = null;
+		_game.empty.effects[key] = null;
 		_game.empty.applied[key] = null;
-		_game.empty.last[key] = -1;
+		_game.empty.last[key] = -100;
 	}
 
 	/* login-screen html components */
@@ -187,17 +186,17 @@ _game.applyState = function (state) {
 		_game.applySetup();
 };
 _game.canEffect = function (name, full) {
-	if (full && (_game.self == null || _game.self.ready || _game.state.phase != 'Category'))
+	if (full && (_game.self == null || _game.self.ready || _game.state.phase != 'category'))
 		return false;
 	if ((_game.state.round - _game.self.last[name]) <= _game.effects[name].timeout)
 		return false;
-	if (_game.self.effect[name] != null)
+	if (_game.self.effects[name] != null)
 		return false;
 	return true;
 };
 _game.doEffect = function (name, value) {
 	_game.self.last[name] = _game.state.round;
-	_game.self.effect[name] = value;
+	_game.self.effects[name] = value;
 	_game.selfChanged();
 };
 
@@ -219,7 +218,7 @@ _game.applyHeaderAndFooter = function () {
 		_game.htmlCategory.classList.remove('hidden');
 		_game.htmlCategory.innerText = `Category: ${_game.state.question.category}`;
 
-		if (_game.state.phase != 'category' || _game.self.effect.exposed) {
+		if (_game.state.phase != 'category' || _game.self.effects.expose != null) {
 			_game.htmlQuestion.classList.remove('hidden');
 			_game.htmlQuestion.innerText = _game.state.question.text;
 		}
@@ -285,7 +284,7 @@ _game.applyScore = function () {
 
 		/* add the name and score and ready-flag (first has always name-style) */
 		makeNext().innerText = `Name: ${list[i][0]}`;
-		makeNext().innerText = `Score: ${player.score}`;
+		makeNext().innerText = `Score: ${player.score} (Previously: ${player.score - player.delta})`;
 		makeNext().innerText = `Ready: ${player.ready ? 'True' : 'False'}`;
 
 		/* add the result */
@@ -306,10 +305,9 @@ _game.applyScore = function () {
 			makeNext().innerText = `Points: ${player.delta < 0 ? '' : '+'}${player.delta}`;
 
 		/* add the effects flags */
-		for (const key in player.effect) {
-			if (player.applied[key] == null)
-				continue;
-			makeNext().innerText = `${_game.effects[key].description}: ${player.applied[key]}`;
+		for (const key in player.effects) {
+			if (player.applied[key] != null)
+				makeNext().innerText = `${_game.effects[key].description}: ${player.applied[key]}`;
 		}
 
 		/* remove any remaining children */
@@ -408,7 +406,7 @@ _game.applyQuestion = function () {
 			node.classList.remove('invalid');
 			node.classList.remove('correct');
 		}
-		else if (_game.state.question.correct == i) {
+		else if (_game.state.question.correct == i && _game.self.applied.fail == null) {
 			node.classList.remove('invalid');
 			node.classList.add('correct');
 		}
@@ -454,8 +452,8 @@ _game._applyEffect = function (name) {
 	else
 		html.classList.add('disabled');
 
-	if (_game.self.effect[name] != null && ('select' in _game.effects[name]))
-		html.children[0].children[2].innerText = `Selected: ${_game.self.effect[name]}`;
+	if (_game.self.effects[name] != null && ('select' in _game.effects[name]))
+		html.children[0].children[2].innerText = `Selected: ${_game.self.effects[name]}`;
 	else if (can)
 		html.children[0].children[2].innerText = `Timed Out for ${_game.effects[name].timeout} Rounds`;
 	else
@@ -563,7 +561,7 @@ _game.activate = function (name) {
 
 	_game.selectDescription = _game.effects[name].select;
 	_game.selectCallback = function (v) {
-		if (_game.canEffect(name, true))
+		if (v != null && _game.canEffect(name, true))
 			_game.doEffect(name, v);
 	};
 	_game.applyState(null);
@@ -572,6 +570,7 @@ _game.pick = function (v) {
 	/* select-callback will automatically apply state */
 	_game.selectDescription = '';
 	_game.selectCallback(v);
+	_game.applyState(null);
 };
 _game.remove = function () {
 	if (!_game.sock.connected()) {

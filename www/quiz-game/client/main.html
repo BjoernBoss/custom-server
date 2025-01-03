@@ -8,6 +8,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Normal Player!</title>
 	<link rel="stylesheet" type="text/css" href="/quiz-game/client/style.css">
+	<link rel="stylesheet" type="text/css" href="/quiz-game/common/buttons.css">
 	<script src="/quiz-game/common/sync-socket.js"></script>
 	<script src="/quiz-game/client/script.js"></script>
 </head>
@@ -89,6 +90,24 @@
 					</div>
 				</div>
 
+				<!-- fail button -->
+				<div class="button" id="fail">
+					<div class="clickable" onclick="_game.activate('fail')">
+						<p>Wrong</p>
+						<p class="sub">Ensure that the opponent fails, no matter his choice</p>
+						<p class="sub">Timeout</p>
+					</div>
+				</div>
+
+				<!-- zero button -->
+				<div class="button" id="zero">
+					<div class="clickable" onclick="_game.activate('zero')">
+						<p>No Points</p>
+						<p class="sub">Prevent the opponent from getting points</p>
+						<p class="sub">Timeout</p>
+					</div>
+				</div>
+
 				<!-- min button -->
 				<div class="button" id="min">
 					<div class="clickable" onclick="_game.activate('min')">
@@ -107,29 +126,11 @@
 					</div>
 				</div>
 
-				<!-- zero button -->
-				<div class="button" id="zero">
-					<div class="clickable" onclick="_game.activate('zero')">
-						<p>No Points</p>
-						<p class="sub">Prevent the opponent from getting points</p>
-						<p class="sub">Timeout</p>
-					</div>
-				</div>
-
 				<!-- steal button -->
 				<div class="button" id="steal">
 					<div class="clickable" onclick="_game.activate('steal')">
 						<p>Steal Points</p>
-						<p class="sub">Steal all points the opponent earns</p>
-						<p class="sub">Timeout</p>
-					</div>
-				</div>
-
-				<!-- fail button -->
-				<div class="button" id="fail">
-					<div class="clickable" onclick="_game.activate('fail')">
-						<p>Wrong</p>
-						<p class="sub">Ensure that the opponent fails, no matter his choice</p>
+						<p class="sub">Steal all points the opponent earns or loses</p>
 						<p class="sub">Timeout</p>
 					</div>
 				</div>

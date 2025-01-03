@@ -13,12 +13,12 @@ window.onload = function () {
 	_game.effects = {
 		expose: 'Exposed',
 		protect: 'Protected',
-		min: 'Minimize',
-		max: 'Maximize',
-		zero: 'No Points',
-		steal: 'Steal',
-		fail: 'Fail',
-		swap: 'Swap Points',
+		min: 'Minimum confidence because of',
+		max: 'Maximum confidence because of',
+		zero: 'No Points because of',
+		steal: 'Stolen by',
+		fail: 'Failed by',
+		swap: 'Swapped Points with',
 		double: 'Double or Nothing',
 	};
 
@@ -97,7 +97,7 @@ _game.applyState = function (state) {
 
 		/* add the name and score and ready-flag (first has always name-style) */
 		makeNext().innerText = `Name: ${list[i][0]}`;
-		makeNext().innerText = `Score: ${player.score}`;
+		makeNext().innerText = `Score: ${player.score} (Previously: ${player.score - player.delta})`;
 		makeNext().innerText = `Ready: ${player.ready ? 'True' : 'False'}`;
 
 		/* add the result */
@@ -115,27 +115,13 @@ _game.applyState = function (state) {
 
 		/* add the delta */
 		if (_game.state.phase == 'resolved')
-			makeNext().innerText = `Delta: ${player.delta < 0 ? '' : '+'}${player.delta}`;
+			makeNext().innerText = `Points: ${player.delta < 0 ? '' : '+'}${player.delta}`;
 
-		/* add the double-or-nothing */
-		if (_game.state.phase == 'resolved' && player.effect.doubleOrNothing)
-			makeNext().innerText = `Double or Nothing: True`;
-
-		/* add the exposed */
-		if (_game.state.phase == 'resolved' && player.effect.exposed)
-			makeNext().innerText = 'Exposed: True';
-
-		/* add the skipping */
-		if (_game.state.phase == 'resolved' && player.effect.skipping != null)
-			makeNext().innerText = `Skipping: ${player.effect.skipping}`;
-
-		/* add the forcing */
-		if (_game.state.phase == 'resolved' && player.effect.forcing != null)
-			makeNext().innerText = `Forcing Confidence: ${player.effect.forcing}`;
-
-		/* add the inverting */
-		if (_game.state.phase == 'resolved' && player.effect.inverting != null)
-			makeNext().innerText = `Inverting Confidence: ${player.effect.inverting}`;
+		/* add the effects flags */
+		for (const key in player.effects) {
+			if (player.applied[key] != null)
+				makeNext().innerText = `${_game.effects[key]}: ${player.applied[key]}`;
+		}
 
 		/* remove any remaining children */
 		while (node.children.length > count)
