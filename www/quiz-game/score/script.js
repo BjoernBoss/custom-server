@@ -103,7 +103,7 @@ _game.applyState = function (state) {
 		/* add the result */
 		if (_game.state.phase == 'resolved') {
 			let next = makeNext();
-			if (_game.choice == -1)
+			if (player.choice == -1)
 				next.innerText = `Result: None`;
 			else
 				next.innerText = `Result: ${_game.state.question.options[player.choice]} (${player.correct ? 'Correct' : 'Incorrect'})`;
