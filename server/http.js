@@ -240,7 +240,8 @@ export class HttpMessage {
 			this.respondFile(filePath, useURLPathForType);
 	}
 	tryAcceptWebSocket(callback) {
-		if (this.request.headers.connection.toLowerCase() != 'upgrade' || this.request.headers.upgrade.toLowerCase() != 'websocket')
+		let connection = this.request.headers.connection.toLowerCase().split(',').map((v) => v.trim());
+		if (connection.indexOf('upgrade') == -1 || this.request.headers.upgrade.toLowerCase() != 'websocket')
 			return false;
 		WebSocketServer.handleUpgrade(this.request, this.request.socket, Buffer.alloc(0), (ws, _) => callback(ws));
 		return true;
