@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libFs from "fs";
+import * as libConfig from './config.js';
 
 var logIntoConsole = true;
 var logFile = {
@@ -9,7 +10,6 @@ var logFile = {
 	oldFilePath: null,
 	logFileSize: 0,
 	bufMaximumLines: 1500,
-	logMaximumSize: 10_000_000,
 	fs: null,
 	buffer: [],
 	flushId: null,
@@ -55,7 +55,7 @@ function MakeActualLog(level, msg) {
 	}
 
 	/* check if the log-files need to be swapped */
-	if (logFile.logFileSize < logFile.logMaximumSize)
+	if (logFile.logFileSize < libConfig.MaxFileLoggingLength)
 		return;
 
 	/* flush the buffered entries */

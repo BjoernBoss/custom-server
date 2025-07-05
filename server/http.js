@@ -118,7 +118,7 @@ export class HttpMessage {
 		for (const key in this._headers)
 			this.response.setHeader(key, this._headers[key]);
 
-		this.response.setHeader('Server', libConfig.ServerName);
+		this.response.setHeader('Server', libConfig.GetServerName());
 		this.response.setHeader('Content-Type', HttpMessage._ContentType(path));
 		this.response.setHeader('Date', new Date().toUTCString());
 
