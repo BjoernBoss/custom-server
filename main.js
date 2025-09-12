@@ -7,7 +7,7 @@ import * as libConfig from "./server/config.js";
 import * as libShared from "./handler/shared.js";
 import * as libCatchAll from "./handler/catch-all.js";
 import * as libQuizGame from "./quiz-game/app.js";
-import * as libWeddingGame from "./handler/wedding-game.js";
+import * as libWeddingGame from "./wedding-game/app.js";
 
 function Setup(localModule) {
 	const server = new libServer.Server();

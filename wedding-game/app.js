@@ -3,9 +3,6 @@
 import * as libLog from "../server/log.js";
 import * as libPath from "path";
 
-export const SubPath = '/wedding-game';
-const ActualPath = libPath.resolve('./www/wedding-game');
-
 let GameGlobal = {};
 
 class GameSync {
@@ -397,16 +394,18 @@ function HandleScoreMessage(msg, score) {
 	}
 }
 
+export const SubPath = '/wedding-game';
+
 export function Handle(msg) {
 	libLog.Log(`Game handler for [${msg.relative}]`);
 
 	/* check if its a root-request and forward it accordingly */
 	if (msg.relative == '/') {
-		msg.tryRespondFile(libPath.join(ActualPath, './client/main.html'), false);
+		msg.tryRespondFile(libPath.join(import.meta.dirname, './static/client/main.html'), false);
 		return;
 	}
 	if (msg.relative == '/score') {
-		msg.tryRespondFile(libPath.join(ActualPath, './score/main.html'), false);
+		msg.tryRespondFile(libPath.join(import.meta.dirname, './static/score/main.html'), false);
 		return;
 	}
 
@@ -434,5 +433,5 @@ export function Handle(msg) {
 	}
 
 	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(libPath.join(ActualPath, '.' + msg.relative), false);
+	msg.tryRespondFile(libPath.join(import.meta.dirname, './static' + msg.relative), false);
 }
