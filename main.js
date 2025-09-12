@@ -4,10 +4,9 @@ import * as libServer from "./server/server.js";
 import * as libLog from "./server/log.js";
 import * as libConfig from "./server/config.js";
 
-import * as libShared from "./handler/shared.js";
-import * as libCatchAll from "./handler/catch-all.js";
-import * as libQuizGame from "./quiz-game/app.js";
-import * as libWeddingGame from "./wedding-game/app.js";
+import * as libShared from "./handler/share/app.js";
+import * as libQuizGame from "./handler/quiz-game/app.js";
+import * as libWeddingGame from "./handler/wedding-game/app.js";
 
 function Setup(localModule) {
 	const server = new libServer.Server();
@@ -24,7 +23,10 @@ function Setup(localModule) {
 	server.listenHttp(libConfig.PortInternalHttp, true);
 
 	/* add the catch-all handler */
-	server.addHandler(libCatchAll.SubPath, false, libCatchAll.Handle);
+	server.addHandler('', false, function (msg) {
+		libLog.Log(`Catch-all not-found handler for [${msg.relative}]`);
+		msg.respondNotFound();
+	});
 
 	/* add the shared content handler */
 	server.addHandler(libShared.SubPath, false, libShared.Handle);

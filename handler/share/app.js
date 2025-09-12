@@ -1,12 +1,9 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
-import * as libLog from "../server/log.js";
-import * as libTemplates from "../server/templates.js";
+import * as libLog from "../../server/log.js";
+import * as libTemplates from "../../server/templates.js";
 import * as libPath from "path";
 import * as libFs from "fs";
-
-export const SubPath = '/shared';
-const ActualPath = libPath.resolve('./www/shared');
 
 function ListDirectory(msg, filePath) {
 	var content = libFs.readdirSync(filePath);
@@ -48,15 +45,17 @@ function ListDirectory(msg, filePath) {
 		dirPath = dirPath.substr(0, dirPath.length - 1);
 
 	/* construct the final template and return it */
-	const out = libTemplates.LoadExpanded(libTemplates.ListDir.base, { path: dirPath, entries });
+	const out = libTemplates.LoadExpanded(libTemplates.ListDir.base, { path: msg.relative, entries });
 	msg.respondHtml(out);
 }
+
+export const SubPath = '/share';
 
 export function Handle(msg) {
 	libLog.Log(`Shared handler for [${msg.relative}]`);
 
 	/* expand the path */
-	const filePath = libPath.join(ActualPath, '.' + msg.relative);
+	const filePath = libPath.join(import.meta.dirname, './content' + msg.relative);
 
 	/* ensure the request is using the Get-method */
 	if (!msg.ensureMethod(['GET']))
