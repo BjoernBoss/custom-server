@@ -6,7 +6,7 @@ import * as libConfig from "./server/config.js";
 
 import * as libShared from "./handler/shared.js";
 import * as libCatchAll from "./handler/catch-all.js";
-import * as libQuizGame from "./handler/quiz-game/app.js";
+import * as libQuizGame from "./quiz-game/app.js";
 import * as libWeddingGame from "./handler/wedding-game.js";
 
 function Setup(localModule) {

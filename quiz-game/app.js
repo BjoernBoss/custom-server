@@ -1,14 +1,11 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
-import * as libLog from "../../server/log.js";
+import * as libLog from "../server/log.js";
 import * as libPath from "path";
 import * as libFs from "fs";
 import * as libCrypto from "crypto";
 
-export const SubPath = '/quiz-game';
-const ActualPath = libPath.resolve('./www/quiz-game');
-
-let JsonQuestions = JSON.parse(libFs.readFileSync('./handler/quiz-game/categorized-questions.json', 'utf8'));
+let JsonQuestions = JSON.parse(libFs.readFileSync(libPath.join(import.meta.dirname, './categorized-questions.json'), 'utf8'));
 let Sessions = {};
 
 class GameState {
@@ -385,12 +382,14 @@ function AcceptWebSocket(ws, id) {
 	});
 }
 
+export const SubPath = '/quiz-game';
+
 export function Handle(msg) {
 	libLog.Log(`Game handler for [${msg.relative}]`);
 
 	/* check if its a root-request and forward it accordingly */
 	if (msg.relative == '/') {
-		msg.respondFile(libPath.join(ActualPath, './base/startup.html'), false);
+		msg.respondFile(libPath.join(import.meta.dirname, './static/base/startup.html'), false);
 		return;
 	}
 
@@ -403,15 +402,15 @@ export function Handle(msg) {
 
 	/* check if a session-dependent page has been requested */
 	if (msg.relative == '/session') {
-		msg.respondFile(libPath.join(ActualPath, './base/session.html'), false);
+		msg.respondFile(libPath.join(import.meta.dirname, './static/base/session.html'), false);
 		return
 	}
 	if (msg.relative == '/client') {
-		msg.respondFile(libPath.join(ActualPath, './client/main.html'), false);
+		msg.respondFile(libPath.join(import.meta.dirname, './static/client/main.html'), false);
 		return;
 	}
 	if (msg.relative == '/score') {
-		msg.respondFile(libPath.join(ActualPath, './score/main.html'), false);
+		msg.respondFile(libPath.join(import.meta.dirname, './static/score/main.html'), false);
 		return;
 	}
 
@@ -426,5 +425,5 @@ export function Handle(msg) {
 	}
 
 	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(libPath.join(ActualPath, '.' + msg.relative), false);
+	msg.tryRespondFile(libPath.join(import.meta.dirname, './static' + msg.relative), false);
 }
