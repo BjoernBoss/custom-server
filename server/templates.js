@@ -4,42 +4,52 @@ import * as libLog from "./log.js";
 import * as libFs from "fs";
 import * as libPath from "path";
 
-/*	Defines:
-*		{path}: requested path
-*		{new}: new destination
-*/
-export const PermanentlyMoved = libPath.join(import.meta.dirname, './templates/301.html');
+function fileRelative(path) {
+	/* workaround! (7 => file://) */
+	const dirName = import.meta.dirname ?? libPath.dirname(import.meta.url.slice(7));
+	if (path.startsWith('/'))
+		return libPath.join(dirName, '.' + path);
+	if (!path.startsWith('./'))
+		return libPath.join(dirName, './' + path);
+	return libPath.join(dirName, path);
+}
 
 /*	Defines:
 *		{path}: requested path
 *		{new}: new destination
 */
-export const TemporaryRedirect = libPath.join(import.meta.dirname, './templates/307.html');
+export const PermanentlyMoved = fileRelative('templates/301.html');
+
+/*	Defines:
+*		{path}: requested path
+*		{new}: new destination
+*/
+export const TemporaryRedirect = fileRelative('templates/307.html');
 
 /*	Defines:
 *		{path}: requested path
 *		{reason}: description of issue
 */
-export const ErrorBadRequest = libPath.join(import.meta.dirname, './templates/400.html');
+export const ErrorBadRequest = fileRelative('templates/400.html');
 
 /*	Defines:
 *		{path}: requested path
 */
-export const ErrorNotFound = libPath.join(import.meta.dirname, './templates/404.html');
+export const ErrorNotFound = fileRelative('templates/404.html');
 
 /*	Defines:
 *		{method}: requested method
 *		{allowed}: allowed methods
 *		{path}: requested path
 */
-export const ErrorInvalidMethod = libPath.join(import.meta.dirname, './templates/405.html');
+export const ErrorInvalidMethod = fileRelative('templates/405.html');
 
 /*	Defines:
 *		{range}: range
 *		{path}: requested path
 *		{size}: file-size
 */
-export const ErrorRangeIssue = libPath.join(import.meta.dirname, './templates/416.html');
+export const ErrorRangeIssue = fileRelative('templates/416.html');
 
 /*	Base defines:
 *		{path}: path of directory
@@ -51,9 +61,9 @@ export const ErrorRangeIssue = libPath.join(import.meta.dirname, './templates/41
 		%none%
 */
 export const ListDir = {
-	base: libPath.join(import.meta.dirname, './templates/list-dir/page.html'),
-	entry: libPath.join(import.meta.dirname, './templates/list-dir/entry.txt'),
-	empty: libPath.join(import.meta.dirname, './templates/list-dir/empty.txt')
+	base: fileRelative('templates/list-dir/page.html'),
+	entry: fileRelative('templates/list-dir/entry.txt'),
+	empty: fileRelative('templates/list-dir/empty.txt')
 };
 
 function ExpandPlaceholders(content, map) {

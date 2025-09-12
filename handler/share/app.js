@@ -5,6 +5,16 @@ import * as libTemplates from "../../server/templates.js";
 import * as libPath from "path";
 import * as libFs from "fs";
 
+function fileRelative(path) {
+	/* workaround! (7 => file://) */
+	const dirName = import.meta.dirname ?? libPath.dirname(import.meta.url.slice(7));
+	if (path.startsWith('/'))
+		return libPath.join(dirName, '.' + path);
+	if (!path.startsWith('./'))
+		return libPath.join(dirName, './' + path);
+	return libPath.join(dirName, path);
+}
+
 function ListDirectory(msg, filePath) {
 	var content = libFs.readdirSync(filePath);
 
@@ -55,7 +65,7 @@ export function Handle(msg) {
 	libLog.Log(`Shared handler for [${msg.relative}]`);
 
 	/* expand the path */
-	const filePath = libPath.join(import.meta.dirname, './content' + msg.relative);
+	const filePath = fileRelative('content' + msg.relative);
 
 	/* ensure the request is using the Get-method */
 	if (!msg.ensureMethod(['GET']))
