@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en" style="margin: 0; height: 100%;">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Editor</title>
+</head>
+
+<body contenteditable="false"
+	style="display: flex; justify-content: center; margin: 0; height: 100%; align-items: center;">
+	<!-- dimension screen -->
+	<div id="dimensions"
+		style="border-radius: 6px; border-width: 1px; border-style: solid; border-color: #202020; padding:20px; background-color: #f0f0f0; display: inline-flex; flex-direction: column;">
+		<div
+			style="margin-bottom: 10px; font-size: 1.75em; font-weight: 500; text-align: center; font-family: system-ui;">
+			Dimensions</div>
+		<div style="display: flex; margin-bottom: 10px;">
+			<input type="number" placeholder="Width" id="width" style="width: 150px; font-size: 1.3em; padding: 4px;"
+				min="1" max="64" value="15">
+			<div style="font-size: 2em; padding: 0px 10px;">&times;</div>
+			<input type="number" placeholder="Height" id="height" style="width: 150px; font-size: 1.3em; padding: 4px;"
+				min="1" max="64" value="15">
+		</div>
+		<div style="display: flex; justify-content: center;">
+			<button style="font-size: 1.3em; width: 100px;" onclick="_state.setup()">Create</button>
+		</div>
+	</div>
+
+	<!-- editor view -->
+	<div id="editor" style="display: none; flex-direction: column; width: 100%; height: 100%;">
+		<!-- editor caption -->
+		<div
+			style="background-color: #c0c0c0; display: flex; align-items: center; width: 100%; padding: 20px; justify-content: space-between; box-sizing: border-box; border-style: solid; border-color: #202020; border-width: 0 0 2px 0;">
+			<div id="caption" style="font-size: 1.75em; font-weight: 600; font-family: system-ui; margin-right: 20px;">
+				Creating Crossword of Size:
+			</div>
+			<button style="width: 100px; height: 40px; font-size: 1.3em;">Finish</button>
+		</div>
+
+		<!-- editor view -->
+		<div style="flex: 1; background-color: #f0f0f0; overflow: hidden; position: relative; user-select: none;"
+			id="container">
+			<div style="background-color: #ffffff; border-width: 4px; border-color: #000000; border-style: solid; transform-origin: top left; width: fit-content;"
+				id="content">
+			</div>
+		</div>
+
+		<!-- editor footer -->
+		<div
+			style="background-color: #c0c0c0; display: flex; align-items: center; width: 100%; padding: 20px; justify-content: space-between; box-sizing: border-box;">
+			<div style="font-family: system-ui;">
+				Note: Numbers are automatically assigned. Should they not match, please open issue on github.
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
+
+<style>
+	.row-style {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.cell-style {
+		width: 48px;
+		height: 64px;
+		border-color: #e0e0e0;
+		border-style: solid;
+		border-width: 1px;
+		font-size: 1.3em;
+		font-family: system-ui;
+		font-weight: 500;
+		color: #c0c0c0;
+		padding: 0px 8px;
+	}
+
+	.cell-style.solid {
+		background-color: #000000;
+		border-color: #000000;
+	}
+</style>
+
+<script>
+	let _state = {};
+	_state.setup = function () {
+		/* validate the dimension */
+		_state.width = parseInt(document.getElementById('width').value);
+		_state.height = parseInt(document.getElementById('height').value);
+		if (!isFinite(_state.width) || !isFinite(_state.height) || _state.width < 0 || _state.width > 64 || _state.height < 0 || _state.height > 64) {
+			alert("Invalid dimensions specified");
+			return;
+		}
+
+		/* lock the input page */
+		document.getElementById('dimensions').style.display = 'none';
+
+		/* setup the editor */
+		document.getElementById('editor').style.display = 'flex';
+		document.getElementById('caption').innerText += ` [${_state.width} \u00d7 ${_state.height}]`;
+
+		/* create the grid object */
+		_state.grid = new Array(_state.width);
+		for (let x = 0; x < _state.width; ++x) {
+			_state.grid[x] = new Array(_state.height);
+			for (let y = 0; y < _state.height; ++y)
+				_state.grid[x][y] = { solid: false, html: null };
+		}
+
+		/* create the separate cells */
+		_state.container = document.getElementById('container');
+		_state.content = document.getElementById('content');
+		for (let y = 0; y < _state.height; ++y) {
+			let row = document.createElement('div');
+			row.classList.add(['row-style']);
+			_state.content.appendChild(row);
+
+			/* add all of the cells */
+			for (let x = 0; x < _state.width; ++x) {
+				let cell = document.createElement('div');
+				cell.classList.add(['cell-style']);
+				row.appendChild(cell);
+
+				/* write the cell to the grid object */
+				_state.grid[x][y].html = cell;
+			}
+		}
+
+		/* digitize the new grid (to add all indices) */
+		_state.digitize();
+
+		/* setup the viewport */
+		_state.view = { scale: 1, pos: [0, 0] };
+		_state.applyView();
+
+		/* setup the input state */
+		_state.input = { panning: false, updating: null };
+
+		/* register the event listener for the panning (by right-click) */
+		_state.container.addEventListener('mousedown', function (e) {
+			if (e.button != 2) return;
+			e.preventDefault();
+			e.stopPropagation();
+			_state.input.panning = true;
+		});
+		_state.container.addEventListener('mouseup', function (e) {
+			if (e.button != 2 || !_state.input.panning) return;
+			e.preventDefault();
+			e.stopPropagation();
+			_state.stopPanning();
+		});
+		_state.container.addEventListener('mousemove', function (e) {
+			if (!_state.input.panning) return;
+			if ((e.buttons & 0x02) != 0x02)
+				_state.stopPanning();
+			else
+				_state.updatePanning(e.movementX, e.movementY);
+		});
+		_state.container.addEventListener('contextmenu', (e) => e.preventDefault());
+
+		/* register the event listeners for updating the grid (by left-click) */
+		_state.content.addEventListener('mousedown', function (e) {
+			if (e.button == 0 && _state.startToggle(e.clientX, e.clientY)) {
+				e.preventDefault();
+				e.stopPropagation();
+			}
+		});
+		_state.content.addEventListener('mousemove', function (e) {
+			if ((e.buttons & 0x01) != 0x01)
+				_state.stopToggle();
+			else
+				_state.moveToggle(e.clientX, e.clientY);
+		});
+		_state.content.addEventListener('mouseup', function (e) {
+			if (e.button != 0) return;
+			_state.stopToggle();
+			e.preventDefault();
+			e.stopPropagation();
+		});
+		_state.content.addEventListener('touchstart', function (e) {
+			if (e.touches.length != 1) _state.stopToggle();
+			else if (_state.startToggle(e.touches[0].clientX, e.touches[0].clientY)) {
+				e.preventDefault();
+				e.stopPropagation();
+			}
+		});
+		_state.content.addEventListener('touchmove', function (e) {
+			if (e.touches.length != 1)
+				_state.stopToggle();
+			else
+				_state.moveToggle(e.touches[0].clientX, e.touches[0].clientY);
+		});
+		_state.content.addEventListener('touchstop', function (e) {
+			_state.stopToggle();
+			e.preventDefault();
+			e.stopPropagation();
+		});
+	}
+
+	_state.startToggle = function (clientX, clientY) {
+		if (_state.input.panning) return false;
+
+		/* check if a valid cell has been hit */
+		let [x, y] = _state.screenToIndex(clientX, clientY);
+		if (x == null || y == null) return false;
+
+		/* setup the operation */
+		_state.input.updating = !_state.grid[x][y].solid;
+		_state.toggleSolid(x, y);
+		return true;
+	}
+	_state.moveToggle = function (clientX, clientY) {
+		if (_state.input.updating == null) return;
+		let [x, y] = _state.screenToIndex(clientX, clientY);
+		_state.toggleSolid(x, y);
+	}
+	_state.stopToggle = function () {
+		_state.input.updating = null;
+	}
+	_state.toggleSolid = function (x, y) {
+		/* check if the operation is over */
+		if (_state.input.updating == null) return;
+		if (x == null || y == null) {
+			_state.input.updating = null;
+			return;
+		}
+
+		/* check if the value should be updated */
+		if (_state.grid[x][y].solid != _state.input.updating) {
+			_state.grid[x][y].solid = _state.input.updating;
+			_state.digitize();
+		}
+	}
+
+	_state.digitize = function () {
+		/* rule for digitization: if previous is solid or out of bounds, and next is not, add a digit (both for
+		*	horizontal and vertical) and then assign digits from left to right, followed by top to bottom */
+		let next = 0;
+
+		/* iterate over the grid from left to right/top to bottom and assign the digits */
+		for (let y = 0; y < _state.height; ++y) {
+			for (let x = 0; x < _state.width; ++x) {
+				/* check if the cell is solid and can be marked as solid and skipped */
+				if (_state.grid[x][y].solid) {
+					_state.grid[x][y].html.innerText = '';
+					_state.grid[x][y].html.classList.add(['solid']);
+					continue;
+				}
+				_state.grid[x][y].html.classList.remove(['solid']);
+
+				/* check if a digit should be added */
+				let leftEmpty = (x > 0 && !_state.grid[x - 1][y].solid);
+				let topEmpty = (y > 0 && !_state.grid[x][y - 1].solid);
+				let rightEmpty = (x + 1 < _state.width && !_state.grid[x + 1][y].solid);
+				let bottomEmpty = (y + 1 < _state.height && !_state.grid[x][y + 1].solid);
+				if ((leftEmpty || !rightEmpty) && (topEmpty || !bottomEmpty)) {
+					_state.grid[x][y].html.innerText = '';
+					continue;
+				}
+
+				/* select the next digit and add it */
+				_state.grid[x][y].html.innerText = `${++next}`;
+			}
+		}
+	}
+	_state.screenToIndex = function (x, y) {
+		/* translate relative to container */
+		let rect = _state.container.getBoundingClientRect();
+		x -= rect.left;
+		y -= rect.top;
+
+		/* apply the view transformation */
+		x = (x - _state.view.pos[0]) / _state.view.scale;
+		y = (y - _state.view.pos[1]) / _state.view.scale;
+
+		/* map the values to indices (no need to take care of border-width as it is not part of client-dimensions) */
+		x = Math.floor((x / _state.content.clientWidth) * _state.width);
+		y = Math.floor((y / _state.content.clientHeight) * _state.height);
+		if (x < 0 || x >= _state.width || y < 0 || y >= _state.height)
+			return [null, null];
+		return [x, y];
+	}
+
+	_state.updatePanning = function (x, y) {
+		console.log(`x: ${x}, y: ${y}`);
+	}
+	_state.stopPanning = function () {
+		_state.input.panning = false;
+
+	}
+	_state.applyView = function () {
+		/* fetch the dimensions */
+		let content = [_state.content.clientWidth * _state.view.scale, _state.content.clientHeight * _state.view.scale];
+		let world = [_state.container.clientWidth, _state.container.clientHeight];
+
+		/* clip the position */
+		for (let i = 0; i < 2; ++i) {
+			if (content[i] < world[i]) {
+				_state.view.pos[i] = (world[i] - content[i]) / 2;
+				continue;
+			}
+
+			/* allow panning until half of the world view to each side */
+			let halfWorld = world[i] / 2;
+			if (_state.view.pos[i] > halfWorld)
+				_state.view.pos[i] = halfWorld;
+			else if (_state.view.pos[i] + content[i] < halfWorld)
+				_state.view.pos[i] = halfWorld - content[i];
+		}
+
+		/* apply the new viewport */
+		_state.content.style.transform = `translate(${_state.view.pos[0]}px, ${_state.view.pos[1]}px) scale(${_state.view.scale})`;
+	}
+
+</script>

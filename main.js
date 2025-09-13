@@ -7,6 +7,7 @@ import * as libConfig from "./server/config.js";
 import * as libShared from "./handler/share/app.js";
 import * as libQuizGame from "./handler/quiz-game/app.js";
 import * as libWeddingGame from "./handler/wedding-game/app.js";
+import * as libCrossword from "./handler/crossword/app.js";
 
 function Setup(localModule) {
 	const server = new libServer.Server();
@@ -36,6 +37,9 @@ function Setup(localModule) {
 
 	/* add the wedding-game content handler */
 	server.addHandler(libWeddingGame.SubPath, false, libWeddingGame.Handle);
+
+	/* add the crossword content handler */
+	server.addHandler(libCrossword.SubPath, false, libCrossword.Handle);
 }
 
 /* try to load the local configuration and otherwise perform the default-setup */
