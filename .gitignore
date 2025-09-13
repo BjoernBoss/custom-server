@@ -2,3 +2,4 @@ local/*
 node_modules/*
 package-lock.json
 handler/share/content/*
+handler/crossword/games/*

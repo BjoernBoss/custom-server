@@ -19,8 +19,9 @@
 				style="font-size: 1.75em; font-weight: 600; font-family: system-ui; margin-right: 20px;">
 				Crossword [] uploaded!
 			</div>
-			<button style="width: 45px; height: 40px; font-size: 1.3em; border-radius: 8px;"
-				onclick="_state.closeBanner();">&#x2716;</button>
+			<div class="close-button" style="font-size: 2em;" onclick="_state.closeBanner();">
+				&#x2716;
+			</div>
 		</div>
 
 		<!-- selection view -->
@@ -28,31 +29,18 @@
 			id="container">
 			<div style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; align-items: center;">
 				<div style="margin: 30px;" id="content">
-					<div class="entry" style="display: flex; justify-content: center; align-items: center;"
-						onclick="_state.startEditor();">
+					<div class="entry center-children" onclick="_state.startEditor();">
 						<div style="text-align: center;">
 							Create a new Crossword!
 						</div>
 					</div>
-					<div class="separator"></div>
-					<div class="entry"> Entry 1 </div>
-					<div class="separator"></div>
-					<div class="entry"> Entry 2 </div>
-					<div class="separator"></div>
-					<div class="entry"> Entry 3 </div>
-					<div class="separator"></div>
-					<div class="entry"> Entry 4 </div>
-					<div class="separator"></div>
-					<div class="entry"> Entry 5 </div>
-					<div class="separator"></div>
-					<div class="entry"> Entry 6 </div>
 				</div>
 			</div>
 		</div>
 
 		<!-- main footer -->
 		<div
-			style="display: flex; align-items: center; width: 100%; padding: 20px; justify-content: space-between; box-sizing: border-box;">
+			style="display: flex; align-items: center; width: 100%; padding: 20px; justify-content: space-between; box-sizing: border-box; border-style: solid; border-color: #202020; border-width: 2px 0 0 0;">
 			<div style="font-family: system-ui;">
 				Crosswords can be created and edited together. Deleted crosswords cannot be recovered.
 			</div>
@@ -67,9 +55,46 @@
 		height: 20px;
 	}
 
+	.horizontal-separator {
+		margin: 0px 20px;
+		border-width: 1px;
+		border-color: #00000040;
+		border-style: solid;
+		height: 50px;
+		width: 0px;
+	}
+
+	.option-text {
+		text-align: center;
+		flex: 1;
+	}
+
+	.close-button {
+		user-select: none;
+		width: 45px;
+		height: 45px;
+		font-size: 1.3em;
+		border-radius: 8px;
+		background-color: #ffffff;
+		border-width: 2px;
+		border-style: solid;
+		border-color: black;
+		text-align: center;
+	}
+
+	@media (hover: hover) {
+		.close-button:hover {
+			background-color: #e0e0e0;
+		}
+	}
+
+	.close-button:active {
+		background-color: #c0c0c0;
+	}
+
 	.entry {
 		min-height: 75px;
-		max-width: 400px;
+		max-width: 450px;
 		padding: 10px 20px;
 		display: block;
 		border-radius: 6px;
@@ -81,13 +106,23 @@
 		background-color: #ffffff;
 	}
 
+	.center-children {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
 	@media (hover: hover) {
-		.entry:hover {
+		.entry:not(.disabled):hover {
 			background-color: #e0e0e0;
+		}
+
+		.entry:not(.disabled):hover:has(.close-button:hover) {
+			background-color: #ffffff;
 		}
 	}
 
-	.entry:active {
+	.entry:not(.disabled):active {
 		background-color: #c0c0c0;
 	}
 </style>
@@ -105,6 +140,68 @@
 			document.getElementById('banner').style.display = 'flex';
 			document.getElementById('bannerText').innerText = `Crossword [${name}] uploaded!`;
 		}
+
+		/* patch the history to prevent the banner from being shown again */
+		if (window.history.replaceState) {
+			let url = `${document.location.protocol}//${window.location.host}${window.location.pathname}`;
+			if (url.endsWith('/'))
+				url = url.slice(0, url.length - 1);
+			window.history.replaceState({}, document.title, url);
+		}
+
+		/* start the query of all of the games */
+		fetch('/crossword/games')
+			.then(function (resp) {
+				if (resp.status != 200)
+					throw new Error(`Server responded with ${resp.status}`);
+				if (resp.headers.has('content-type') && !resp.headers.get('content-type').startsWith('application/json'))
+					throw new Error(`Server did not respond with json`);
+				return resp.json();
+			})
+			.then(function (json) {
+				/* write the values out */
+				for (const name of json) {
+					/* add the next entry */
+					let sep = document.createElement('div');
+					sep.classList.add('separator');
+					document.getElementById('content').appendChild(sep);
+
+					let entry = document.createElement('div');
+					entry.classList.add('entry', 'center-children');
+					document.getElementById('content').appendChild(entry);
+
+					let text = document.createElement('div');
+					text.classList.add('option-text');
+					entry.appendChild(text);
+
+					let hsep = document.createElement('div');
+					hsep.classList.add('horizontal-separator');
+					entry.appendChild(hsep);
+
+					let button = document.createElement('div');
+					button.classList.add('close-button');
+					button.innerText = '\u2716';
+					entry.appendChild(button);
+
+					/* add the inner html */
+					text.innerText = name;
+				}
+			})
+			.catch(function (e) {
+				/* add the html components for the error message */
+				let sep = document.createElement('div');
+				sep.classList.add('separator');
+				document.getElementById('content').appendChild(sep);
+				let entry = document.createElement('div');
+				entry.classList.add('entry', 'disabled', 'center-children');
+				document.getElementById('content').appendChild(entry);
+				let msg = document.createElement('div');
+				entry.appendChild(msg);
+				msg.style.color = '#c80000';
+
+				/* setup the error message */
+				msg.innerText = `Failed to fetch the list of games: ${e.message}`;
+			});
 	}
 
 	_state.closeBanner = function () {

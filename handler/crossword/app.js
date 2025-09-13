@@ -1,5 +1,6 @@
 import * as libLog from "../../server/log.js";
 import * as libPath from "path";
+import * as libFs from "fs";
 
 function fileRelative(path) {
 	/* workaround! (7 => file://) */
@@ -9,6 +10,34 @@ function fileRelative(path) {
 	if (!path.startsWith('./'))
 		return libPath.join(dirName, './' + path);
 	return libPath.join(dirName, path);
+}
+
+const nameRegex = '[a-zA-Z0-9]([-_.]?[a-zA-Z0-9])*';
+const nameMaxLength = 255;
+
+function QueryGames(msg) {
+	let content = [];
+	try {
+		content = libFs.readdirSync(fileRelative('games'));
+	}
+	catch (e) {
+		libLog.Error(`Error while reading directory content: ${e.message}`);
+	}
+	let out = [];
+
+	/* collect them all out */
+	libLog.Log(`Querying list of all registered games: [${content}]`);
+	for (const name of content) {
+		if (!name.endsWith('.json'))
+			continue;
+		let actual = name.slice(0, name.length - 5);
+		if (!actual.match(nameRegex) || actual.length > nameMaxLength)
+			continue;
+		out.push(name.slice(0, name.length - 5));
+	}
+
+	/* return them to the request */
+	msg.respondJson(JSON.stringify(out));
 }
 
 export const SubPath = '/crossword';
@@ -25,6 +54,12 @@ export function Handle(msg) {
 	}
 	if (msg.relative == '/editor') {
 		msg.respondFile(fileRelative('static/editor.html'), false);
+		return;
+	}
+
+	/* check if the games are queried */
+	if (msg.relative == '/games') {
+		QueryGames(msg);
 		return;
 	}
 
