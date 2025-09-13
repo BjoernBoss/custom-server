@@ -20,6 +20,7 @@ export const StatusCode = {
 	BadRequest: 400,
 	NotFound: 404,
 	MethodNotAllowed: 405,
+	Conflict: 409,
 	RangeIssue: 416,
 	InternalError: 500
 };
@@ -162,22 +163,57 @@ export class HttpMessage {
 		libLog.Log(`Responded with Internal error [${msg}]`);
 		this._responseString(StatusCode.InternalError, 'f.txt', msg);
 	}
+	respondOk(operation, msg = undefined) {
+		libLog.Log(`Responded with Ok`);
+
+		if (msg != undefined)
+			this._responseString(StatusCode.Ok, 'f.txt', msg);
+		else {
+			const content = libTemplates.LoadExpanded(libTemplates.SuccessOk, { path: this.url.pathname, operation: operation });
+			this._responseString(StatusCode.Ok, 'f.html', content);
+		}
+	}
 	respondNotFound(msg = undefined) {
 		libLog.Log(`Responded with Not-Found`);
-		const content = (msg != undefined ? msg : libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this.url.pathname }));
-		this._responseString(StatusCode.NotFound, 'f.html', content);
+
+		if (msg != undefined)
+			this._responseString(StatusCode.NotFound, 'f.txt', msg);
+		else {
+			const content = libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this.url.pathname });
+			this._responseString(StatusCode.NotFound, 'f.html', content);
+		}
+	}
+	respondConflict(conflict, msg = undefined) {
+		libLog.Log(`Responded with Conflict of [${conflict}]`);
+
+		if (msg != undefined)
+			this._responseString(StatusCode.Conflict, 'f.txt', msg);
+		else {
+			const content = libTemplates.LoadExpanded(libTemplates.ErrorConflict, { path: this.url.pathname, conflict: conflict });
+			this._responseString(StatusCode.Conflict, 'f.html', content);
+		}
 	}
 	respondMoved(target, msg = undefined) {
 		libLog.Log(`Responded with Permanently-Moved to [${target}]`);
-		const content = (msg != undefined ? msg : libTemplates.LoadExpanded(libTemplates.PermanentlyMoved, { path: this.url.pathname, new: target }));
 		this.response.setHeader('Location', target);
-		this._responseString(StatusCode.PermanentlyMoved, 'f.html', content);
+
+		if (msg != undefined)
+			this._responseString(StatusCode.PermanentlyMoved, 'f.txt', msg);
+		else {
+			const content = libTemplates.LoadExpanded(libTemplates.PermanentlyMoved, { path: this.url.pathname, new: target });
+			this._responseString(StatusCode.PermanentlyMoved, 'f.html', content);
+		}
 	}
 	respondRedirect(target, msg = undefined) {
 		libLog.Log(`Responded with Redirect to [${target}]`);
-		const content = (msg != undefined ? msg : libTemplates.LoadExpanded(libTemplates.TemporaryRedirect, { path: this.url.pathname, new: target }));
 		this.response.setHeader('Location', target);
-		this._responseString(StatusCode.TemporaryRedirect, 'f.html', content);
+
+		if (msg != undefined)
+			this._responseString(StatusCode.TemporaryRedirect, 'f.txt', msg);
+		else {
+			const content = ibTemplates.LoadExpanded(libTemplates.TemporaryRedirect, { path: this.url.pathname, new: target });
+			this._responseString(StatusCode.TemporaryRedirect, 'f.html', content);
+		}
 	}
 	respondHtml(content) {
 		this._responseString(StatusCode.Ok, 'f.html', content);

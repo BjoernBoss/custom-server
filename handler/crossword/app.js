@@ -15,6 +15,45 @@ function fileRelative(path) {
 const nameRegex = '[a-zA-Z0-9]([-_.]?[a-zA-Z0-9])*';
 const nameMaxLength = 255;
 
+function ModifyGame(msg) {
+	/* validate the method */
+	if (!msg.ensureMethod(['POST', 'DELETE']))
+		return;
+
+	/* extract the name */
+	let name = msg.relative.slice(6);
+	if (!name.match(nameRegex) || name.length > nameMaxLength) {
+		msg.respondNotFound();
+		return;
+	}
+	libLog.Log(`Handling Game: [${name}] as [${msg.request.method}]`);
+	const filePath = fileRelative(`games/${name}.json`);
+
+	/* check if the game is being removed */
+	if (msg.request.method == 'DELETE') {
+		if (!libFs.existsSync(filePath))
+			msg.respondNotFound();
+		else try {
+			libFs.unlinkSync(filePath);
+			libLog.Log(`Game file: [${filePath}] deleted successfully`);
+			msg.respondOk('delete');
+		} catch (e) {
+			libLog.Error(`Error while removing file [${filePath}]: ${e.message}`);
+			msg.tryRespondInternalError();
+		}
+		return;
+	}
+
+	/* a game must be uploaded */
+	if (libFs.existsSync(filePath)) {
+		msg.respondConflict('already exists');
+		return;
+	}
+
+	/* validate the post content */
+
+	msg.respondOk('upload');
+}
 function QueryGames(msg) {
 	let content = [];
 	try {
@@ -44,6 +83,14 @@ export const SubPath = '/crossword';
 
 export function Handle(msg) {
 	libLog.Log(`Game handler for [${msg.relative}]`);
+
+	/* check if a game is being manipulated */
+	if (msg.relative.startsWith('/game/')) {
+		ModifyGame(msg);
+		return;
+	}
+
+	/* all other endpoints only support 'getting' */
 	if (!msg.ensureMethod(['GET']))
 		return;
 

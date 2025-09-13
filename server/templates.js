@@ -16,6 +16,12 @@ function fileRelative(path) {
 
 /*	Defines:
 *		{path}: requested path
+*		{operation}: operation
+*/
+export const SuccessOk = fileRelative('templates/200.html');
+
+/*	Defines:
+*		{path}: requested path
 *		{new}: new destination
 */
 export const PermanentlyMoved = fileRelative('templates/301.html');
@@ -43,6 +49,12 @@ export const ErrorNotFound = fileRelative('templates/404.html');
 *		{path}: requested path
 */
 export const ErrorInvalidMethod = fileRelative('templates/405.html');
+
+/*	Defines:
+*		{conflict}: conflict description
+*		{path}: requested path
+*/
+export const ErrorConflict = fileRelative('templates/409.html');
 
 /*	Defines:
 *		{range}: range

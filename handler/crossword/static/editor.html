@@ -251,29 +251,22 @@
 		document.getElementById("finalize").style.display = 'none';
 
 		/* post the result out */
-		let req = new XMLHttpRequest();
-		req.onreadystatechange = function () {
-			if (req.readyState != 4) return;
-			_state.uploading = false;
-
-			/* redirect to the main page */
-			if (req.status == 200) {
+		_state.uploading = true;
+		fetch(`/crossword/game/${name}`, { method: 'POST', body: JSON.stringify(out), headers: { "Content-Type": 'application/json' } })
+			.then(function (resp) {
+				/* redirect to the main page */
+				if (!resp.ok)
+					throw new Error(resp.statusText);
 				document.location = `/crossword?uploaded=${name}`;
-				return;
-			}
-
-			/* post the error */
-			document.getElementById("finalize").style.display = 'flex';
-			document.getElementById('error').innerText = 'Error while uploading the edited crossword...';
-			document.getElementById('error').style.display = 'block';
-			return;
-		};
-		req.open("POST", `/crossword/upload/${name}`, true);
-		req.setRequestHeader('Content-Type', 'application/json');
-		req.send(JSON.stringify(out));
+			}).catch(function (e) {
+				/* post the error */
+				document.getElementById("finalize").style.display = 'flex';
+				document.getElementById('error').innerText = `Error while uploading the edited crossword: ${e.message}`;
+				document.getElementById('error').style.display = 'block';
+				_state.uploading = false;
+			});
 
 		/* mark a request as being sent */
-		_state.uploading = true;
 		_state.upload();
 	}
 	_state.cancel = function () {
