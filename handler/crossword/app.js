@@ -76,7 +76,7 @@ function ModifyGame(msg) {
 			msg.respondOk('delete');
 		} catch (e) {
 			libLog.Error(`Error while removing file [${filePath}]: ${e.message}`);
-			msg.tryRespondInternalError();
+			msg.tryRespondInternalError('File-System error removing the game');
 		}
 		return;
 	}
@@ -120,7 +120,7 @@ function ModifyGame(msg) {
 		}
 		catch (e) {
 			libLog.Error(`Error while writing the game out: ${e.message}`);
-			msg.tryRespondInternalError();
+			msg.tryRespondInternalError('File-System error storing the game');
 			return;
 		}
 
@@ -129,7 +129,7 @@ function ModifyGame(msg) {
 	});
 	msg.request.on('error', (err) => {
 		libLog.Error(`Error occurred while posting to [${filePath}]: ${err.message}`);
-		msg.tryRespondInternalError();
+		msg.tryRespondInternalError('Network issue regarding the post payload');
 	});
 }
 function QueryGames(msg) {
