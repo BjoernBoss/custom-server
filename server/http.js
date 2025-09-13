@@ -150,7 +150,7 @@ export class HttpMessage {
 
 		const content = libTemplates.LoadExpanded(libTemplates.ErrorInvalidMethod,
 			{ path: this.url.pathname, method: this.request.method, allowed: methods.join(",") });
-		this._responseString(StatusCode.NotFound, 'f.html', content);
+		this._responseString(StatusCode.MethodNotAllowed, 'f.html', content);
 		return false;
 	}
 	tryRespondInternalError(msg) {
