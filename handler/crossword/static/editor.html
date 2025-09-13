@@ -206,6 +206,12 @@
 			e.preventDefault();
 			e.stopPropagation();
 		});
+
+		/* register handle to cancel dialogs */
+		window.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape')
+				_state.cancel();
+		});
 	}
 	_state.finish = function () {
 		document.getElementById("finalize").style.display = 'flex';

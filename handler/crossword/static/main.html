@@ -177,6 +177,12 @@
 			window.history.replaceState({}, document.title, url);
 		}
 
+		/* register handle to cancel dialogs */
+		window.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape')
+				_state.cancelRemove();
+		});
+
 		/* start the query of all of the games */
 		fetch('/crossword/games')
 			.then(function (resp) {
@@ -217,7 +223,10 @@
 					text.innerText = name;
 
 					/* add the delete callback */
-					button.onclick = () => _state.removeEntry(name);
+					button.onclick = function (e) {
+						e.stopPropagation();
+						_state.removeEntry(name);
+					};
 
 					/* add the main handling callback */
 					entry.onclick = () => alert('Not yet implemented!');
