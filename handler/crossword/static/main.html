@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" style="margin: 0; height: 100%;">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Crosswords!</title>
+</head>
+
+<body contenteditable="false"
+	style="display: flex; justify-content: center; margin: 0; height: 100%; align-items: center; background-color: #c0c0c0;"
+	onload="_state.setup();">
+	<!-- main view -->
+	<div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+		<!-- upload banner -->
+		<div id="banner"
+			style="display: none; align-items: center; width: 100%; padding: 20px; justify-content: space-between; box-sizing: border-box; border-style: solid; border-color: #202020; border-width: 0 0 2px 0;">
+			<div id="bannerText"
+				style="font-size: 1.75em; font-weight: 600; font-family: system-ui; margin-right: 20px;">
+				Crossword [] uploaded!
+			</div>
+			<button style="width: 45px; height: 40px; font-size: 1.3em; border-radius: 8px;"
+				onclick="_state.closeBanner();">&#x2716;</button>
+		</div>
+
+		<!-- selection view -->
+		<div style="flex: 1; background-color: #f0f0f0; user-select: none; display: flex; overflow: hidden;"
+			id="container">
+			<div style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; align-items: center;">
+				<div style="margin: 30px;" id="content">
+					<div class="entry" style="display: flex; justify-content: center; align-items: center;"
+						onclick="_state.startEditor();">
+						<div style="text-align: center;">
+							Create a new Crossword!
+						</div>
+					</div>
+					<div class="separator"></div>
+					<div class="entry"> Entry 1 </div>
+					<div class="separator"></div>
+					<div class="entry"> Entry 2 </div>
+					<div class="separator"></div>
+					<div class="entry"> Entry 3 </div>
+					<div class="separator"></div>
+					<div class="entry"> Entry 4 </div>
+					<div class="separator"></div>
+					<div class="entry"> Entry 5 </div>
+					<div class="separator"></div>
+					<div class="entry"> Entry 6 </div>
+				</div>
+			</div>
+		</div>
+
+		<!-- main footer -->
+		<div
+			style="display: flex; align-items: center; width: 100%; padding: 20px; justify-content: space-between; box-sizing: border-box;">
+			<div style="font-family: system-ui;">
+				Crosswords can be created and edited together. Deleted crosswords cannot be recovered.
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
+
+<style>
+	.separator {
+		height: 20px;
+	}
+
+	.entry {
+		min-height: 75px;
+		max-width: 400px;
+		padding: 10px 20px;
+		display: block;
+		border-radius: 6px;
+		border-color: #000000;
+		border-style: solid;
+		border-width: 2px;
+		font-family: system-ui;
+		font-size: 1.5em;
+		background-color: #ffffff;
+	}
+
+	@media (hover: hover) {
+		.entry:hover {
+			background-color: #e0e0e0;
+		}
+	}
+
+	.entry:active {
+		background-color: #c0c0c0;
+	}
+</style>
+
+<script>
+	let _state = { uploading: false };
+	_state.setup = function () {
+		/* check if a banner is to be shown */
+		let params = new URLSearchParams(document.location.search);
+		let name = params.get('uploaded');
+		if (name == null) {
+			document.getElementById('banner').style.display = 'none';
+		}
+		else {
+			document.getElementById('banner').style.display = 'flex';
+			document.getElementById('bannerText').innerText = `Crossword [${name}] uploaded!`;
+		}
+	}
+
+	_state.closeBanner = function () {
+		document.getElementById('banner').style.display = 'none';
+	}
+
+	_state.startEditor = function () {
+		document.location = '/crossword/editor';
+	}
+</script>
