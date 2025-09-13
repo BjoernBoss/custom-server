@@ -57,6 +57,20 @@ export const ErrorInvalidMethod = fileRelative('templates/405.html');
 export const ErrorConflict = fileRelative('templates/409.html');
 
 /*	Defines:
+*		{length}: used content length
+*		{allowed}: allowed maximum
+*		{path}: requested path
+*/
+export const ErrorContentTooLarge = fileRelative('templates/413.html');
+
+/*	Defines:
+*		{used}: used content/media type
+*		{allowed}: allowed types
+*		{path}: requested path
+*/
+export const ErrorUnsupportedMediaType = fileRelative('templates/415.html');
+
+/*	Defines:
 *		{range}: range
 *		{path}: requested path
 *		{size}: file-size

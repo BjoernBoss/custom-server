@@ -21,6 +21,8 @@ export const StatusCode = {
 	NotFound: 404,
 	MethodNotAllowed: 405,
 	Conflict: 409,
+	ContentTooLarge: 413,
+	UnsupportedMediaType: 415,
 	RangeIssue: 416,
 	InternalError: 500
 };
@@ -147,12 +149,40 @@ export class HttpMessage {
 	}
 	ensureMethod(methods) {
 		if (methods.indexOf(this.request.method) >= 0)
-			return true;
+			return this.request.method;
 		libLog.Log(`Request used unsupported method [${this.request.method}]`);
 
 		const content = libTemplates.LoadExpanded(libTemplates.ErrorInvalidMethod,
 			{ path: this.url.pathname, method: this.request.method, allowed: methods.join(",") });
 		this._responseString(StatusCode.MethodNotAllowed, 'f.html', content);
+		return null;
+	}
+	ensureMediaType(types) {
+		const type = this.request.headers['content-type'];
+		if (type === undefined)
+			return types[0];
+		for (let i = 0; i < types.length; ++i) {
+			if (type === types[i] || type.startsWith(`${types[i]};`) || type.startsWith(`${types[i]} `))
+				return types[i];
+		}
+		libLog.Log(`Responded with Unsupported Media Type for [${type}]`);
+
+		const content = libTemplates.LoadExpanded(libTemplates.ErrorUnsupportedMediaType,
+			{ path: this.url.pathname, used: type, allowed: types.join(",") });
+		this._responseString(StatusCode.UnsupportedMediaType, 'f.html', content);
+		return null;
+	}
+	ensureContentLength(maxLength) {
+		let length = NaN;
+		if (this.request.headers['content-length'] != undefined)
+			length = parseInt(this.request.headers['content-length']);
+		if (isFinite(length) && length >= 0 && length <= maxLength)
+			return true;
+		libLog.Log(`Request is too large or has no size [${length}]`);
+
+		const content = libTemplates.LoadExpanded(libTemplates.ErrorContentTooLarge,
+			{ path: this.url.pathname, length: `${length}`, allowed: `${maxLength}` });
+		this._responseString(StatusCode.ContentTooLarge, 'f.html', content);
 		return false;
 	}
 	tryRespondInternalError(msg) {
@@ -202,6 +232,16 @@ export class HttpMessage {
 		else {
 			const content = libTemplates.LoadExpanded(libTemplates.PermanentlyMoved, { path: this.url.pathname, new: target });
 			this._responseString(StatusCode.PermanentlyMoved, 'f.html', content);
+		}
+	}
+	respondBadRequest(reason, msg = undefined) {
+		libLog.Log(`Responded with Bad-Request`);
+
+		if (msg != undefined)
+			this._responseString(StatusCode.BadRequest, 'f.txt', msg);
+		else {
+			const content = libTemplates.LoadExpanded(libTemplates.ErrorBadRequest, { path: this.url.pathname, reason: reason });
+			this._responseString(StatusCode.BadRequest, 'f.html', content);
 		}
 	}
 	respondRedirect(target, msg = undefined) {

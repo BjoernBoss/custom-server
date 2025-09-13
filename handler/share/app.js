@@ -68,7 +68,7 @@ export function Handle(msg) {
 	const filePath = fileRelative('content' + msg.relative);
 
 	/* ensure the request is using the Get-method */
-	if (!msg.ensureMethod(['GET']))
+	if (msg.ensureMethod(['GET']) == null)
 		return;
 
 	/* check if the path exists in the filesystem */

@@ -408,7 +408,7 @@ export const SubPath = '/wedding-game';
 
 export function Handle(msg) {
 	libLog.Log(`Game handler for [${msg.relative}]`);
-	if (!msg.ensureMethod(['GET']))
+	if (msg.ensureMethod(['GET']) == null)
 		return;
 
 	/* check if its a root-request and forward it accordingly */
