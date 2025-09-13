@@ -35,7 +35,8 @@
 			<div id="caption" style="font-size: 1.75em; font-weight: 600; font-family: system-ui; margin-right: 20px;">
 				Creating Crossword of Size:
 			</div>
-			<button style="width: 100px; height: 40px; font-size: 1.3em;">Finish</button>
+			<button style="width: 100px; height: 40px; font-size: 1.3em;"
+				onclick="alert('Not yet implemented...');">Finish</button>
 		</div>
 
 		<!-- editor view -->
@@ -133,34 +134,11 @@
 
 		/* setup the viewport */
 		_state.view = { scale: 1, pos: [0, 0] };
-		_state.applyView();
+		_state.updateView();
+		new ResizeObserver(() => _state.updateView()).observe(_state.container);
 
-		/* setup the input state */
-		_state.input = { panning: false, updating: null };
-
-		/* register the event listener for the panning (by right-click) */
-		_state.container.addEventListener('mousedown', function (e) {
-			if (e.button != 2) return;
-			e.preventDefault();
-			e.stopPropagation();
-			_state.input.panning = true;
-		});
-		_state.container.addEventListener('mouseup', function (e) {
-			if (e.button != 2 || !_state.input.panning) return;
-			e.preventDefault();
-			e.stopPropagation();
-			_state.stopPanning();
-		});
-		_state.container.addEventListener('mousemove', function (e) {
-			if (!_state.input.panning) return;
-			if ((e.buttons & 0x02) != 0x02)
-				_state.stopPanning();
-			else
-				_state.updatePanning(e.movementX, e.movementY);
-		});
-		_state.container.addEventListener('contextmenu', (e) => e.preventDefault());
-
-		/* register the event listeners for updating the grid (by left-click) */
+		/* register the event listeners for updating the grid (by left-click/single touch) */
+		_state.updating = null;
 		_state.content.addEventListener('mousedown', function (e) {
 			if (e.button == 0 && _state.startToggle(e.clientX, e.clientY)) {
 				e.preventDefault();
@@ -199,41 +177,6 @@
 		});
 	}
 
-	_state.startToggle = function (clientX, clientY) {
-		if (_state.input.panning) return false;
-
-		/* check if a valid cell has been hit */
-		let [x, y] = _state.screenToIndex(clientX, clientY);
-		if (x == null || y == null) return false;
-
-		/* setup the operation */
-		_state.input.updating = !_state.grid[x][y].solid;
-		_state.toggleSolid(x, y);
-		return true;
-	}
-	_state.moveToggle = function (clientX, clientY) {
-		if (_state.input.updating == null) return;
-		let [x, y] = _state.screenToIndex(clientX, clientY);
-		_state.toggleSolid(x, y);
-	}
-	_state.stopToggle = function () {
-		_state.input.updating = null;
-	}
-	_state.toggleSolid = function (x, y) {
-		/* check if the operation is over */
-		if (_state.input.updating == null) return;
-		if (x == null || y == null) {
-			_state.input.updating = null;
-			return;
-		}
-
-		/* check if the value should be updated */
-		if (_state.grid[x][y].solid != _state.input.updating) {
-			_state.grid[x][y].solid = _state.input.updating;
-			_state.digitize();
-		}
-	}
-
 	_state.digitize = function () {
 		/* rule for digitization: if previous is solid or out of bounds, and next is not, add a digit (both for
 		*	horizontal and vertical) and then assign digits from left to right, followed by top to bottom */
@@ -265,6 +208,39 @@
 			}
 		}
 	}
+
+	_state.startToggle = function (clientX, clientY) {
+		/* check if a valid cell has been hit */
+		let [x, y] = _state.screenToIndex(clientX, clientY);
+		if (x == null || y == null) return false;
+
+		/* setup the operation */
+		_state.updating = !_state.grid[x][y].solid;
+		_state.toggleSolid(x, y);
+		return true;
+	}
+	_state.moveToggle = function (clientX, clientY) {
+		if (_state.updating == null) return;
+		let [x, y] = _state.screenToIndex(clientX, clientY);
+		_state.toggleSolid(x, y);
+	}
+	_state.stopToggle = function () {
+		_state.updating = null;
+	}
+	_state.toggleSolid = function (x, y) {
+		/* check if the operation is over */
+		if (_state.updating == null) return;
+		if (x == null || y == null) {
+			_state.updating = null;
+			return;
+		}
+
+		/* check if the value should be updated */
+		if (_state.grid[x][y].solid != _state.updating) {
+			_state.grid[x][y].solid = _state.updating;
+			_state.digitize();
+		}
+	}
 	_state.screenToIndex = function (x, y) {
 		/* translate relative to container */
 		let rect = _state.container.getBoundingClientRect();
@@ -283,32 +259,20 @@
 		return [x, y];
 	}
 
-	_state.updatePanning = function (x, y) {
-		console.log(`x: ${x}, y: ${y}`);
-	}
-	_state.stopPanning = function () {
-		_state.input.panning = false;
-
-	}
-	_state.applyView = function () {
+	_state.updateView = function () {
 		/* fetch the dimensions */
-		let content = [_state.content.clientWidth * _state.view.scale, _state.content.clientHeight * _state.view.scale];
+		let content = [_state.content.clientWidth, _state.content.clientHeight];
 		let world = [_state.container.clientWidth, _state.container.clientHeight];
 
-		/* clip the position */
-		for (let i = 0; i < 2; ++i) {
-			if (content[i] < world[i]) {
-				_state.view.pos[i] = (world[i] - content[i]) / 2;
-				continue;
-			}
+		/* compute the requested destination position and dimensions */
+		let target = [world[0] * (7 / 8), world[1] * (7 / 8)];
 
-			/* allow panning until half of the world view to each side */
-			let halfWorld = world[i] / 2;
-			if (_state.view.pos[i] > halfWorld)
-				_state.view.pos[i] = halfWorld;
-			else if (_state.view.pos[i] + content[i] < halfWorld)
-				_state.view.pos[i] = halfWorld - content[i];
-		}
+		/* compute the scale such that the target is reached along one axis, and the other axis is smaller */
+		_state.view.scale = Math.min(target[0] / content[0], target[1] / content[1]);
+
+		/* compute the positions accordingly */
+		for (let i = 0; i < 2; ++i)
+			_state.view.pos[i] = (world[i] - (content[i] * _state.view.scale)) / 2;
 
 		/* apply the new viewport */
 		_state.content.style.transform = `translate(${_state.view.pos[0]}px, ${_state.view.pos[1]}px) scale(${_state.view.scale})`;

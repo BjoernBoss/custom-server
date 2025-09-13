@@ -17,5 +17,7 @@ export function Handle(msg) {
 	libLog.Log(`Game handler for [${msg.relative}]`);
 
 	/* respond to the request by trying to server the file */
+	if (!msg.ensureMethod(['GET']))
+		return;
 	msg.tryRespondFile(fileRelative('static' + msg.relative), false);
 }
