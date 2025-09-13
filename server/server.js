@@ -13,11 +13,11 @@ export class Server {
 		this._exact = {};
 	}
 
-	_requestHandler(request, response, secureInternal) {
+	_requestHandler(request, response, internal) {
 		var msg = null;
 		try {
-			libLog.Info(`New ${secureInternal ? "internal-secure" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
-			msg = new libHttp.HttpMessage(request, response, secureInternal);
+			libLog.Info(`New ${internal ? "internal" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
+			msg = new libHttp.HttpMessage(request, response, internal);
 
 			/* check if an exact handler exists */
 			if (msg.url.pathname in this._exact) {
@@ -68,11 +68,11 @@ export class Server {
 			(exactPath ? this._exact : this._handler)[path] = callback;
 		}
 	}
-	listenHttp(port, secureInternal) {
+	listenHttp(port, internal) {
 		try {
 			/* start the actual server */
 			const server = libNodeHttp.createServer((req, resp) =>
-				this._requestHandler(req, resp, secureInternal)
+				this._requestHandler(req, resp, internal)
 			).listen(port);
 			server.on('error', (err) => {
 				libLog.Error(`While listening to port ${port} using http: ${err}`);
@@ -81,12 +81,12 @@ export class Server {
 				return;
 
 			const address = server.address();
-			libLog.Info(`Http-server${secureInternal ? " flagged as secure-internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
+			libLog.Info(`Http-server${internal ? " flagged as internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using http: ${err}`);
 		}
 	}
-	listenHttps(port, key, cert, secureInternal) {
+	listenHttps(port, key, cert, internal) {
 		try {
 			/* load the key and certificate */
 			const config = {
@@ -96,7 +96,7 @@ export class Server {
 
 			/* start the actual server */
 			const server = libNodeHttps.createServer(config, (req, resp) =>
-				this._requestHandler(req, resp, secureInternal)
+				this._requestHandler(req, resp, internal)
 			).listen(port);
 			server.on('error', (err) => {
 				libLog.Error(`While listening to port ${port} using https: ${err}`);
@@ -105,7 +105,7 @@ export class Server {
 				return;
 
 			const address = server.address();
-			libLog.Info(`Https-server${secureInternal ? " flagged as secure-internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
+			libLog.Info(`Https-server${internal ? " flagged as internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using https: ${err}`);
 		}

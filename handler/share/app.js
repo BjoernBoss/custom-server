@@ -77,7 +77,7 @@ export function Handle(msg) {
 
 		/* check if the path is a file */
 		if (what.isFile()) {
-			msg.respondFile(filePath, false);
+			msg.tryRespondFile(filePath);
 			return;
 		}
 

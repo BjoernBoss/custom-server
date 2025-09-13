@@ -6,7 +6,8 @@ Small custom server written in javascript, which currently hosts:
 
     quiz-game
     wedding-game
-    static
+    share
+    crossword
 
 Note: This server is primarily used for internal/private usage and is therefore not fully documented.
 

@@ -413,11 +413,11 @@ export function Handle(msg) {
 
 	/* check if its a root-request and forward it accordingly */
 	if (msg.relative == '/') {
-		msg.tryRespondFile(fileRelative('static/client/main.html'), false);
+		msg.tryRespondFile(fileRelative('static/client/main.html'));
 		return;
 	}
 	if (msg.relative == '/score') {
-		msg.tryRespondFile(fileRelative('static/score/main.html'), false);
+		msg.tryRespondFile(fileRelative('static/score/main.html'));
 		return;
 	}
 
@@ -445,5 +445,5 @@ export function Handle(msg) {
 	}
 
 	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(fileRelative('static' + msg.relative), false);
+	msg.tryRespondFile(fileRelative('static' + msg.relative));
 }

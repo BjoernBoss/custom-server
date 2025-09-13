@@ -48,7 +48,15 @@ function ParseAndValidateGame(data) {
 		throw new Error('Malformed Grid');
 	}
 
-	/* write the grid to the file */
+	/* patch the object to contain all necessary meta data */
+	for (let i = 0; i < obj.grid.length; ++i) {
+		obj.grid[i] = {
+			solid: obj.grid[i],
+			char: '',
+			certain: false,
+			author: ''
+		};
+	}
 	return obj;
 }
 function ModifyGame(msg) {
@@ -174,11 +182,15 @@ export function Handle(msg) {
 
 	/* check if its a redirection and forward it accordingly */
 	if (msg.relative == '/' || msg.relative == '/main') {
-		msg.respondFile(fileRelative('static/main.html'), false);
+		msg.tryRespondFile(fileRelative('static/main.html'));
 		return;
 	}
 	if (msg.relative == '/editor') {
-		msg.respondFile(fileRelative('static/editor.html'), false);
+		msg.tryRespondFile(fileRelative('static/editor.html'));
+		return;
+	}
+	if (msg.relative == '/play') {
+		msg.tryRespondFile(fileRelative('static/play.html'));
 		return;
 	}
 
@@ -189,5 +201,5 @@ export function Handle(msg) {
 	}
 
 	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(fileRelative('static' + msg.relative), false);
+	msg.tryRespondFile(fileRelative('static' + msg.relative));
 }

@@ -28,10 +28,10 @@ export const StatusCode = {
 };
 
 export class HttpMessage {
-	constructor(request, response, secureInternal) {
+	constructor(request, response, internal) {
 		this.request = request;
 		this.response = response;
-		this.secureInternal = secureInternal;
+		this.internal = internal;
 		this.url = new libURL.URL(request.url, `http://${request.headers.host}`);
 		this.relative = this.url.pathname;
 		this._headersDone = false;
@@ -261,7 +261,13 @@ export class HttpMessage {
 	respondJson(content) {
 		this._responseString(StatusCode.Ok, 'f.json', content);
 	}
-	respondFile(filePath, useURLPathForType) {
+	tryRespondFile(filePath) {
+		/* check if the file exists */
+		if (!libFs.existsSync(filePath) || !libFs.lstatSync(filePath).isFile()) {
+			libLog.Log(`Request to unknown resource`);
+			this.respondNotFound();
+			return;
+		}
 		const fileSize = libFs.statSync(filePath).size;
 
 		/* mark byte-ranges to be supported in principle */
@@ -300,7 +306,7 @@ export class HttpMessage {
 		/* setup the response */
 		if (rangeResult == HttpMessage._ParseRangeValid)
 			this._headers['Content-Range'] = `bytes ${offset}-${offset + size - 1}/${fileSize}`;
-		this._closeHeader((rangeResult == HttpMessage._ParseRangeNoRange ? StatusCode.Ok : StatusCode.PartialContent), useURLPathForType ? this.url.pathname : filePath, size);
+		this._closeHeader((rangeResult == HttpMessage._ParseRangeNoRange ? StatusCode.Ok : StatusCode.PartialContent), filePath, size);
 
 		/* write the content to the stream */
 		libLog.Log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
@@ -309,15 +315,6 @@ export class HttpMessage {
 				err = 'Content has been sent';
 			libLog.Log(`While sending content: [${err}]`);
 		});
-	}
-	tryRespondFile(filePath, useURLPathForType) {
-		/* check if the file exists */
-		if (!libFs.existsSync(filePath) || !libFs.lstatSync(filePath).isFile()) {
-			libLog.Log(`Request to unknown resource`);
-			this.respondNotFound();
-		}
-		else
-			this.respondFile(filePath, useURLPathForType);
 	}
 	tryAcceptWebSocket(callback) {
 		let connection = this.request.headers.connection.toLowerCase().split(',').map((v) => v.trim());

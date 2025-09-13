@@ -401,7 +401,7 @@ export function Handle(msg) {
 
 	/* check if its a root-request and forward it accordingly */
 	if (msg.relative == '/') {
-		msg.respondFile(fileRelative('static/base/startup.html'), false);
+		msg.tryRespondFile(fileRelative('static/base/startup.html'));
 		return;
 	}
 
@@ -414,15 +414,15 @@ export function Handle(msg) {
 
 	/* check if a session-dependent page has been requested */
 	if (msg.relative == '/session') {
-		msg.respondFile(fileRelative('static/base/session.html'), false);
+		msg.tryRespondFile(fileRelative('static/base/session.html'));
 		return
 	}
 	if (msg.relative == '/client') {
-		msg.respondFile(fileRelative('static/client/main.html'), false);
+		msg.tryRespondFile(fileRelative('static/client/main.html'));
 		return;
 	}
 	if (msg.relative == '/score') {
-		msg.respondFile(fileRelative('static/score/main.html'), false);
+		msg.tryRespondFile(fileRelative('static/score/main.html'));
 		return;
 	}
 
@@ -437,5 +437,5 @@ export function Handle(msg) {
 	}
 
 	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(fileRelative('static' + msg.relative), false);
+	msg.tryRespondFile(fileRelative('static' + msg.relative));
 }
