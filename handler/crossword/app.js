@@ -24,7 +24,7 @@ const nameMaxLength = 255;
 class ActiveGame {
 	constructor(name, filePath) {
 		this.ws = {};
-		this.grid = null;
+		this.data = null;
 		this.name = name;
 		this.filePath = filePath;
 		this.queued = null;
@@ -34,7 +34,7 @@ class ActiveGame {
 		/* fetch the initial data */
 		try {
 			const file = libFs.readFileSync(this.filePath, { encoding: 'utf-8', flag: 'r' });
-			this.grid = JSON.parse(file);
+			this.data = JSON.parse(file);
 		}
 		catch (e) {
 			libLog.Error(`Failed to read the current game state: ${e.message}`);
@@ -44,7 +44,9 @@ class ActiveGame {
 	_notifyAll() {
 		let out = {
 			failed: this.writebackFailed,
-			grid: this.grid,
+			grid: this.data.grid,
+			width: this.data.width,
+			height: this.data.height,
 			names: [],
 			online: []
 		};
@@ -67,11 +69,11 @@ class ActiveGame {
 		}
 
 		/* collect all already used names in the grid */
-		if (this.grid != null) {
-			for (let i = 0; i < this.grid.length; ++i) {
-				if (this.grid[i].author in names) continue;
-				names[this.grid[i].author] = true;
-				out.names.push(this.grid[i].author);
+		if (this.data != null) {
+			for (let i = 0; i < this.data.grid.length; ++i) {
+				if (this.data.grid[i].author in names || this.data.grid[i].author == '') continue;
+				names[this.data.grid[i].author] = true;
+				out.names.push(this.data.grid[i].author);
 			}
 		}
 
@@ -81,7 +83,7 @@ class ActiveGame {
 			this.ws[id].ws.send(json);
 	}
 	_queueWriteBack() {
-		if (this.grid == null) return;
+		if (this.data == null) return;
 
 		/* kill the last queue */
 		if (this.queued != null)
@@ -99,7 +101,7 @@ class ActiveGame {
 		try {
 			/* try to write the data back to a temporary file */
 			libLog.Log(`Creating temporary file [${tempPath}] for [${this.filePath}]`);
-			libFs.writeFileSync(tempPath, JSON.stringify(this.grid), { encoding: 'utf-8', flag: 'wx' });
+			libFs.writeFileSync(tempPath, JSON.stringify(this.data), { encoding: 'utf-8', flag: 'wx' });
 			written = true;
 
 			/* replace the existing file */
@@ -135,12 +137,12 @@ class ActiveGame {
 		this.writebackFailed = true;
 	}
 	updateGrid(grid) {
-		let valid = (this.grid != null && this.grid.length == grid.length);
+		let valid = (this.data != null && this.data.grid.length == grid.length);
 
 		/* validate the grid structure */
 		let merged = [], dirty = false;
 		if (valid) {
-			for (let i = 0; i < this.grid.length; ++i) {
+			for (let i = 0; i < grid.length; ++i) {
 				/* validate the data-types */
 				if (typeof grid[i].char != 'string' || typeof grid[i].certain != 'boolean' || typeof grid[i].author != string) {
 					valid = false;
@@ -148,7 +150,7 @@ class ActiveGame {
 				}
 
 				/* setup the sanitized data */
-				let char = grid[i].char.slice(0, 1);
+				let char = grid[i].char.slice(0, 1).toUpperCase();
 				let certain = grid[i].certain;
 				let author = grid[i].author.slice(0, nameMaxLength + 1);
 				if (this.grid[i].solid) {
@@ -156,20 +158,21 @@ class ActiveGame {
 					author = '';
 					certain = false;
 				}
-				else if (char == '') {
+				else if (char == '' || char < 'A' || char > 'Z') {
+					char = '';
 					author = '';
 					certain = false;
 				}
 
 				/* check if the data actually have changed */
-				if (char == grid[i].char && certain == grid[i].certain && author == grid[i].author) {
-					merged.push(grid[i]);
+				if (char == this.data.grid[i].char && certain == this.data.grid[i].certain && author == this.data.grid[i].author) {
+					merged.push(this.data.grid[i]);
 					continue;
 				}
 
 				/* update the merged grid */
 				merged.push({
-					solid: grid[i].solid,
+					solid: this.data.grid[i].solid,
 					char: char,
 					certain: certain,
 					author: author
@@ -191,7 +194,7 @@ class ActiveGame {
 		}
 
 		/* update the grid and notify the listeners about the change */
-		this.grid = merged;
+		this.data.grid = merged;
 		this._notifyAll();
 		this._queueWriteBack();
 	}

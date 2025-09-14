@@ -176,8 +176,14 @@ class SyncSocket {
 
 			/* parse the message and handle it */
 			let msg = JSON.parse(m.data);
-			if (this.onreceived != null)
-				this.onreceived(msg);
+			try {
+				if (this.onreceived != null)
+					this.onreceived(msg);
+			}
+			catch (e) {
+				console.error(`User data handling error: ${e.message}`);
+				this._fatal('Error while processing received data!');
+			}
 		} catch (e) {
 			console.error(`Error while handling data from [${this._url}]: ${e.message}`);
 			this._failed(true);

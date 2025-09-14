@@ -12,6 +12,7 @@
 	<link rel="stylesheet" type="text/css" href="/crossword/notifier.css">
 	<script src="/crossword/notifier.js"></script>
 	<script src="/crossword/sync-socket.js"></script>
+	<script src="/crossword/grid.js"></script>
 
 </head>
 
@@ -65,7 +66,9 @@
 		dirty: false,
 		grid: null,
 		players: {},
-		usedsHues: []
+		usedsHues: [],
+		content: null,
+		container: null
 	};
 
 	window.onload = function () {
@@ -88,6 +91,10 @@
 		_state.sock.onfailed = (msg) => PushNotification(msg, true);
 		_state.sock.onreceived = (data) => _state.handleData(data);
 		_state.sock.onconnected = () => _state.handleConnected();
+
+		/* fetch the necessary state for the grid */
+		_state.container = document.getElementById('container');
+		_state.content = document.getElementById('content');
 	}
 
 	_state.enter = function () {
@@ -143,7 +150,7 @@
 		/* add the hue to the list of used hues and return the actual hsl-color */
 		_state.usedsHues.push(hue);
 		_state.usedsHues.sort();
-		return `hsl(${hue}, 75%, 75%)`;
+		return hue;
 	}
 	_state.updatePlayers = function () {
 		let players = Object.keys(_state.players).sort();
@@ -169,12 +176,36 @@
 			else
 				div.classList.remove('online');
 			div.innerText = name;
-			div.style.backgroundColor = _state.players[name].color;
+			div.style.backgroundColor = `hsl(${_state.players[name].hue}, 75%, 75%)`;
 		}
 
 		/* remove the remaining children */
 		while (html.children.length > players.length)
 			html.lastChild.remove();
+	}
+	_state.updateGrid = function (data) {
+		const getAuthorHue = function (name) {
+			if (name in _state.players)
+				return _state.players[name].hue;
+			return 0;
+		};
+
+		/* check if the grid should be unloaded */
+		if (_state.grid != null && (_state.grid.width != data.width || _state.grid.height != data.height)) {
+			_state.grid = null;
+			while (_state.content.children.length > 0)
+				_state.content.lastChild.remove();
+		}
+
+		/* check if the initial grid is being shown */
+		if (_state.grid == null) {
+			_state.grid = LoadGrid(data, _state.content, getAuthorHue);
+			_state.content.style.display = 'block';
+		}
+
+		/* update the grid data */
+		else
+			ApplyGridUpdate(_state.grid, data, getAuthorHue);
 	}
 
 	_state.handleData = function (data) {
@@ -195,7 +226,7 @@
 		/* update the player data */
 		for (const key of data.names) {
 			if (!(key in _state.players))
-				_state.players[key] = { color: _state.nextColor(), online: false };
+				_state.players[key] = { hue: _state.nextColor(), online: false };
 		}
 		for (const key of data.online) {
 			if (key in _state.players)
@@ -205,8 +236,8 @@
 		}
 		_state.updatePlayers();
 
-		/* update the grid data and render it */
-		_state.grid = data;
+		/* update the grid */
+		_state.updateGrid(data);
 	}
 	_state.handleConnected = function () {
 		if (_state.name != '')
@@ -223,20 +254,7 @@
 			return;
 
 		/* build the game-state to be sent */
-		let out = {
-			width: _state.grid.width,
-			height: _state.grid.height,
-			grid: []
-		}
-		for (let y = 0; y < out.height; ++y) {
-			for (let x = 0; x < out.width; ++x) {
-				out.grid.push({
-					char: _state.grid[x][y].char,
-					certain: _state.grid[x][y].certain,
-					author: _state.grid[x][y].author
-				});
-			}
-		}
+		let out = FullSerialize(_state.grid);
 
 		/* send the data to the server */
 		_state.sock.send((send) => send({ cmd: 'update', data: out }));

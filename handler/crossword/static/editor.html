@@ -9,6 +9,7 @@
 	<title>Editor</title>
 	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
+	<script src="/crossword/grid.js"></script>
 </head>
 
 <body contenteditable="false">
@@ -25,24 +26,6 @@
 			</div>
 			<div class="confirm">
 				<div class="button" style="width: 150px;" onclick="_state.setup()">Create</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- finalize screen -->
-	<div id="finalize" class="overlay">
-		<div class="dialog">
-			<div class="caption">Upload Crossword</div>
-			<div style="margin: 15px;">
-				<input placeholder="Name" id="name" style="width: 350px; font-size: 1.3em; padding: 4px;">
-			</div>
-			<div id="error" class="error" style="margin: 0px 15px 15px 15px;">Error Message</div>
-			<div style="margin: 0px 15px 15px 15px; font-size: 0.75em;">Note: Uploaded crosswords cannot be modified
-				anymore.</div>
-			<div class="confirm">
-				<div class="button" style="width: 100px;" onclick="_state.upload()">Upload</div>
-				<div style="width: 15px;"></div>
-				<div class="button" style="width: 100px;" onclick="_state.cancel()">Cancel</div>
 			</div>
 		</div>
 	</div>
@@ -66,6 +49,24 @@
 			Note: Numbers are automatically assigned. Should they not match, please open issue on github.
 		</div>
 	</div>
+
+	<!-- finalize screen -->
+	<div id="finalize" class="overlay">
+		<div class="dialog">
+			<div class="caption">Upload Crossword</div>
+			<div style="margin: 15px;">
+				<input placeholder="Name" id="name" style="width: 350px; font-size: 1.3em; padding: 4px;">
+			</div>
+			<div id="error" class="error" style="margin: 0px 15px 15px 15px;">Error Message</div>
+			<div style="margin: 0px 15px 15px 15px; font-size: 0.75em;">Note: Uploaded crosswords cannot be modified
+				anymore.</div>
+			<div class="confirm">
+				<div class="button" style="width: 100px;" onclick="_state.upload()">Upload</div>
+				<div style="width: 15px;"></div>
+				<div class="button" style="width: 100px;" onclick="_state.cancel()">Cancel</div>
+			</div>
+		</div>
+	</div>
 </body>
 
 </html>
@@ -87,39 +88,14 @@
 		/* lock the input page */
 		document.getElementById('dimensions').classList.remove('show');
 
-		/* setup the editor */
+		/* setup the editor caption */
 		document.getElementById('caption').innerText = `Creating a Crossword of Size: [${_state.width} \u00d7 ${_state.height}]`;
-		document.getElementById('content').style.display = 'block';
 
-		/* create the grid object */
-		_state.grid = new Array(_state.width);
-		for (let x = 0; x < _state.width; ++x) {
-			_state.grid[x] = new Array(_state.height);
-			for (let y = 0; y < _state.height; ++y)
-				_state.grid[x][y] = { solid: false, html: null };
-		}
-
-		/* create the separate cells */
+		/* create the grid object and show it */
 		_state.container = document.getElementById('container');
 		_state.content = document.getElementById('content');
-		for (let y = 0; y < _state.height; ++y) {
-			let row = document.createElement('div');
-			row.classList.add('row');
-			_state.content.appendChild(row);
-
-			/* add all of the cells */
-			for (let x = 0; x < _state.width; ++x) {
-				let cell = document.createElement('div');
-				cell.classList.add('cell');
-				row.appendChild(cell);
-
-				/* write the cell to the grid object */
-				_state.grid[x][y].html = cell;
-			}
-		}
-
-		/* digitize the new grid (to add all indices) */
-		_state.digitize();
+		_state.grid = GenerateGrid(_state.width, _state.height, _state.content, () => 0);
+		_state.content.style.display = 'block';
 
 		/* setup the viewport */
 		_state.view = { scale: 1, pos: [0, 0] };
@@ -209,11 +185,7 @@
 		}
 
 		/* serialize the grid */
-		let out = { width: _state.width, height: _state.height, grid: [] };
-		for (let x = 0; x < _state.width; ++x) {
-			for (let y = 0; y < _state.width; ++y)
-				out.grid.push(_state.grid[x][y].solid);
-		}
+		let out = SolidSerialize(_state.grid);
 		document.getElementById("finalize").classList.remove('show');
 
 		/* post the result out */
@@ -238,45 +210,13 @@
 		document.getElementById("finalize").classList.remove('show');
 	}
 
-	_state.digitize = function () {
-		/* rule for digitization: if previous is solid or out of bounds, and next is not, add a digit (both for
-		*	horizontal and vertical) and then assign digits from left to right, followed by top to bottom */
-		let next = 0;
-
-		/* iterate over the grid from left to right/top to bottom and assign the digits */
-		for (let y = 0; y < _state.height; ++y) {
-			for (let x = 0; x < _state.width; ++x) {
-				/* check if the cell is solid and can be marked as solid and skipped */
-				if (_state.grid[x][y].solid) {
-					_state.grid[x][y].html.innerText = '';
-					_state.grid[x][y].html.classList.add('solid');
-					continue;
-				}
-				_state.grid[x][y].html.classList.remove('solid');
-
-				/* check if a digit should be added */
-				let leftEmpty = (x > 0 && !_state.grid[x - 1][y].solid);
-				let topEmpty = (y > 0 && !_state.grid[x][y - 1].solid);
-				let rightEmpty = (x + 1 < _state.width && !_state.grid[x + 1][y].solid);
-				let bottomEmpty = (y + 1 < _state.height && !_state.grid[x][y + 1].solid);
-				if ((leftEmpty || !rightEmpty) && (topEmpty || !bottomEmpty)) {
-					_state.grid[x][y].html.innerText = '';
-					continue;
-				}
-
-				/* select the next digit and add it */
-				_state.grid[x][y].html.innerText = `${++next}`;
-			}
-		}
-	}
-
 	_state.startToggle = function (clientX, clientY) {
 		/* check if a valid cell has been hit */
 		let [x, y] = _state.screenToIndex(clientX, clientY);
 		if (x == null || y == null) return false;
 
 		/* setup the operation */
-		_state.updating = !_state.grid[x][y].solid;
+		_state.updating = !_state.grid.mesh[x][y].solid;
 		_state.dirty = true;
 		_state.toggleSolid(x, y);
 		return true;
@@ -298,9 +238,9 @@
 		}
 
 		/* check if the value should be updated */
-		if (_state.grid[x][y].solid != _state.updating) {
-			_state.grid[x][y].solid = _state.updating;
-			_state.digitize();
+		if (_state.grid.mesh[x][y].solid != _state.updating) {
+			_state.grid.mesh[x][y].solid = _state.updating;
+			RenderGrid(_state.grid, () => 0);
 		}
 	}
 	_state.screenToIndex = function (x, y) {
