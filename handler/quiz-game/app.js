@@ -431,7 +431,7 @@ export function Handle(msg) {
 		let id = msg.relative.substring(4);
 		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, id)))
 			return;
-		libLog.Log(`Invalid request for web-socket point for session: [${id}]`);
+		libLog.Warning(`Invalid request for web-socket point for session: [${id}]`);
 		msg.respondNotFound();
 		return;
 	}

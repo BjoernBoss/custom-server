@@ -151,7 +151,7 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0px 8px;
+	padding: 0px 8px 2px 8px;
 }
 
 @media (hover: hover) {

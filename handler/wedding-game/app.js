@@ -425,21 +425,21 @@ export function Handle(msg) {
 	if (msg.relative == '/ws-client') {
 		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'client')))
 			return;
-		libLog.Log(`Invalid request for client web-socket point`);
+		libLog.Warning(`Invalid request for client web-socket point`);
 		msg.respondNotFound();
 		return;
 	}
 	if (msg.relative == '/ws-admin') {
 		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'admin')))
 			return;
-		libLog.Log(`Invalid request for admin web-socket point`);
+		libLog.Warning(`Invalid request for admin web-socket point`);
 		msg.respondNotFound();
 		return;
 	}
 	if (msg.relative == '/ws-score') {
 		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'score')))
 			return;
-		libLog.Log(`Invalid request for score web-socket point`);
+		libLog.Warning(`Invalid request for score web-socket point`);
 		msg.respondNotFound();
 		return;
 	}

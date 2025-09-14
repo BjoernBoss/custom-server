@@ -177,7 +177,7 @@
 			.then(function (resp) {
 				if (!resp.ok)
 					throw new Error(resp.statusText);
-				document.location = '/crossword';
+				document.location = '/crossword/main.html';
 			}).catch(function (e) {
 				document.getElementById('error').classList.add('show');
 				document.getElementById('error').innerText = `Error while deleting the crossword: ${e.message}\nTry to reload the page...`;
@@ -192,9 +192,9 @@
 	}
 
 	_state.startEditor = function () {
-		document.location = '/crossword/editor';
+		document.location = '/crossword/editor.html';
 	}
 	_state.startPlay = function (name) {
-		document.location = `/crossword/play?name=${name}`;
+		document.location = `/crossword/play.html?name=${name}`;
 	}
 </script>
