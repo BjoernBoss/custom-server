@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2025 Bjoern Boss Henrichsen */
 function _setupGridHtml(grid, onFocused, html) {
 	/* create the separate cells */
 	for (let y = 0; y < grid.height; ++y) {
@@ -28,7 +30,11 @@ function _setupGridHtml(grid, onFocused, html) {
 				char.contentEditable = false;
 			else {
 				char.contentEditable = true;
-				char.onfocus = () => onFocused(x, y, null);
+				char.onfocus = function () {
+					if (!onFocused(x, y, true))
+						char.blur();
+				};
+				char.onblur = () => onFocused(x, y, false);
 				char.addEventListener('beforeinput', (e) => e.preventDefault());
 			}
 		}
@@ -327,5 +333,173 @@ class GridView {
 		if (x < 0 || x >= this._grid.width || y < 0 || y >= this._grid.height)
 			return [null, null];
 		return [x, y];
+	}
+}
+
+class GridFocus {
+	constructor(view, onchange) {
+		this._grid = null;
+		this._name = '';
+		this._view = view;
+
+		this._cell = [0, 0];
+		this._start = [0, 0];
+		this._end = [0, 0];
+
+		this._active = false;
+		this._certain = false;
+		this._horizontal = true;
+
+		this._onchange = onchange;
+	}
+
+	_focused(x, y) {
+		/* check if nothing needs to be done */
+		if (this._grid != null && this._active && x >= this._start[0] && x <= this._end[0] && y >= this._start[1] && y <= this._end[1])
+			return true;
+
+		/* validate the request */
+		this._cell = [x, y];
+		this._start = [x, y];
+		this._end = [x, y];
+		if (this._grid == null || x < 0 || y < 0 || x >= this._grid.width || y >= this._grid.height || this._grid.mesh[x][y].solid) {
+			this._active = false;
+			this._view.reset();
+			return false;
+		}
+		this._active = true;
+
+		/* find the start and end cell */
+		if (this._horizontal) {
+			while (this._start[0] > 0 && !this._grid.mesh[this._start[0] - 1][y].solid)
+				--this._start[0];
+			while (this._end[0] + 1 < this._grid.width && !this._grid.mesh[this._end[0] + 1][y].solid)
+				++this._end[0];
+		}
+		else {
+			while (this._start[1] > 0 && !this._grid.mesh[x][this._start[1] - 1].solid)
+				--this._start[1];
+			while (this._end[1] + 1 < this._grid.height && !this._grid.mesh[x][this._end[1] + 1].solid)
+				++this._end[1];
+		}
+
+		/* update the view */
+		this._view.target(this._start, this._end);
+		return true;
+	}
+	_lose() {
+		this._active = false;
+		this._view.reset();
+		this._grid.mesh[this._cell[0]][this._cell[1]].html.children[0].blur();
+	}
+	_move(x, y, back) {
+		/* find the next valid cell in the given direction (there must exist a
+		*	non-solid cell, as move is called when a cell is already focused) */
+		if (x < 0 || y < 0 || x >= this._grid.width || y >= this._grid.height || this._grid.mesh[x][y].solid) {
+			while (true) {
+				x += (back ? -1 : 1);
+
+				/* wrap x around */
+				if (x < 0) {
+					--y;
+					x = this._grid.width - 1;
+				}
+				else if (x >= this._grid.width) {
+					++y;
+					x = 0;
+				}
+
+				/* wrap y around */
+				if (y < 0)
+					y = this._grid.height - 1;
+				else if (y >= this._grid.height)
+					y = 0;
+
+				/* check if the cell is solid */
+				if (!this._grid.mesh[x][y].solid)
+					break;
+			}
+		}
+
+		/* focus the new cell */
+		if (x != this._cell[0] || y != this._cell[1])
+			this._grid.mesh[x][y].html.children[0].focus({ preventScroll: true });
+	}
+	_write(c) {
+		const cell = this._grid.mesh[this._cell[0]][this._cell[1]];
+		if (c != '' && this._name == '')
+			return;
+
+		/* update the cell content */
+		cell.char = c;
+		cell.author = (c == '' ? '' : this._name);
+		cell.certain = (c != '' && this._certain);
+
+		/* notify about the changed grid */
+		this._onchange();
+	}
+
+	focused(x, y, focus) {
+		if (focus)
+			return this._focused(x, y);
+
+		/* check if the focus has been lost */
+		if (this._active && this._cell[0] == x && this._cell[1] == y) {
+			this._active = false;
+			this._view.reset();
+		}
+		return true;
+	}
+	input(c) {
+		if (!this._active)
+			return;
+
+		/* write the key out and advance the character */
+		this._write(c);
+		this._move(this._cell[0] + (this._horizontal ? 1 : 0), this._cell[1] + (this._horizontal ? 0 : 1), false);
+	}
+	control(key) {
+		if (!this._active)
+			return;
+
+		/* check if the focus should be lost */
+		if (key == 'Escape') {
+			this._lose();
+			return true;
+		}
+
+		/* check if the focus should be passed on */
+		if (key.startsWith('Arrow')) {
+			this._move(
+				this._cell[0] + (key == 'ArrowLeft' ? -1 : 0) + (key == 'ArrowRight' ? 1 : 0),
+				this._cell[1] + (key == 'ArrowUp' ? -1 : 0) + (key == 'ArrowDown' ? 1 : 0),
+				(key == 'ArrowLeft' || key == 'ArrowUp')
+			);
+			return true;
+		}
+
+		/* check if the current character should be deleted */
+		const cell = this._grid.mesh[this._cell[0]][this._cell[1]];
+		if (key != 'Backspace' && key != 'Delete')
+			return false;
+
+		/* either clear the cell or move back by one cell */
+		if (cell.char != '')
+			this._write('');
+		else
+			this._move(this._cell[0] - (this._horizontal ? 1 : 0), this._cell[1] - (this._horizontal ? 0 : 1), true);
+		return true;
+	}
+	update(grid) {
+		this._grid = grid;
+		if (this._active)
+			this._focused(this._cell[0], this._cell[1]);
+	}
+	config(certain, horizontal, name) {
+		this._certain = certain;
+		this._horizontal = horizontal;
+		this._name = name;
+		if (this._active)
+			this._focused(this._cell[0], this._cell[1]);
 	}
 }
