@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2025 Bjoern Boss Henrichsen */
-function _setupGridHtml(grid, onFocused, html) {
+function _setupGridHtml(grid, focus, html) {
 	/* create the separate cells */
 	for (let y = 0; y < grid.height; ++y) {
 		let row = document.createElement('div');
@@ -26,15 +26,17 @@ function _setupGridHtml(grid, onFocused, html) {
 			grid.mesh[x][y].html = cell;
 
 			/* check if the cell should be editable */
-			if (onFocused == null)
+			if (focus == null)
 				char.contentEditable = false;
 			else {
 				char.contentEditable = true;
+
+				/* notify the grid-focus about the current focus */
 				char.onfocus = function () {
-					if (!onFocused(x, y, true))
+					if (!focus.focused(x, y, true))
 						char.blur();
 				};
-				char.onblur = () => onFocused(x, y, false);
+				char.onblur = () => focus.focused(x, y, false);
 
 				/* ensure that clicks onto the border are forwarded to the character */
 				cell.onmousedown = function (e) {
@@ -43,13 +45,24 @@ function _setupGridHtml(grid, onFocused, html) {
 					char.focus();
 				};
 
-				char.addEventListener('beforeinput', (e) => e.preventDefault());
+				/* pass any input to the focus */
+				char.onkeydown = function (e) {
+					if (focus.control(e.key)) {
+						e.stopPropagation();
+						e.preventDefault();
+					}
+				};
+				char.onbeforeinput = function (e) {
+					focus.input(e.data);
+					e.stopPropagation();
+					e.preventDefault();
+				};
 			}
 		}
 	}
 }
 
-function GenerateGrid(width, height, html, onFocused, authorHue) {
+function GenerateGrid(width, height, html, focus, authorHue) {
 	const grid = {
 		width: width,
 		height: height,
@@ -65,13 +78,13 @@ function GenerateGrid(width, height, html, onFocused, authorHue) {
 	}
 
 	/* setup the html object */
-	_setupGridHtml(grid, onFocused, html);
+	_setupGridHtml(grid, focus, html);
 
 	/* render the new grid properly */
 	RenderGrid(grid, authorHue);
 	return grid;
 }
-function LoadGrid(data, html, onFocused, authorHue) {
+function LoadGrid(data, html, focus, authorHue) {
 	const grid = {
 		width: data.width,
 		height: data.height,
@@ -96,7 +109,7 @@ function LoadGrid(data, html, onFocused, authorHue) {
 	}
 
 	/* setup the html object */
-	_setupGridHtml(grid, onFocused, html);
+	_setupGridHtml(grid, focus, html);
 
 	/* render the new grid properly */
 	RenderGrid(grid, authorHue);
@@ -438,10 +451,15 @@ class GridFocus {
 		if (c != '' && this._name == '')
 			return;
 
-		/* update the cell content */
-		cell.char = c;
-		cell.author = (c == '' ? '' : this._name);
-		cell.certain = (c != '' && this._certain);
+		/* update the cell content (only update the author, if the character is changed) */
+		const certain = (c != '' && this._certain);
+		if (cell.char != c) {
+			cell.char = c;
+			cell.author = (c == '' ? '' : this._name);
+		}
+		else if (cell.certain == certain)
+			return;
+		cell.certain = certain;
 
 		/* notify about the changed grid */
 		this._onchange();
@@ -459,16 +477,21 @@ class GridFocus {
 		return true;
 	}
 	input(c) {
-		if (!this._active)
+		/* validate the character */
+		if (!this._active || c.length != 1)
+			return;
+		c = c.toUpperCase();
+		if (c < 'A' || c > 'Z')
 			return;
 
-		/* write the key out and advance the character */
+		/* write the key out and advance the character (only if its not the last character) */
 		this._write(c);
-		this._move(this._cell[0] + (this._horizontal ? 1 : 0), this._cell[1] + (this._horizontal ? 0 : 1), false);
+		if (this._cell[0] != this._end[0] || this._cell[1] != this._end[1])
+			this._move(this._cell[0] + (this._horizontal ? 1 : 0), this._cell[1] + (this._horizontal ? 0 : 1), false);
 	}
 	control(key) {
 		if (!this._active)
-			return;
+			return false;
 
 		/* check if the focus should be lost */
 		if (key == 'Escape') {

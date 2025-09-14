@@ -108,21 +108,6 @@
 			_state.dirty = true;
 			_state.pushDirty();
 		});
-
-		/* register the other input handlers */
-		document.getElementById('container').onkeydown = function (e) {
-			if (_state.focus.control(e.key)) {
-				e.stopPropagation();
-				return;
-			}
-
-			/* TEMPORARY */
-			let k = e.key.toUpperCase();
-			if (k >= 'A' && k <= 'Z' && k.length == 1) {
-				_state.focus.input(k);
-				e.stopPropagation();
-			}
-		};
 	}
 
 	_state.enter = function () {
@@ -220,10 +205,9 @@
 		return 0;
 	}
 	_state.updateGrid = function (data) {
-		const onFocused = (x, y, f) => _state.focus.focused(x, y, f);
+		const content = document.getElementById('content');
 
 		/* check if the grid should be unloaded */
-		const content = document.getElementById('content');
 		if (_state.grid != null && (_state.grid.width != data.width || _state.grid.height != data.height)) {
 			_state.grid = null;
 			while (content.children.length > 0)
@@ -232,7 +216,7 @@
 
 		/* check if the initial grid is being shown */
 		if (_state.grid == null)
-			_state.grid = LoadGrid(data, content, onFocused, _state.getAuthorHue);
+			_state.grid = LoadGrid(data, content, _state.focus, _state.getAuthorHue);
 
 		/* update the grid data */
 		else

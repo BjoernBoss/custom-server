@@ -175,9 +175,10 @@ body {
 
 .grid .index {
 	font-weight: 500;
+	font-size: 1.1em;
 	color: #404040;
 	position: absolute;
-	top: -2px;
+	top: -4px;
 	left: 2px;
 }
 
