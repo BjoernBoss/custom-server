@@ -111,13 +111,17 @@
 
 		/* register the other input handlers */
 		document.getElementById('container').onkeydown = function (e) {
-			if (_state.focus.control(e.key))
+			if (_state.focus.control(e.key)) {
 				e.stopPropagation();
+				return;
+			}
 
 			/* TEMPORARY */
 			let k = e.key.toUpperCase();
-			if (k >= 'A' && k <= 'Z')
+			if (k >= 'A' && k <= 'Z' && k.length == 1) {
 				_state.focus.input(k);
+				e.stopPropagation();
+			}
 		};
 	}
 

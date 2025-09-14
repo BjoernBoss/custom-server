@@ -35,6 +35,14 @@ function _setupGridHtml(grid, onFocused, html) {
 						char.blur();
 				};
 				char.onblur = () => onFocused(x, y, false);
+
+				/* ensure that clicks onto the border are forwarded to the character */
+				cell.onmousedown = function (e) {
+					e.stopPropagation();
+					e.preventDefault();
+					char.focus();
+				};
+
 				char.addEventListener('beforeinput', (e) => e.preventDefault());
 			}
 		}
@@ -260,7 +268,7 @@ class GridView {
 		const tSize = [wSize[0] * (7 / 8), wSize[1] * (7 / 8)];
 
 		/* compute the scale such that the target is reached along one axis, and the other axis is smaller */
-		let scale = Math.min(tSize[0] / cSize[0], tSize[1] / cSize[1]);
+		let scale = Math.min(tSize[0] / cSize[0], tSize[1] / cSize[1], 7.5);
 
 		/* compute the offset between the content and the actual first cell */
 		const rContent = this._content.getBoundingClientRect();
