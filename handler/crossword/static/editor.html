@@ -94,7 +94,7 @@
 		/* create the grid object and show it */
 		_state.container = document.getElementById('container');
 		_state.content = document.getElementById('content');
-		_state.grid = GenerateGrid(_state.width, _state.height, _state.content, () => 0);
+		_state.grid = GenerateGrid(_state.width, _state.height, _state.content, false, () => 0);
 		_state.content.style.display = 'block';
 
 		/* setup the viewport */
@@ -262,21 +262,7 @@
 	}
 
 	_state.updateView = function () {
-		/* fetch the dimensions */
-		let content = [_state.content.clientWidth, _state.content.clientHeight];
-		let world = [_state.container.clientWidth, _state.container.clientHeight];
-
-		/* compute the requested destination position and dimensions */
-		let target = [world[0] * (7 / 8), world[1] * (7 / 8)];
-
-		/* compute the scale such that the target is reached along one axis, and the other axis is smaller */
-		_state.view.scale = Math.min(target[0] / content[0], target[1] / content[1]);
-
-		/* compute the positions accordingly */
-		for (let i = 0; i < 2; ++i)
-			_state.view.pos[i] = (world[i] - (content[i] * _state.view.scale)) / 2;
-
-		/* apply the new viewport */
+		_state.view = ComputeGridView(_state.grid, [0, 0], [_state.grid.width - 1, _state.grid.height - 1], _state.content, _state.container, _state.view.scale);
 		_state.content.style.transform = `translate(${_state.view.pos[0]}px, ${_state.view.pos[1]}px) scale(${_state.view.scale})`;
 	}
 

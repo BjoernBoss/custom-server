@@ -1,4 +1,4 @@
-function _setupGridHtml(grid, html) {
+function _setupGridHtml(grid, editable, html) {
 	/* create the separate cells */
 	for (let y = 0; y < grid.height; ++y) {
 		let row = document.createElement('div');
@@ -14,7 +14,9 @@ function _setupGridHtml(grid, html) {
 			/* add the char and index element */
 			let char = document.createElement('div');
 			char.classList.add('char');
+			char.contentEditable = editable;
 			cell.appendChild(char);
+
 			let index = document.createElement('div');
 			index.classList.add('index');
 			cell.appendChild(index);
@@ -25,7 +27,7 @@ function _setupGridHtml(grid, html) {
 	}
 }
 
-function GenerateGrid(width, height, html, authorHue) {
+function GenerateGrid(width, height, html, editable, authorHue) {
 	const grid = {
 		width: width,
 		height: height,
@@ -41,13 +43,13 @@ function GenerateGrid(width, height, html, authorHue) {
 	}
 
 	/* setup the html object */
-	_setupGridHtml(grid, html);
+	_setupGridHtml(grid, editable, html);
 
 	/* render the new grid properly */
 	RenderGrid(grid, authorHue);
 	return grid;
 }
-function LoadGrid(data, html, authorHue) {
+function LoadGrid(data, html, editable, authorHue) {
 	const grid = {
 		width: data.width,
 		height: data.height,
@@ -72,7 +74,7 @@ function LoadGrid(data, html, authorHue) {
 	}
 
 	/* setup the html object */
-	_setupGridHtml(grid, html);
+	_setupGridHtml(grid, editable, html);
 
 	/* render the new grid properly */
 	RenderGrid(grid, authorHue);
@@ -172,4 +174,34 @@ function FullSerialize(grid) {
 		}
 	}
 	return out;
+}
+function ComputeGridView(grid, first, second, html, world, lastScale) {
+	const view = {};
+
+	/* fetch all necessary bounding boxes */
+	const rWorld = world.getBoundingClientRect();
+	const rFirst = grid.mesh[first[0]][first[1]].html.getBoundingClientRect();
+	const rSecond = grid.mesh[second[0]][second[1]].html.getBoundingClientRect();
+
+	/* compute the dimension of the content to be shown and the world as well as the maximum target dimensions */
+	const cSize = [
+		(Math.max(rFirst.right - rWorld.left, rSecond.right - rWorld.left) - Math.min(rFirst.left - rWorld.left, rSecond.left - rWorld.left)) / lastScale,
+		(Math.max(rFirst.bottom - rWorld.top, rSecond.bottom - rWorld.top) - Math.min(rFirst.top - rWorld.top, rSecond.top - rWorld.top)) / lastScale
+	];
+	const wSize = [rWorld.width, rWorld.height];
+	const tSize = [wSize[0] * (7 / 8), wSize[1] * (7 / 8)];
+
+	/* compute the scale such that the target is reached along one axis, and the other axis is smaller */
+	view.scale = Math.min(tSize[0] / cSize[0], tSize[1] / cSize[1]);
+
+	/* compute the offset between the html container and the actual first cell */
+	const rHtml = html.getBoundingClientRect();
+	const rCell = grid.mesh[Math.min(first[0], second[0])][Math.min(first[1], second[1])].html.getBoundingClientRect();
+	const offset = [(rCell.left - rHtml.left) / lastScale, (rCell.top - rHtml.top) / lastScale];
+
+	/* compute the positions accordingly */
+	view.pos = [0, 0];
+	for (let i = 0; i < 2; ++i)
+		view.pos[i] = ((wSize[i] - (cSize[i] * view.scale)) / 2) - (offset[i] * view.scale);
+	return view;
 }

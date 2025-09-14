@@ -95,6 +95,10 @@
 		/* fetch the necessary state for the grid */
 		_state.container = document.getElementById('container');
 		_state.content = document.getElementById('content');
+
+		/* setup the viewport */
+		_state.view = { scale: 1, pos: [0, 0] };
+		new ResizeObserver(() => _state.updateView()).observe(_state.container);
 	}
 
 	_state.enter = function () {
@@ -199,13 +203,20 @@
 
 		/* check if the initial grid is being shown */
 		if (_state.grid == null) {
-			_state.grid = LoadGrid(data, _state.content, getAuthorHue);
+			_state.grid = LoadGrid(data, _state.content, true, getAuthorHue);
 			_state.content.style.display = 'block';
 		}
 
 		/* update the grid data */
 		else
 			ApplyGridUpdate(_state.grid, data, getAuthorHue);
+		_state.updateView();
+	}
+	_state.updateView = function () {
+		if (_state.grid == null)
+			return;
+		_state.view = ComputeGridView(_state.grid, [0, 3], [11, 3], _state.content, _state.container, _state.view.scale);
+		_state.content.style.transform = `translate(${_state.view.pos[0]}px, ${_state.view.pos[1]}px) scale(${_state.view.scale})`;
 	}
 
 	_state.handleData = function (data) {
