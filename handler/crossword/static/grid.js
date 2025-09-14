@@ -186,21 +186,59 @@ function FullSerializeGrid(grid) {
 
 class GridView {
 	constructor(container, content) {
-		this._x = 0;
-		this._y = 0;
-		this._scale = 1.0;
+		this._duration = 225;
+
 		this._container = container;
 		this._content = content;
 		this._grid = null;
 		this._goal = { x0: 0, x1: 0, y0: 0, y1: 0 };
+		this._current = { x: 0, y: 0, scale: 1 };
+		this._start = { x: 0, y: 0, scale: 1 };
+		this._end = { x: 0, y: 0, scale: 1 };
+		this._animationStart = 0;
 
 		/* register the listener for changes */
 		new ResizeObserver(() => this._update()).observe(this._container);
 	}
 
+	_animateNext() {
+		/* check if the grid has been removed, in which case nothing needs to be done */
+		if (this._grid == null)
+			return;
+		const lerp = (a, b, t) => (t >= 1 ? b : a + (b - a) * t);
+
+		/* check if the goal has been reached */
+		if (this._end.x == this._current.x && this._end.y == this._current.y && this._end.scale == this._current.scale)
+			return;
+
+		/* compute the new entry  */
+		const progress = Math.max(0, (Date.now() - this._animationStart) / this._duration);
+		this._current.x = lerp(this._start.x, this._end.x, progress);
+		this._current.y = lerp(this._start.y, this._end.y, progress);
+		this._current.scale = lerp(this._start.scale, this._end.scale, progress);
+
+		/* write the value out */
+		this._content.style.transform = `translate(${this._current.x}px, ${this._current.y}px) scale(${this._current.scale})`;
+
+		/* queue the next animation */
+		if (progress < 1)
+			window.requestAnimationFrame(() => this._animateNext());
+	}
+	_animateTo(x, y, scale) {
+		/* check if the goal is already set */
+		if (x == this._end.x && y == this._end.y && scale == this._end.scale)
+			return;
+
+		/* setup the new animation target, and start the jurnery to it */
+		this._start = { x: this._current.x, y: this._current.y, scale: this._current.scale };
+		this._end = { x: x, y: y, scale: scale };
+		this._animationStart = Date.now();
+		this._animateNext();
+	}
 	_update() {
 		/* check if no grid is available, in which case nothing needs to be done */
-		if (this._grid == null) return;
+		if (this._grid == null)
+			return;
 
 		/* fetch all necessary bounding boxes */
 		const rWorld = this._container.getBoundingClientRect();
@@ -209,8 +247,8 @@ class GridView {
 
 		/* compute the dimension of the content to be shown and the world as well as the maximum target dimensions */
 		const cSize = [
-			((rSecond.right - rWorld.left) - (rFirst.left - rWorld.left)) / this._scale,
-			((rSecond.bottom - rWorld.top) - (rFirst.top - rWorld.top)) / this._scale
+			((rSecond.right - rWorld.left) - (rFirst.left - rWorld.left)) / this._current.scale,
+			((rSecond.bottom - rWorld.top) - (rFirst.top - rWorld.top)) / this._current.scale
 		];
 		const wSize = [rWorld.width, rWorld.height];
 		const tSize = [wSize[0] * (7 / 8), wSize[1] * (7 / 8)];
@@ -221,20 +259,15 @@ class GridView {
 		/* compute the offset between the content and the actual first cell */
 		const rContent = this._content.getBoundingClientRect();
 		const rCell = this._grid.mesh[this._goal.x0][this._goal.y0].html.getBoundingClientRect();
-		const offset = [(rCell.left - rContent.left) / this._scale, (rCell.top - rContent.top) / this._scale];
+		const offset = [(rCell.left - rContent.left) / this._current.scale, (rCell.top - rContent.top) / this._current.scale];
 
 		/* compute the positions accordingly */
 		let pos = [0, 0];
 		for (let i = 0; i < 2; ++i)
 			pos[i] = ((wSize[i] - (cSize[i] * scale)) / 2) - (offset[i] * scale);
 
-		/* check if the data have changed and update them */
-		if (scale == this._scale && pos[0] == this._x && pos[1] == this._y)
-			return;
-		this._scale = scale;
-		this._x = pos[0];
-		this._y = pos[1];
-		this._content.style.transform = `translate(${this._x}px, ${this._y}px) scale(${this._scale})`;
+		/* animate to the new data */
+		this._animateTo(pos[0], pos[1], scale);
 	}
 	_target(first, second) {
 		this._goal.x0 = Math.min(first[0], second[0]);
@@ -242,14 +275,17 @@ class GridView {
 		this._goal.y0 = Math.min(first[1], second[1]);
 		this._goal.y1 = Math.max(first[1], second[1]);
 	}
+	_reset() {
+		if (this._grid != null)
+			this._target([0, 0], [this._grid.width - 1, this._grid.height - 1]);
+	}
 
 	target(first, second) {
 		this._target(first, second);
 		this._update();
 	}
 	reset() {
-		if (this._grid != null)
-			this._target([0, 0], [this._grid.width - 1, this._grid.height - 1]);
+		this._reset();
 		this._update();
 	}
 	update(grid) {
@@ -260,15 +296,21 @@ class GridView {
 			return;
 		}
 
-		/* check if the grid was just added */
-		if (this._grid == null || this._grid.width != grid.width || this._grid.height != grid.height) {
-			this._content.style.display = 'block';
-			this._goal = { x0: 0, y0: 0, x1: grid.width - 1, y1: grid.height - 1 };
+		/* check if the grid object is just being replaced */
+		if (this._grid != null && this._grid.width == grid.width && this._grid.height == grid.height) {
+			this._grid = grid;
+			return;
 		}
 
-		/* update the grid */
+		/* show the grid and reset the view to contain the entire grid */
+		this._content.style.display = 'block';
 		this._grid = grid;
+		this._reset();
 		this._update();
+
+		/* force the animation to reach the target immediately */
+		this._animationStart -= 2 * this._duration;
+		this._animateNext();
 	}
 	index(x, y) {
 		if (this._grid == null)
