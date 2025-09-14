@@ -200,6 +200,36 @@ body {
 	border-color: #000000;
 }
 
+.button {
+	user-select: none;
+	min-width: 35px;
+	min-height: 35px;
+	font-size: 1.3em;
+	border-radius: 3px;
+	background-color: #ffffff;
+	border-width: 1px;
+	border-style: solid;
+	border-color: black;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0px 4px 2px 4px;
+}
+
+@media (hover: hover) {
+	.button:not(.disabled):hover {
+		background-color: #e0e0e0;
+	}
+
+	.button:not(.disabled):hover:has(.button:hover) {
+		background-color: #ffffff;
+	}
+}
+
+.button:not(.disabled):active {
+	background-color: #c0c0c0;
+}
+
 .menu-splitter {
 	margin: 0px 20px;
 	border-width: 1px;
@@ -219,5 +249,36 @@ body {
 
 .menu-text {
 	text-align: center;
+	flex: 1;
+}
+
+.notification-host {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	width: calc(100% - 60px);
+	min-width: 250px;
+	margin: 0px 30px 30px 30px;
+}
+
+.notification {
+	display: flex;
+	align-items: center;
+	margin-top: 30px;
+	padding: 20px;
+	justify-content: end;
+	box-sizing: border-box;
+	border-radius: 8px;
+	border-style: solid;
+	border-color: #202020;
+	border-width: 2px;
+	width: 100%;
+	background-color: #c0c0c0;
+}
+
+.notification .text {
+	font-size: 1.75em;
+	font-weight: 600;
 	flex: 1;
 }

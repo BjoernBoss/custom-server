@@ -7,7 +7,6 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Editor</title>
-	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
 	<script src="/crossword/grid.js"></script>
 </head>
@@ -88,9 +87,9 @@
 
 	_state.setup = function () {
 		/* validate the dimension */
-		_state.width = parseInt(document.getElementById('width').value);
-		_state.height = parseInt(document.getElementById('height').value);
-		if (!isFinite(_state.width) || !isFinite(_state.height) || _state.width < 0 || _state.width > 64 || _state.height < 0 || _state.height > 64) {
+		const width = parseInt(document.getElementById('width').value);
+		const height = parseInt(document.getElementById('height').value);
+		if (!isFinite(width) || !isFinite(height) || width < 0 || width > 64 || height < 0 || height > 64) {
 			alert("Invalid dimensions specified");
 			return;
 		}
@@ -99,53 +98,50 @@
 		document.getElementById('dimensions').classList.remove('show');
 
 		/* setup the editor caption */
-		document.getElementById('caption').innerText = `Creating a Crossword of Size: [${_state.width} \u00d7 ${_state.height}]`;
+		document.getElementById('caption').innerText = `Creating a Crossword of Size: [${width} \u00d7 ${height}]`;
 
 		/* create the grid object and show it */
-		_state.container = document.getElementById('container');
-		_state.content = document.getElementById('content');
-		_state.grid = GenerateGrid(_state.width, _state.height, _state.content, null, () => 0);
-		_state.content.style.display = 'block';
+		const content = document.getElementById('content');
+		_state.grid = GenerateGrid(width, height, content, null, () => 0);
 
 		/* setup the viewport */
-		_state.view = { scale: 1, pos: [0, 0] };
-		_state.updateView();
-		new ResizeObserver(() => _state.updateView()).observe(_state.container);
+		_state.view = new GridView(document.getElementById('container'), content);
+		_state.view.update(_state.grid);
 
 		/* register the event listeners for updating the grid (by left-click/single touch) */
 		_state.updating = null;
-		_state.content.addEventListener('mousedown', function (e) {
+		content.addEventListener('mousedown', function (e) {
 			if (e.button == 0 && _state.startToggle(e.clientX, e.clientY)) {
 				e.preventDefault();
 				e.stopPropagation();
 			}
 		});
-		_state.content.addEventListener('mousemove', function (e) {
+		content.addEventListener('mousemove', function (e) {
 			if ((e.buttons & 0x01) != 0x01)
 				_state.stopToggle();
 			else
 				_state.moveToggle(e.clientX, e.clientY);
 		});
-		_state.content.addEventListener('mouseup', function (e) {
+		content.addEventListener('mouseup', function (e) {
 			if (e.button != 0) return;
 			_state.stopToggle();
 			e.preventDefault();
 			e.stopPropagation();
 		});
-		_state.content.addEventListener('touchstart', function (e) {
+		content.addEventListener('touchstart', function (e) {
 			if (e.touches.length != 1) _state.stopToggle();
 			else if (_state.startToggle(e.touches[0].clientX, e.touches[0].clientY)) {
 				e.preventDefault();
 				e.stopPropagation();
 			}
 		});
-		_state.content.addEventListener('touchmove', function (e) {
+		content.addEventListener('touchmove', function (e) {
 			if (e.touches.length != 1)
 				_state.stopToggle();
 			else
 				_state.moveToggle(e.touches[0].clientX, e.touches[0].clientY);
 		});
-		_state.content.addEventListener('touchstop', function (e) {
+		content.addEventListener('touchstop', function (e) {
 			_state.stopToggle();
 			e.preventDefault();
 			e.stopPropagation();
@@ -222,7 +218,7 @@
 
 	_state.startToggle = function (clientX, clientY) {
 		/* check if a valid cell has been hit */
-		let [x, y] = _state.screenToIndex(clientX, clientY);
+		let [x, y] = _state.view.index(clientX, clientY);
 		if (x == null || y == null) return false;
 
 		/* setup the operation */
@@ -233,7 +229,7 @@
 	}
 	_state.moveToggle = function (clientX, clientY) {
 		if (_state.updating == null) return;
-		let [x, y] = _state.screenToIndex(clientX, clientY);
+		let [x, y] = _state.view.index(clientX, clientY);
 		_state.toggleSolid(x, y);
 	}
 	_state.stopToggle = function () {
@@ -252,28 +248,6 @@
 			_state.grid.mesh[x][y].solid = _state.updating;
 			RenderGrid(_state.grid, () => 0);
 		}
-	}
-	_state.screenToIndex = function (x, y) {
-		/* translate relative to container */
-		let rect = _state.container.getBoundingClientRect();
-		x -= rect.left;
-		y -= rect.top;
-
-		/* apply the view transformation */
-		x = (x - _state.view.pos[0]) / _state.view.scale;
-		y = (y - _state.view.pos[1]) / _state.view.scale;
-
-		/* map the values to indices (no need to take care of border-width as it is not part of client-dimensions) */
-		x = Math.floor((x / _state.content.clientWidth) * _state.width);
-		y = Math.floor((y / _state.content.clientHeight) * _state.height);
-		if (x < 0 || x >= _state.width || y < 0 || y >= _state.height)
-			return [null, null];
-		return [x, y];
-	}
-
-	_state.updateView = function () {
-		_state.view = ComputeGridView(_state.grid, [0, 0], [_state.grid.width - 1, _state.grid.height - 1], _state.content, _state.container, _state.view.scale);
-		_state.content.style.transform = `translate(${_state.view.pos[0]}px, ${_state.view.pos[1]}px) scale(${_state.view.scale})`;
 	}
 
 </script>

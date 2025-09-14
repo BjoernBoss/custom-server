@@ -28,7 +28,7 @@ function _setupGridHtml(grid, onFocused, html) {
 				char.contentEditable = false;
 			else {
 				char.contentEditable = true;
-				char.onfocus = () => onFocused(x, y);
+				char.onfocus = () => onFocused(x, y, null);
 				char.addEventListener('beforeinput', (e) => e.preventDefault());
 			}
 		}
@@ -183,33 +183,107 @@ function FullSerializeGrid(grid) {
 	}
 	return out;
 }
-function ComputeGridView(grid, first, second, html, world, lastScale) {
-	const view = {};
 
-	/* fetch all necessary bounding boxes */
-	const rWorld = world.getBoundingClientRect();
-	const rFirst = grid.mesh[first[0]][first[1]].html.getBoundingClientRect();
-	const rSecond = grid.mesh[second[0]][second[1]].html.getBoundingClientRect();
+class GridView {
+	constructor(container, content) {
+		this._x = 0;
+		this._y = 0;
+		this._scale = 1.0;
+		this._container = container;
+		this._content = content;
+		this._grid = null;
+		this._goal = { x0: 0, x1: 0, y0: 0, y1: 0 };
 
-	/* compute the dimension of the content to be shown and the world as well as the maximum target dimensions */
-	const cSize = [
-		(Math.max(rFirst.right - rWorld.left, rSecond.right - rWorld.left) - Math.min(rFirst.left - rWorld.left, rSecond.left - rWorld.left)) / lastScale,
-		(Math.max(rFirst.bottom - rWorld.top, rSecond.bottom - rWorld.top) - Math.min(rFirst.top - rWorld.top, rSecond.top - rWorld.top)) / lastScale
-	];
-	const wSize = [rWorld.width, rWorld.height];
-	const tSize = [wSize[0] * (7 / 8), wSize[1] * (7 / 8)];
+		/* register the listener for changes */
+		new ResizeObserver(() => this._update()).observe(this._container);
+	}
 
-	/* compute the scale such that the target is reached along one axis, and the other axis is smaller */
-	view.scale = Math.min(tSize[0] / cSize[0], tSize[1] / cSize[1]);
+	_update() {
+		/* check if no grid is available, in which case nothing needs to be done */
+		if (this._grid == null) return;
 
-	/* compute the offset between the html container and the actual first cell */
-	const rHtml = html.getBoundingClientRect();
-	const rCell = grid.mesh[Math.min(first[0], second[0])][Math.min(first[1], second[1])].html.getBoundingClientRect();
-	const offset = [(rCell.left - rHtml.left) / lastScale, (rCell.top - rHtml.top) / lastScale];
+		/* fetch all necessary bounding boxes */
+		const rWorld = this._container.getBoundingClientRect();
+		const rFirst = this._grid.mesh[this._goal.x0][this._goal.y0].html.getBoundingClientRect();
+		const rSecond = this._grid.mesh[this._goal.x1][this._goal.y1].html.getBoundingClientRect();
 
-	/* compute the positions accordingly */
-	view.pos = [0, 0];
-	for (let i = 0; i < 2; ++i)
-		view.pos[i] = ((wSize[i] - (cSize[i] * view.scale)) / 2) - (offset[i] * view.scale);
-	return view;
+		/* compute the dimension of the content to be shown and the world as well as the maximum target dimensions */
+		const cSize = [
+			((rSecond.right - rWorld.left) - (rFirst.left - rWorld.left)) / this._scale,
+			((rSecond.bottom - rWorld.top) - (rFirst.top - rWorld.top)) / this._scale
+		];
+		const wSize = [rWorld.width, rWorld.height];
+		const tSize = [wSize[0] * (7 / 8), wSize[1] * (7 / 8)];
+
+		/* compute the scale such that the target is reached along one axis, and the other axis is smaller */
+		let scale = Math.min(tSize[0] / cSize[0], tSize[1] / cSize[1]);
+
+		/* compute the offset between the content and the actual first cell */
+		const rContent = this._content.getBoundingClientRect();
+		const rCell = this._grid.mesh[this._goal.x0][this._goal.y0].html.getBoundingClientRect();
+		const offset = [(rCell.left - rContent.left) / this._scale, (rCell.top - rContent.top) / this._scale];
+
+		/* compute the positions accordingly */
+		let pos = [0, 0];
+		for (let i = 0; i < 2; ++i)
+			pos[i] = ((wSize[i] - (cSize[i] * scale)) / 2) - (offset[i] * scale);
+
+		/* check if the data have changed and update them */
+		if (scale == this._scale && pos[0] == this._x && pos[1] == this._y)
+			return;
+		this._scale = scale;
+		this._x = pos[0];
+		this._y = pos[1];
+		this._content.style.transform = `translate(${this._x}px, ${this._y}px) scale(${this._scale})`;
+	}
+	_target(first, second) {
+		this._goal.x0 = Math.min(first[0], second[0]);
+		this._goal.x1 = Math.max(first[0], second[0]);
+		this._goal.y0 = Math.min(first[1], second[1]);
+		this._goal.y1 = Math.max(first[1], second[1]);
+	}
+
+	target(first, second) {
+		this._target(first, second);
+		this._update();
+	}
+	reset() {
+		if (this._grid != null)
+			this._target([0, 0], [this._grid.width - 1, this._grid.height - 1]);
+		this._update();
+	}
+	update(grid) {
+		/* check if the grid has been removed */
+		if (grid == null) {
+			this._grid = null;
+			this._content.style.display = 'none';
+			return;
+		}
+
+		/* check if the grid was just added */
+		if (this._grid == null || this._grid.width != grid.width || this._grid.height != grid.height) {
+			this._content.style.display = 'block';
+			this._goal = { x0: 0, y0: 0, x1: grid.width - 1, y1: grid.height - 1 };
+		}
+
+		/* update the grid */
+		this._grid = grid;
+		this._update();
+	}
+	index(x, y) {
+		if (this._grid == null)
+			return [null, null];
+
+		/* translate the position relative to the first cell */
+		const rect = this._grid.mesh[0][0].html.getBoundingClientRect();
+		x -= rect.left;
+		y -= rect.top;
+
+		/* estimate the index based on the size of the first cell */
+		x = Math.floor(x / rect.width);
+		y = Math.floor(y / rect.height);
+		if (x < 0 || x >= this._grid.width || y < 0 || y >= this._grid.height)
+			return [null, null];
+		return [x, y];
+	}
 }

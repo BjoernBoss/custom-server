@@ -7,9 +7,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Play Crossword</title>
-	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
-	<link rel="stylesheet" type="text/css" href="/crossword/notifier.css">
 	<script src="/crossword/notifier.js"></script>
 	<script src="/crossword/sync-socket.js"></script>
 	<script src="/crossword/grid.js"></script>
@@ -67,8 +65,7 @@
 		grid: null,
 		players: {},
 		usedsHues: [],
-		content: null,
-		container: null,
+		view: null,
 		focus: {
 			active: false,
 			start: [0, 0],
@@ -106,20 +103,16 @@
 		_state.sock.onreceived = (data) => _state.handleData(data);
 		_state.sock.onconnected = () => _state.handleConnected();
 
-		/* fetch the necessary state for the grid */
-		_state.container = document.getElementById('container');
-		_state.content = document.getElementById('content');
-
 		/* setup the viewport */
-		_state.view = { scale: 1, pos: [0, 0] };
-		new ResizeObserver(() => _state.updateView()).observe(_state.container);
+		const content = document.getElementById('content');
+		_state.view = new GridView(document.getElementById('container'), content);
 
 		/* register the other input handlers */
-		_state.content.onmousedown = (e) => e.stopPropagation();
+		content.onmousedown = (e) => e.stopPropagation();
 		document.getElementById('full-body').onmousedown = function () {
 			_state.loseFocus();
 		};
-		_state.container.onkeydown = function (e) {
+		document.getElementById('container').onkeydown = function (e) {
 			if (_state.handleFocusKey(e.key))
 				e.stopPropagation();
 		};
@@ -222,35 +215,27 @@
 		};
 
 		/* check if the grid should be unloaded */
+		const content = document.getElementById('content');
 		if (_state.grid != null && (_state.grid.width != data.width || _state.grid.height != data.height)) {
 			_state.grid = null;
-			while (_state.content.children.length > 0)
-				_state.content.lastChild.remove();
+			while (content.children.length > 0)
+				content.lastChild.remove();
 		}
 
 		/* check if the initial grid is being shown */
-		if (_state.grid == null) {
-			_state.grid = LoadGrid(data, _state.content, onFocused, _state.getAuthorHue);
-			_state.content.style.display = 'block';
-		}
+		if (_state.grid == null)
+			_state.grid = LoadGrid(data, content, onFocused, _state.getAuthorHue);
 
 		/* update the grid data */
 		else
 			ApplyGridUpdate(_state.grid, data, _state.getAuthorHue);
 
+		/* update the view */
+		_state.view.update(_state.grid);
+
 		/* update the focus and the view */
 		if (_state.focus.active)
 			_state.updateFocus(_state.focus.cell[0], _state.focus.cell[1]);
-		_state.updateView();
-	}
-	_state.updateView = function () {
-		if (_state.grid == null)
-			return;
-		const start = (_state.focus.active ? _state.focus.start : [0, 0]);
-		const end = (_state.focus.active ? _state.focus.end : [_state.grid.width - 1, _state.grid.height - 1]);
-
-		_state.view = ComputeGridView(_state.grid, start, end, _state.content, _state.container, _state.view.scale);
-		_state.content.style.transform = `translate(${_state.view.pos[0]}px, ${_state.view.pos[1]}px) scale(${_state.view.scale})`;
 	}
 
 	_state.updateFocus = function (x, y) {
@@ -279,7 +264,7 @@
 
 		/* mark the focus as active and update the view */
 		_state.focus.active = true;
-		_state.updateView();
+		_state.view.target(_state.focus.start, _state.focus.end);
 
 		/* focus the cell itself */
 		_state.grid.mesh[x][y].html.children[0].focus();
@@ -289,7 +274,7 @@
 			return;
 		_state.focus.active = false;
 		_state.grid.mesh[_state.focus.cell[0]][_state.focus.cell[1]].html.children[0].blur();
-		_state.updateView();
+		_state.view.reset();
 	}
 	_state.handleFocusKey = function (key) {
 		if (!_state.focus.active)
