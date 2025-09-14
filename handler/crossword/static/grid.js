@@ -1,4 +1,4 @@
-function _setupGridHtml(grid, editable, html) {
+function _setupGridHtml(grid, onFocused, html) {
 	/* create the separate cells */
 	for (let y = 0; y < grid.height; ++y) {
 		let row = document.createElement('div');
@@ -14,7 +14,6 @@ function _setupGridHtml(grid, editable, html) {
 			/* add the char and index element */
 			let char = document.createElement('div');
 			char.classList.add('char');
-			char.contentEditable = editable;
 			cell.appendChild(char);
 
 			let index = document.createElement('div');
@@ -23,11 +22,20 @@ function _setupGridHtml(grid, editable, html) {
 
 			/* write the cell to the grid object */
 			grid.mesh[x][y].html = cell;
+
+			/* check if the cell should be editable */
+			if (onFocused == null)
+				char.contentEditable = false;
+			else {
+				char.contentEditable = true;
+				char.onfocus = () => onFocused(x, y);
+				char.addEventListener('beforeinput', (e) => e.preventDefault());
+			}
 		}
 	}
 }
 
-function GenerateGrid(width, height, html, editable, authorHue) {
+function GenerateGrid(width, height, html, onFocused, authorHue) {
 	const grid = {
 		width: width,
 		height: height,
@@ -43,13 +51,13 @@ function GenerateGrid(width, height, html, editable, authorHue) {
 	}
 
 	/* setup the html object */
-	_setupGridHtml(grid, editable, html);
+	_setupGridHtml(grid, onFocused, html);
 
 	/* render the new grid properly */
 	RenderGrid(grid, authorHue);
 	return grid;
 }
-function LoadGrid(data, html, editable, authorHue) {
+function LoadGrid(data, html, onFocused, authorHue) {
 	const grid = {
 		width: data.width,
 		height: data.height,
@@ -74,7 +82,7 @@ function LoadGrid(data, html, editable, authorHue) {
 	}
 
 	/* setup the html object */
-	_setupGridHtml(grid, editable, html);
+	_setupGridHtml(grid, onFocused, html);
 
 	/* render the new grid properly */
 	RenderGrid(grid, authorHue);
@@ -150,7 +158,7 @@ function RenderGrid(grid, authorHue) {
 		}
 	}
 }
-function SolidSerialize(grid) {
+function SolidSerializeAll(grid) {
 	let out = { width: grid.width, height: grid.height, grid: [] };
 
 	/* serialize the data out */
@@ -160,13 +168,13 @@ function SolidSerialize(grid) {
 	}
 	return out;
 }
-function FullSerialize(grid) {
-	let out = { width: grid.width, height: grid.height, grid: [] };
+function FullSerializeGrid(grid) {
+	let out = [];
 
 	/* serialize the data out */
 	for (let y = 0; y < grid.height; ++y) {
 		for (let x = 0; x < grid.width; ++x) {
-			out.grid.push({
+			out.push({
 				char: grid.mesh[x][y].char,
 				certain: grid.mesh[x][y].certain,
 				author: grid.mesh[x][y].author

@@ -144,7 +144,7 @@ class ActiveGame {
 		if (valid) {
 			for (let i = 0; i < grid.length; ++i) {
 				/* validate the data-types */
-				if (typeof grid[i].char != 'string' || typeof grid[i].certain != 'boolean' || typeof grid[i].author != string) {
+				if (typeof grid[i].char != 'string' || typeof grid[i].certain != 'boolean' || typeof grid[i].author != 'string') {
 					valid = false;
 					break;
 				}
@@ -153,7 +153,7 @@ class ActiveGame {
 				let char = grid[i].char.slice(0, 1).toUpperCase();
 				let certain = grid[i].certain;
 				let author = grid[i].author.slice(0, nameMaxLength + 1);
-				if (this.grid[i].solid) {
+				if (this.data.grid[i].solid) {
 					char = '';
 					author = '';
 					certain = false;

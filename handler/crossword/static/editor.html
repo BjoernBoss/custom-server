@@ -94,7 +94,7 @@
 		/* create the grid object and show it */
 		_state.container = document.getElementById('container');
 		_state.content = document.getElementById('content');
-		_state.grid = GenerateGrid(_state.width, _state.height, _state.content, false, () => 0);
+		_state.grid = GenerateGrid(_state.width, _state.height, _state.content, null, () => 0);
 		_state.content.style.display = 'block';
 
 		/* setup the viewport */
@@ -185,7 +185,7 @@
 		}
 
 		/* serialize the grid */
-		let out = SolidSerialize(_state.grid);
+		let out = SolidSerializeAll(_state.grid);
 		document.getElementById("finalize").classList.remove('show');
 
 		/* post the result out */

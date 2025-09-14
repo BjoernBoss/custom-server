@@ -16,7 +16,7 @@
 
 </head>
 
-<body contenteditable="false">
+<body contenteditable="false" id="full-body">
 	<!-- name screen -->
 	<div id="fetch-name" class="overlay show">
 		<div class="dialog">
@@ -68,7 +68,13 @@
 		players: {},
 		usedsHues: [],
 		content: null,
-		container: null
+		container: null,
+		focus: {
+			active: false,
+			start: [0, 0],
+			end: [0, 0],
+			cell: [0, 0]
+		}
 	};
 
 	window.onload = function () {
@@ -99,6 +105,16 @@
 		/* setup the viewport */
 		_state.view = { scale: 1, pos: [0, 0] };
 		new ResizeObserver(() => _state.updateView()).observe(_state.container);
+
+		/* register the other input handlers */
+		_state.content.onmousedown = (e) => e.stopPropagation();
+		document.getElementById('full-body').onmousedown = function () {
+			_state.loseFocus();
+		};
+		_state.container.onkeydown = function (e) {
+			if (_state.handleFocusKey(e.key))
+				e.stopPropagation();
+		};
 	}
 
 	_state.enter = function () {
@@ -153,7 +169,7 @@
 
 		/* add the hue to the list of used hues and return the actual hsl-color */
 		_state.usedsHues.push(hue);
-		_state.usedsHues.sort();
+		_state.usedsHues.sort((a, b) => a - b);
 		return hue;
 	}
 	_state.updatePlayers = function () {
@@ -187,11 +203,14 @@
 		while (html.children.length > players.length)
 			html.lastChild.remove();
 	}
+	_state.getAuthorHue = function (name) {
+		if (name in _state.players)
+			return _state.players[name].hue;
+		return 0;
+	}
 	_state.updateGrid = function (data) {
-		const getAuthorHue = function (name) {
-			if (name in _state.players)
-				return _state.players[name].hue;
-			return 0;
+		const onFocused = function (x, y) {
+			_state.updateFocus(x, y);
 		};
 
 		/* check if the grid should be unloaded */
@@ -203,20 +222,117 @@
 
 		/* check if the initial grid is being shown */
 		if (_state.grid == null) {
-			_state.grid = LoadGrid(data, _state.content, true, getAuthorHue);
+			_state.grid = LoadGrid(data, _state.content, onFocused, _state.getAuthorHue);
 			_state.content.style.display = 'block';
 		}
 
 		/* update the grid data */
 		else
-			ApplyGridUpdate(_state.grid, data, getAuthorHue);
+			ApplyGridUpdate(_state.grid, data, _state.getAuthorHue);
+
+		/* update the focus and the view */
+		if (_state.focus.active)
+			_state.updateFocus(_state.focus.cell[0], _state.focus.cell[1]);
 		_state.updateView();
 	}
 	_state.updateView = function () {
 		if (_state.grid == null)
 			return;
-		_state.view = ComputeGridView(_state.grid, [0, 3], [11, 3], _state.content, _state.container, _state.view.scale);
+		const start = (_state.focus.active ? _state.focus.start : [0, 0]);
+		const end = (_state.focus.active ? _state.focus.end : [_state.grid.width - 1, _state.grid.height - 1]);
+
+		_state.view = ComputeGridView(_state.grid, start, end, _state.content, _state.container, _state.view.scale);
 		_state.content.style.transform = `translate(${_state.view.pos[0]}px, ${_state.view.pos[1]}px) scale(${_state.view.scale})`;
+	}
+
+	_state.updateFocus = function (x, y) {
+		_state.focus.cell = [x, y];
+		_state.focus.active = true;
+
+		/* check if the focus should be lost */
+		if (_state.grid == null || x < 0 || x >= _state.grid.width || y < 0 || y >= _state.grid.height) {
+			_state.loseFocus();
+			return;
+		}
+
+		/* check if the cell is solid, which also loses focus */
+		if (_state.grid.mesh[x][y].solid) {
+			_state.loseFocus();
+			return;
+		}
+
+		/* find the start and end */
+		_state.focus.start = [x, y];
+		_state.focus.end = [x, y];
+		while (_state.focus.start[0] > 0 && !_state.grid.mesh[_state.focus.start[0] - 1][_state.focus.start[1]].solid)
+			--_state.focus.start[0];
+		while (_state.focus.end[0] + 1 < _state.grid.width && !_state.grid.mesh[_state.focus.end[0] + 1][_state.focus.end[1]].solid)
+			++_state.focus.end[0];
+
+		/* mark the focus as active and update the view */
+		_state.focus.active = true;
+		_state.updateView();
+
+		/* focus the cell itself */
+		_state.grid.mesh[x][y].html.children[0].focus();
+	}
+	_state.loseFocus = function () {
+		if (!_state.focus.active)
+			return;
+		_state.focus.active = false;
+		_state.grid.mesh[_state.focus.cell[0]][_state.focus.cell[1]].html.children[0].blur();
+		_state.updateView();
+	}
+	_state.handleFocusKey = function (key) {
+		if (!_state.focus.active)
+			return false;
+
+		/* check if its the escape key */
+		if (key == 'Escape') {
+			_state.loseFocus();
+			return true;
+		}
+
+		/* check if the focus should be shifted */
+		if (key.startsWith('Arrow')) {
+			_state.updateFocus(
+				_state.focus.cell[0] + (key == 'ArrowLeft' ? -1 : 0) + (key == 'ArrowRight' ? 1 : 0),
+				_state.focus.cell[1] + (key == 'ArrowUp' ? -1 : 0) + (key == 'ArrowDown' ? 1 : 0)
+			);
+			return true;
+		}
+
+		/* check if the character should be removed */
+		const cell = _state.grid.mesh[_state.focus.cell[0]][_state.focus.cell[1]];
+		if (key == 'Backspace' || key == 'Delete') {
+			if (cell.char == '') {
+				_state.updateFocus(_state.focus.cell[0] - 1, _state.focus.cell[1]);
+				return true;
+			}
+
+			/* update the cell */
+			cell.char = '';
+			cell.author = '';
+			cell.uncertain = false;
+		}
+
+		/* check if a character is being added */
+		else if (key.toUpperCase() >= 'A' && key.toUpperCase() <= 'Z') {
+			key = key.toUpperCase();
+			if (cell.char == key)
+				return true;
+
+			/* update the cell */
+			cell.char = key;
+			cell.author = _state.name;
+			cell.uncertain = false;
+			_state.updateFocus(_state.focus.cell[0] + 1, _state.focus.cell[1]);
+		}
+
+		/* post the new data and render the grid */
+		RenderGrid(_state.grid, _state.getAuthorHue);
+		_state.dirty = true;
+		_state.pushDirty();
 	}
 
 	_state.handleData = function (data) {
@@ -265,7 +381,7 @@
 			return;
 
 		/* build the game-state to be sent */
-		let out = FullSerialize(_state.grid);
+		let out = FullSerializeGrid(_state.grid);
 
 		/* send the data to the server */
 		_state.sock.send((send) => send({ cmd: 'update', data: out }));
