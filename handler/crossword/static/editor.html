@@ -76,6 +76,16 @@
 
 	window.onbeforeunload = function () { if (!_state.dirty || _state.uploaded) return null; return "Your work will be lost."; };
 
+	window.onload = function () {
+		/* ensure phones handle the visibility of the keyboard properly */
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener("resize", function () {
+				document.body.style.height = `${window.visualViewport.height}px`;
+				document.querySelectorAll('.overlay').forEach(el => el.style.height = `${window.visualViewport.height}px`);
+			});
+		}
+	}
+
 	_state.setup = function () {
 		/* validate the dimension */
 		_state.width = parseInt(document.getElementById('width').value);

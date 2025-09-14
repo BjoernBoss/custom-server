@@ -78,6 +78,14 @@
 	};
 
 	window.onload = function () {
+		/* ensure phones handle the visibility of the keyboard properly */
+		if (window.visualViewport) {
+			window.visualViewport.addEventListener("resize", function () {
+				document.body.style.height = `${window.visualViewport.height}px`;
+				document.querySelectorAll('.overlay').forEach(el => el.style.height = `${window.visualViewport.height}px`);
+			});
+		}
+
 		/* initialize the last name from the cookies */
 		let lastName = document.cookie.split('; ').find((v) => v.startsWith('crossword-last-name='))?.split('=')[1];
 		if (lastName != null)
