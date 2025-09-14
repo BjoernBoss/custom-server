@@ -70,6 +70,8 @@
 </html>
 
 <script>
+	window.onbeforeunload = function () { return "Your work will be lost."; };
+
 	let _state = { uploading: false };
 	_state.setup = function () {
 		/* validate the dimension */
@@ -219,7 +221,7 @@
 				/* redirect to the main page */
 				if (!resp.ok)
 					throw new Error(resp.statusText);
-				document.location = `/crossword?uploaded=${name}`;
+				document.location = `/crossword/main.html?uploaded=${name}`;
 			}).catch(function (e) {
 				/* post the error */
 				document.getElementById("finalize").classList.add('show');

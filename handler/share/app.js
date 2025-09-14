@@ -19,7 +19,7 @@ function ListDirectory(msg, filePath) {
 	var content = libFs.readdirSync(filePath);
 
 	/* cleanup the path to end in a slash */
-	var dirPath = msg.url.pathname;
+	var dirPath = msg.fullpath;
 	if (!dirPath.endsWith('/'))
 		dirPath = dirPath + '/';
 
@@ -59,36 +59,43 @@ function ListDirectory(msg, filePath) {
 	msg.respondHtml(out);
 }
 
-export const SubPath = '/share';
-
-export function Handle(msg) {
-	libLog.Log(`Shared handler for [${msg.relative}]`);
-
-	/* expand the path */
-	const filePath = fileRelative('content' + msg.relative);
-
-	/* ensure the request is using the Get-method */
-	if (msg.ensureMethod(['GET']) == null)
-		return;
-
-	/* check if the path exists in the filesystem */
-	if (libFs.existsSync(filePath)) {
-		const what = libFs.lstatSync(filePath);
-
-		/* check if the path is a file */
-		if (what.isFile()) {
-			msg.tryRespondFile(filePath);
-			return;
-		}
-
-		/* check if the path is a directory */
-		else if (what.isDirectory()) {
-			ListDirectory(msg, filePath);
-			return;
-		}
+export class Application {
+	constructor() {
+		this.path = '/share';
 	}
+	request(msg) {
+		libLog.Log(`Shared handler for [${msg.relative}]`);
 
-	/* add the not found error */
-	libLog.Log(`Request to unknown resource`);
-	msg.respondNotFound();
-}
+		/* expand the path */
+		const filePath = fileRelative('content' + msg.relative);
+
+		/* ensure the request is using the Get-method */
+		if (msg.ensureMethod(['GET']) == null)
+			return;
+
+		/* check if the path exists in the filesystem */
+		if (libFs.existsSync(filePath)) {
+			const what = libFs.lstatSync(filePath);
+
+			/* check if the path is a file */
+			if (what.isFile()) {
+				msg.tryRespondFile(filePath);
+				return;
+			}
+
+			/* check if the path is a directory */
+			else if (what.isDirectory()) {
+				ListDirectory(msg, filePath);
+				return;
+			}
+		}
+
+		/* add the not found error */
+		libLog.Log(`Request to unknown resource`);
+		msg.respondNotFound();
+	}
+	upgrade(msg) {
+		libLog.Log(`Shared handler for [${msg.relative}]`);
+		msg.respondNotFound();
+	}
+};

@@ -23,23 +23,17 @@ function Setup(localModule) {
 	/* internally reachable */
 	server.listenHttp(libConfig.PortInternalHttp, true);
 
-	/* add the catch-all handler */
-	server.addHandler('', false, function (msg) {
-		libLog.Log(`Catch-all not-found handler for [${msg.relative}]`);
-		msg.respondNotFound();
-	});
-
 	/* add the shared content handler */
-	server.addHandler(libShared.SubPath, false, libShared.Handle);
+	server.addHandler(new libShared.Application());
 
 	/* add the quiz-game content handler */
-	server.addHandler(libQuizGame.SubPath, false, libQuizGame.Handle);
+	server.addHandler(new libQuizGame.Application());
 
 	/* add the wedding-game content handler */
-	server.addHandler(libWeddingGame.SubPath, false, libWeddingGame.Handle);
+	server.addHandler(new libWeddingGame.Application());
 
 	/* add the crossword content handler */
-	server.addHandler(libCrossword.SubPath, false, libCrossword.Handle);
+	server.addHandler(new libCrossword.Application());
 }
 
 /* try to load the local configuration and otherwise perform the default-setup */

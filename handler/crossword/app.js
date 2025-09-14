@@ -253,7 +253,7 @@ function ModifyGame(msg) {
 			msg.respondOk('delete');
 		} catch (e) {
 			libLog.Error(`Error while removing file [${filePath}]: ${e.message}`);
-			msg.tryRespondInternalError('File-System error removing the game');
+			msg.respondInternalError('File-System error removing the game');
 		}
 		return;
 	}
@@ -297,7 +297,7 @@ function ModifyGame(msg) {
 		}
 		catch (e) {
 			libLog.Error(`Error while writing the game out: ${e.message}`);
-			msg.tryRespondInternalError('File-System error storing the game');
+			msg.respondInternalError('File-System error storing the game');
 			return;
 		}
 
@@ -306,7 +306,7 @@ function ModifyGame(msg) {
 	});
 	msg.request.on('error', (err) => {
 		libLog.Error(`Error occurred while posting to [${filePath}]: ${err.message}`);
-		msg.tryRespondInternalError('Network issue regarding the post payload');
+		msg.respondInternalError('Network issue regarding the post payload');
 	});
 }
 function QueryGames(msg) {
@@ -333,24 +333,16 @@ function QueryGames(msg) {
 	/* return them to the request */
 	msg.respondJson(JSON.stringify(out));
 }
-function AcceptWebSocket(msg) {
-	/* extract the name and validate it */
-	let name = msg.relative.slice(4);
-	if (!name.match(nameRegex) || name.length > nameMaxLength) {
-		msg.respondNotFound();
-		return;
-	}
+function AcceptWebSocket(msg, name) {
 	libLog.Log(`Handling WebSocket to: [${name}]`);
 	const filePath = fileRelative(`games/${name}.json`);
 
 	/* check if the game exists */
-	if (!libFs.existsSync(filePath)) {
-		msg.respondNotFound();
-		return;
-	}
+	if (!libFs.existsSync(filePath))
+		return false;
 
 	/* try to establish the web-socket connection */
-	const acceptable = msg.tryAcceptWebSocket(function (ws) {
+	return msg.tryAcceptWebSocket(function (ws) {
 		/* check if the game-state for the given name has already been set-up */
 		if (!(name in gameState))
 			gameState[name] = new ActiveGame(name, filePath);
@@ -376,6 +368,7 @@ function AcceptWebSocket(msg) {
 				}
 			}, 30_000);
 		};
+		ws._socket.setKeepAlive(true, 45_000);
 
 		/* initiate the alive-check */
 		queueAliveCheck(true);
@@ -387,12 +380,12 @@ function AcceptWebSocket(msg) {
 			clearTimeout(aliveInterval);
 			libLog.Log(`Socket [${id}] disconnected`);
 		});
-		ws.on('message', function (msg) {
+		ws.on('message', function (data) {
 			queueAliveCheck(true);
 
 			/* parse the data */
 			try {
-				let parsed = JSON.parse(msg);
+				let parsed = JSON.parse(data);
 				libLog.Log(`Received for socket [${id}]: ${parsed.cmd}`);
 
 				/* handle the command */
@@ -406,53 +399,65 @@ function AcceptWebSocket(msg) {
 			}
 		});
 	});
-	if (!acceptable) {
+}
+
+export class Application {
+	constructor() {
+		this.path = '/crossword';
+	}
+
+	request(msg) {
+		libLog.Log(`Game handler for [${msg.relative}]`);
+
+		/* check if a game is being manipulated */
+		if (msg.relative.startsWith('/game/')) {
+			ModifyGame(msg);
+			return;
+		}
+
+		/* all other endpoints only support 'getting' */
+		if (msg.ensureMethod(['GET']) == null)
+			return;
+
+		/* check if its a redirection and forward it accordingly */
+		if (msg.relative == '/' || msg.relative == '/main') {
+			msg.tryRespondFile(fileRelative('static/main.html'));
+			return;
+		}
+		if (msg.relative == '/editor') {
+			msg.tryRespondFile(fileRelative('static/editor.html'));
+			return;
+		}
+		if (msg.relative == '/play') {
+			msg.tryRespondFile(fileRelative('static/play.html'));
+			return;
+		}
+
+		/* check if the games are queried */
+		if (msg.relative == '/games') {
+			QueryGames(msg);
+			return;
+		}
+
+		/* respond to the request by trying to server the file */
+		msg.tryRespondFile(fileRelative('static' + msg.relative));
+	}
+	upgrade(msg) {
+		libLog.Log(`Game handler for [${msg.relative}]`);
+
+		/* check if a web-socket is connecting */
+		if (!msg.relative.startsWith('/ws/')) {
+			msg.respondNotFound();
+			return;
+		}
+
+		/* extract the name and validate it */
+		let name = msg.relative.slice(4);
+		if (name.match(nameRegex) && name.length <= nameMaxLength) {
+			if (AcceptWebSocket(msg, name))
+				return;
+		}
 		libLog.Warning(`Invalid request for web-socket point for game [${name}]`);
 		msg.respondNotFound();
 	}
-}
-
-export const SubPath = '/crossword';
-
-export function Handle(msg) {
-	libLog.Log(`Game handler for [${msg.relative}]`);
-
-	/* check if a game is being manipulated */
-	if (msg.relative.startsWith('/game/')) {
-		ModifyGame(msg);
-		return;
-	}
-
-	/* all other endpoints only support 'getting' */
-	if (msg.ensureMethod(['GET']) == null)
-		return;
-
-	/* check if its a redirection and forward it accordingly */
-	if (msg.relative == '/' || msg.relative == '/main') {
-		msg.tryRespondFile(fileRelative('static/main.html'));
-		return;
-	}
-	if (msg.relative == '/editor') {
-		msg.tryRespondFile(fileRelative('static/editor.html'));
-		return;
-	}
-	if (msg.relative == '/play') {
-		msg.tryRespondFile(fileRelative('static/play.html'));
-		return;
-	}
-
-	/* check if the games are queried */
-	if (msg.relative == '/games') {
-		QueryGames(msg);
-		return;
-	}
-
-	/* check if a web-socket is connecting */
-	if (msg.relative.startsWith('/ws/')) {
-		AcceptWebSocket(msg);
-		return;
-	}
-
-	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(fileRelative('static' + msg.relative));
-}
+};

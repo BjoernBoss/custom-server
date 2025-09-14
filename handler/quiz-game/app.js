@@ -392,50 +392,59 @@ function AcceptWebSocket(ws, id) {
 	});
 }
 
-export const SubPath = '/quiz-game';
-
-export function Handle(msg) {
-	libLog.Log(`Game handler for [${msg.relative}]`);
-	if (msg.ensureMethod(['GET']) == null)
-		return;
-
-	/* check if its a root-request and forward it accordingly */
-	if (msg.relative == '/') {
-		msg.tryRespondFile(fileRelative('static/base/startup.html'));
-		return;
+export class Application {
+	constructor() {
+		this.path = '/quiz-game';
 	}
+	request(msg) {
+		libLog.Log(`Game handler for [${msg.relative}]`);
+		if (msg.ensureMethod(['GET']) == null)
+			return;
 
-	/* check if a new session has been requested and create it */
-	if (msg.relative == '/new') {
-		let id = SetupSession();
-		msg.respondRedirect(libPath.join(SubPath, `./session`) + `?id=${id}`);
-		return;
-	}
+		/* check if its a root-request and forward it accordingly */
+		if (msg.relative == '/') {
+			msg.tryRespondFile(fileRelative('static/base/startup.html'));
+			return;
+		}
 
-	/* check if a session-dependent page has been requested */
-	if (msg.relative == '/session') {
-		msg.tryRespondFile(fileRelative('static/base/session.html'));
-		return
-	}
-	if (msg.relative == '/client') {
-		msg.tryRespondFile(fileRelative('static/client/main.html'));
-		return;
-	}
-	if (msg.relative == '/score') {
-		msg.tryRespondFile(fileRelative('static/score/main.html'));
-		return;
-	}
+		/* check if a new session has been requested and create it */
+		if (msg.relative == '/new') {
+			let id = SetupSession();
+			msg.respondRedirect(`${this.path}/session` + `?id=${id}`);
+			return;
+		}
 
-	/* check if the websocket has been requested */
-	if (msg.relative.startsWith('/ws/')) {
+		/* check if a session-dependent page has been requested */
+		if (msg.relative == '/session') {
+			msg.tryRespondFile(fileRelative('static/base/session.html'));
+			return
+		}
+		if (msg.relative == '/client') {
+			msg.tryRespondFile(fileRelative('static/client/main.html'));
+			return;
+		}
+		if (msg.relative == '/score') {
+			msg.tryRespondFile(fileRelative('static/score/main.html'));
+			return;
+		}
+
+		/* respond to the request by trying to server the file */
+		msg.tryRespondFile(fileRelative('static' + msg.relative));
+	}
+	upgrade(msg) {
+		libLog.Log(`Game handler for [${msg.relative}]`);
+		
+		/* check if the websocket has been requested */
+		if (!msg.relative.startsWith('/ws/')) {
+			msg.respondNotFound();
+			return;
+		}
+
+		/* extract the id and try to accept the socket */
 		let id = msg.relative.substring(4);
 		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, id)))
 			return;
 		libLog.Warning(`Invalid request for web-socket point for session: [${id}]`);
 		msg.respondNotFound();
-		return;
 	}
-
-	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(fileRelative('static' + msg.relative));
-}
+};

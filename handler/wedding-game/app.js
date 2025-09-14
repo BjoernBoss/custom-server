@@ -404,46 +404,48 @@ function HandleScoreMessage(msg, score) {
 	}
 }
 
-export const SubPath = '/wedding-game';
-
-export function Handle(msg) {
-	libLog.Log(`Game handler for [${msg.relative}]`);
-	if (msg.ensureMethod(['GET']) == null)
-		return;
-
-	/* check if its a root-request and forward it accordingly */
-	if (msg.relative == '/') {
-		msg.tryRespondFile(fileRelative('static/client/main.html'));
-		return;
+export class Application {
+	constructor() {
+		this.path = '/wedding-game';
 	}
-	if (msg.relative == '/score') {
-		msg.tryRespondFile(fileRelative('static/score/main.html'));
-		return;
-	}
-
-	/* check if its a web-socket request */
-	if (msg.relative == '/ws-client') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'client')))
+	request(msg) {
+		libLog.Log(`Game handler for [${msg.relative}]`);
+		if (msg.ensureMethod(['GET']) == null)
 			return;
-		libLog.Warning(`Invalid request for client web-socket point`);
+
+		/* check if its a root-request and forward it accordingly */
+		if (msg.relative == '/') {
+			msg.tryRespondFile(fileRelative('static/client/main.html'));
+			return;
+		}
+		if (msg.relative == '/score') {
+			msg.tryRespondFile(fileRelative('static/score/main.html'));
+			return;
+		}
+
+		/* respond to the request by trying to server the file */
+		msg.tryRespondFile(fileRelative('static' + msg.relative));
+	}
+	upgrade(msg) {
+		libLog.Log(`Game handler for [${msg.relative}]`);
+
+		/* check if its a web-socket request */
+		if (msg.relative == '/ws-client') {
+			if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'client')))
+				return;
+			libLog.Warning(`Invalid request for client web-socket point`);
+		}
+		else if (msg.relative == '/ws-admin') {
+			if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'admin')))
+				return;
+			libLog.Warning(`Invalid request for admin web-socket point`);
+		}
+		else if (msg.relative == '/ws-score') {
+			if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'score')))
+				return;
+			libLog.Warning(`Invalid request for score web-socket point`);
+		}
 		msg.respondNotFound();
 		return;
 	}
-	if (msg.relative == '/ws-admin') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'admin')))
-			return;
-		libLog.Warning(`Invalid request for admin web-socket point`);
-		msg.respondNotFound();
-		return;
-	}
-	if (msg.relative == '/ws-score') {
-		if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, 'score')))
-			return;
-		libLog.Warning(`Invalid request for score web-socket point`);
-		msg.respondNotFound();
-		return;
-	}
-
-	/* respond to the request by trying to server the file */
-	msg.tryRespondFile(fileRelative('static' + msg.relative));
-}
+};

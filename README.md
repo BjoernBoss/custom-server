@@ -21,7 +21,3 @@ Afterwards install the dependencies, and start the server:
     $ cd arsox-server
     $ npm install
     $ node main.js
-
-Known Issues:
-
-    Somehow websockets keep closing after a certain time.

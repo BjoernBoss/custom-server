@@ -10,73 +10,81 @@ export class Server {
 	constructor() {
 		libLog.Info(`Server object created`);
 		this._handler = {};
-		this._exact = {};
 	}
 
-	_requestHandler(request, response, internal) {
-		var msg = null;
+	_lookupHandler(pathname) {
+		/* lookup the best matching handler */
+		let bestKey = null;
+		for (const key in this._handler) {
+			/* ensure that the key is the leading path of the url and either a direct match or
+			*	immediately followed by a '/' (i.e. its not a partial name of a path-component) */
+			if (!pathname.startsWith(key))
+				continue;
+			if (pathname.length > key.length && pathname[key.length] != '/' && (key.length == 0 || pathname[key.length - 1] != '/'))
+				continue;
+
+			/* check if this is the better match by being the first match or more precise */
+			if (bestKey == null || key.length > bestKey.length)
+				bestKey = key;
+		}
+		return bestKey;
+	}
+	_handleWrapper(request, establish) {
+		let msg = null;
 		try {
-			libLog.Info(`New ${internal ? "internal" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
-			msg = new libHttp.HttpMessage(request, response, internal);
+			msg = establish();
 
-			/* check if an exact handler exists */
-			if (msg.url.pathname in this._exact) {
-				msg.translate(msg.url.pathname);
-				this._exact[msg.url.pathname](msg);
-				return;
-			}
-
-			/* lookup the best matching handler */
-			var bestKey = undefined;
-			for (const key in this._handler) {
-				/* ensure that the key is the leading path of the url and either a direct match or
-				*	immediately followed by a '/' (i.e. its not a partial name of a path-component) */
-				if (!msg.url.pathname.startsWith(key))
-					continue;
-				if (msg.url.pathname.length > key.length && msg.url.pathname[key.length] != '/' && (key.length == 0 || msg.url.pathname[key.length - 1] != '/'))
-					continue;
-
-				/* check if this is the better match by being the first match or more precise */
-				if (bestKey == undefined || key.length > bestKey.length)
-					bestKey = key;
-			}
+			/* find the handler to use */
+			let key = this._lookupHandler(msg.relative);
 
 			/* check if a handler has been found */
-			if (bestKey != undefined) {
-				msg.translate(bestKey);
-				this._handler[bestKey](msg);
+			if (key != null) {
+				msg.translate(key);
+				if (request)
+					this._handler[key].request(msg);
+				else
+					this._handler[key].upgrade(msg);
 				return;
 			}
 
-			/* add the default 404 (not-found) response */
-			libLog.Error(`No handler registered for [${msg.url.pathname}]`)
-			msg.respondNotFound(`No handler registered for [${msg.url.pathname}]`);
+			/* add the default [not-found] response */
+			libLog.Error(`No handler registered for [${msg.relative}]`)
+			msg.respondNotFound(`No handler registered for [${msg.relative}]`);
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
 			libLog.Error(`Uncaught exception encountered: ${err}`)
 			if (msg != null)
-				msg.tryRespondInternalError('Unknown internal error encountered');
+				msg.respondInternalError('Unknown internal error encountered');
 			request.destroy();
 		}
 	}
+	_handleRequest(request, response, internal) {
+		this._handleWrapper(true, function () {
+			libLog.Info(`New ${internal ? "internal" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
+			return new libHttp.HttpMessage(request, response, internal);
+		});
+	}
+	_handleUpgrade(request, socket, head, internal) {
+		this._handleWrapper(false, function () {
+			libLog.Info(`New ${internal ? "internal" : "external"} upgrade: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
+			return new libHttp.HttpUpgrade(request, socket, head, internal);
+		});
+	}
 
-	addHandler(path, exactPath, callback) {
-		if (path in (exactPath ? this._exact : this._handler))
-			libLog.Error(`${exactPath ? "path" : "Sub-path"} [${path}] is already being handled`);
+	addHandler(handler) {
+		if (handler.path in this._handler)
+			libLog.Error(`Path [${handler.path}] is already being handled`);
 		else {
-			libLog.Info(`Registered ${exactPath ? "path" : "sub-path"} handler for [${path}]`);
-			(exactPath ? this._exact : this._handler)[path] = callback;
+			libLog.Info(`Registered path handler for [${handler.path}]`);
+			this._handler[handler.path] = handler;
 		}
 	}
 	listenHttp(port, internal) {
 		try {
 			/* start the actual server */
-			const server = libNodeHttp.createServer((req, resp) =>
-				this._requestHandler(req, resp, internal)
-			).listen(port);
-			server.on('error', (err) => {
-				libLog.Error(`While listening to port ${port} using http: ${err}`);
-			});
+			const server = libNodeHttp.createServer((req, resp) => this._handleRequest(req, resp, internal)).listen(port);
+			server.on('error', (err) => libLog.Error(`While listening to port ${port} using http: ${err}`));
+			server.on('upgrade', (req, sock, head) => this._handleUpgrade(req, sock, head, internal));
 			if (!server.listening)
 				return;
 
@@ -95,12 +103,9 @@ export class Server {
 			};
 
 			/* start the actual server */
-			const server = libNodeHttps.createServer(config, (req, resp) =>
-				this._requestHandler(req, resp, internal)
-			).listen(port);
-			server.on('error', (err) => {
-				libLog.Error(`While listening to port ${port} using https: ${err}`);
-			});
+			const server = libNodeHttps.createServer(config, (req, resp) => this._handleRequest(req, resp, internal)).listen(port);
+			server.on('error', (err) => libLog.Error(`While listening to port ${port} using https: ${err}`));
+			server.on('upgrade', (req, sock, head) => this._handleUpgrade(req, sock, head, internal));
 			if (!server.listening)
 				return;
 
