@@ -7,18 +7,18 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Crosswords!</title>
+	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
+	<link rel="stylesheet" type="text/css" href="/crossword/notify/notifier.css">
+	<script src="/crossword/notify/notifier.js"></script>
 </head>
 
 <body contenteditable="false" onload="_state.setup();">
+	<!-- notification placeholder -->
+	<div id="notification-host" class="notification-host"></div>
+
 	<!-- main view -->
 	<div class="main">
-		<!-- uploaded notification -->
-		<div id="notification" class="notification">
-			<div id="notification-text" class="caption">Crossword [] uploaded!</div>
-			<div class="button" onclick="_state.hideNotification();">&#x2716;</div>
-		</div>
-
 		<!-- selection view -->
 		<div class="content" id="container">
 			<div class="scroll-view">
@@ -55,15 +55,9 @@
 	let _state = { removing: null, busy: false };
 	_state.setup = function () {
 		/* check if a notification is to be shown */
-		let params = new URLSearchParams(document.location.search);
-		let name = params.get('uploaded');
-		if (name == null) {
-			document.getElementById('notification').classList.remove('show');
-		}
-		else {
-			document.getElementById('notification').classList.add('show');
-			document.getElementById('notification-text').innerText = `Crossword [${name}] uploaded!`;
-		}
+		let name = new URLSearchParams(document.location.search).get('uploaded');
+		if (name != null)
+			PushNotification(`Crossword [${name}] uploaded!`, false);
 
 		/* patch the history to prevent the banner from being shown again */
 		if (window.history.replaceState) {
@@ -111,7 +105,7 @@
 					entry.appendChild(hsep);
 
 					let button = document.createElement('div');
-					button.classList.add('button', 'nested');
+					button.classList.add('button');
 					button.innerText = '\u2716';
 					entry.appendChild(button);
 
@@ -132,24 +126,8 @@
 				}
 			})
 			.catch(function (e) {
-				/* add the html components for the error message */
-				let sep = document.createElement('div');
-				sep.style.height = '20px';
-				document.getElementById('content').appendChild(sep);
-				let entry = document.createElement('div');
-				entry.classList.add('button', 'menu-option', 'disabled');
-				document.getElementById('content').appendChild(entry);
-				let msg = document.createElement('div');
-				entry.appendChild(msg);
-				msg.classList.add('menu-error');
-
-				/* setup the error message */
-				msg.innerText = `Failed to fetch the list of games: ${e.message}\n\n...reload page to try again!`;
+				PushNotification(`Failed to fetch the list of games: ${e.message}\n...reload page to try again!`, true);
 			});
-	}
-
-	_state.hideNotification = function () {
-		document.getElementById('notification').classList.remove('show')
 	}
 
 	_state.removeEntry = function (name) {
@@ -183,9 +161,6 @@
 				document.getElementById('error').innerText = `Error while deleting the crossword: ${e.message}\nTry to reload the page...`;
 				_state.busy = false;
 			});
-
-		/* mark a request as being sent */
-		_state.doRemove();
 	}
 	_state.cancelRemove = function () {
 		document.getElementById('remove').classList.remove('show');
@@ -195,6 +170,6 @@
 		document.location = '/crossword/editor.html';
 	}
 	_state.startPlay = function (name) {
-		document.location = `/crossword/play.html?name=${name}`;
+		document.location = `/crossword/play.html?game=${name}`;
 	}
 </script>

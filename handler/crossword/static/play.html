@@ -1,0 +1,108 @@
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- Copyright (c) 2025 Bjoern Boss Henrichsen -->
+<!DOCTYPE html>
+<html lang="en" style="margin: 0; height: 100%;">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Play Crossword</title>
+	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
+	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
+</head>
+
+<body contenteditable="false">
+	<!-- notification placeholder -->
+	<div id="notification-host" class="notification-host"></div>
+
+	<!-- name screen -->
+	<div id="fetch-name" class="overlay show">
+		<div class="dialog">
+			<div class="caption">Your Player Name</div>
+			<div style="margin: 15px;">
+				<input placeholder="Name" id="name" style="width: 350px; font-size: 1.3em; padding: 4px;">
+			</div>
+			<div id="error" class="error" style="margin: 0px 15px 15px 15px;">Error Message</div>
+			<div class="confirm">
+				<div class="button" style="width: 100px;" onclick="_state.enter()">Ok</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- game view -->
+	<div class="main">
+		<!-- game caption -->
+		<div class="header" style="justify-content: center;">
+			<div id="caption" class="caption">Playing!</div>
+		</div>
+
+		<!-- game view -->
+		<div class="content" id="container">
+			<div class="grid" id="content" style="display: none;"></div>
+		</div>
+
+		<!-- game footer -->
+		<div class="footer">
+			Note: Numbers are automatically assigned. Should they not match, please open issue on github.
+		</div>
+	</div>
+</body>
+
+</html>
+
+<script>
+	let _state = { game: '', name: '', sock: {} };
+
+	window.onload = function () {
+		/* initialize the last name from the cookies */
+		let lastName = document.cookie.split('; ').find((v) => v.startsWith('crossword-last-name='))?.split('=')[1];
+		if (lastName != null)
+			document.getElementById('name').value = lastName;
+
+		/* initialize the caption */
+		let game = new URLSearchParams(document.location.search).get('game');
+		if (game != null) {
+			_state.game = game;
+			document.getElementById('caption').innerText = `Crossword: ${_state.game}`;
+		}
+		else
+			document.getElementById('caption').innerText = 'Unknown Crossword!';
+
+		/* setup the socket */
+		_state.socketSetup();
+	}
+
+	_state.enter = function () {
+		/* validate the name */
+		const name = document.getElementById('name').value;
+		if (name.length == 0) {
+			document.getElementById('error').innerText = 'Name cannot be empty';
+			document.getElementById('error').classList.add('show');
+			return;
+		}
+
+		/* update the name */
+		_state.name = name;
+		document.getElementById('fetch-name').classList.remove('show');
+
+		/* write the last name as a cookie out (lifetime = 24hrs) */
+		document.cookie = `crossword-last-name=${_state.name}; expires=${new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString()};`;
+
+		/* notify the socket about the available name */
+		_state.socketName();
+	}
+
+	_state.socketSetup = function () {
+		/* construct the url for the web-socket */
+		let protocol = (location.protocol == 'https:' ? 'wss' : 'ws');
+		_state.sock.url = `${protocol}://${location.host}/crossword/ws/${_state.game}`;
+
+		_state.sock.ws = new WebSocket(_state.sock.url);
+		_state.sock.ws.onmessage = function (msg) {
+
+		};
+	};
+	_state.socketName = function () {
+
+	};
+</script>

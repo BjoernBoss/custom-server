@@ -7,6 +7,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Editor</title>
+	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
 </head>
 
@@ -47,7 +48,7 @@
 	</div>
 
 	<!-- editor view -->
-	<div id="editor" class="main">
+	<div class="main">
 		<!-- editor caption -->
 		<div class="header">
 			<div id="caption" class="caption">Creating a new Crossword!</div>
@@ -70,9 +71,10 @@
 </html>
 
 <script>
-	window.onbeforeunload = function () { return "Your work will be lost."; };
+	let _state = { uploading: false, uploaded: false };
 
-	let _state = { uploading: false };
+	window.onbeforeunload = function () { if (_state.uploaded) return null; return "Your work will be lost."; };
+
 	_state.setup = function () {
 		/* validate the dimension */
 		_state.width = parseInt(document.getElementById('width').value);
@@ -221,6 +223,7 @@
 				/* redirect to the main page */
 				if (!resp.ok)
 					throw new Error(resp.statusText);
+				_state.uploaded = true;
 				document.location = `/crossword/main.html?uploaded=${name}`;
 			}).catch(function (e) {
 				/* post the error */
@@ -229,9 +232,6 @@
 				document.getElementById('error').classList.add('show');
 				_state.uploading = false;
 			});
-
-		/* mark a request as being sent */
-		_state.upload();
 	}
 	_state.cancel = function () {
 		document.getElementById('name').value = '';
