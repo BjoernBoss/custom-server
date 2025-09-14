@@ -18,6 +18,9 @@ function fileRelative(path) {
 
 let gameState = {};
 
+const nameRegex = '[a-zA-Z0-9]([-_.]?[a-zA-Z0-9])*';
+const nameMaxLength = 255;
+
 class ActiveGame {
 	constructor(name, filePath) {
 		this.ws = {};
@@ -135,12 +138,43 @@ class ActiveGame {
 		let valid = (this.grid != null && this.grid.length == grid.length);
 
 		/* validate the grid structure */
+		let merged = [], dirty = false;
 		if (valid) {
 			for (let i = 0; i < this.grid.length; ++i) {
-				if (this.grid[i].solid == grid[i].solid && typeof grid[i].char == 'string' && typeof grid[i].certain == 'boolean' && typeof grid[i].author == 'string')
+				/* validate the data-types */
+				if (typeof grid[i].char != 'string' || typeof grid[i].certain != 'boolean' || typeof grid[i].author != string) {
+					valid = false;
+					break;
+				}
+
+				/* setup the sanitized data */
+				let char = grid[i].char.slice(0, 1);
+				let certain = grid[i].certain;
+				let author = grid[i].author.slice(0, nameMaxLength + 1);
+				if (this.grid[i].solid) {
+					char = '';
+					author = '';
+					certain = false;
+				}
+				else if (char == '') {
+					author = '';
+					certain = false;
+				}
+
+				/* check if the data actually have changed */
+				if (char == grid[i].char && certain == grid[i].certain && author == grid[i].author) {
+					merged.push(grid[i]);
 					continue;
-				valid = false;
-				break;
+				}
+
+				/* update the merged grid */
+				merged.push({
+					solid: grid[i].solid,
+					char: char,
+					certain: certain,
+					author: author
+				});
+				dirty = true;
 			}
 		}
 
@@ -150,12 +184,19 @@ class ActiveGame {
 			return;
 		}
 
+		/* check if the data are not dirty */
+		if (!dirty) {
+			libLog.Log(`Silently discarding empty grid update of [${this.filePath}]`);
+			return;
+		}
+
 		/* update the grid and notify the listeners about the change */
-		this.grid = grid;
+		this.grid = merged;
 		this._notifyAll();
 		this._queueWriteBack();
 	}
 	updateName(id, name) {
+		name = name.slice(0, nameMaxLength + 1);
 		if (this.ws[id].name == name) return;
 
 		/* update the name and notify the other sockets */
@@ -183,9 +224,6 @@ class ActiveGame {
 		return this.nextId;
 	}
 }
-
-const nameRegex = '[a-zA-Z0-9]([-_.]?[a-zA-Z0-9])*';
-const nameMaxLength = 255;
 
 function ParseAndValidateGame(data) {
 	/* parse the json content */
@@ -333,71 +371,70 @@ function QueryGames(msg) {
 	/* return them to the request */
 	msg.respondJson(JSON.stringify(out));
 }
-function AcceptWebSocket(msg, name) {
+function AcceptWebSocket(ws, name) {
 	libLog.Log(`Handling WebSocket to: [${name}]`);
 	const filePath = fileRelative(`games/${name}.json`);
 
 	/* check if the game exists */
-	if (!libFs.existsSync(filePath))
-		return false;
+	if (!libFs.existsSync(filePath)) {
+		ws.send(JSON.stringify('unknown-game'));
+		ws.close();
+		return;
+	}
 
-	/* try to establish the web-socket connection */
-	return msg.tryAcceptWebSocket(function (ws) {
-		/* check if the game-state for the given name has already been set-up */
-		if (!(name in gameState))
-			gameState[name] = new ActiveGame(name, filePath);
-		const id = gameState[name].register(ws);
-		libLog.Log(`Registered websocket to: [${name}] as [${id}]`);
+	/* check if the game-state for the given name has already been set-up */
+	if (!(name in gameState))
+		gameState[name] = new ActiveGame(name, filePath);
+	const id = gameState[name].register(ws);
+	libLog.Log(`Registered websocket to: [${name}] as [${id}]`);
 
-		/* define the alive callback */
-		let isAlive = true, aliveInterval = null, queueAliveCheck = null;
-		queueAliveCheck = function (alive) {
-			/* update the alive-flag and kill the old timer */
-			isAlive = alive;
-			clearTimeout(aliveInterval);
+	/* define the alive callback */
+	let isAlive = true, aliveInterval = null, queueAliveCheck = null;
+	queueAliveCheck = function (alive) {
+		/* update the alive-flag and kill the old timer */
+		isAlive = alive;
+		clearTimeout(aliveInterval);
 
-			/* queue the check callback */
-			aliveInterval = setTimeout(function () {
-				if (!isAlive) {
-					ws.close();
-					aliveInterval = null;
-				}
-				else {
-					queueAliveCheck(false);
-					ws.ping();
-				}
-			}, 30_000);
-		};
-		ws._socket.setKeepAlive(true, 45_000);
+		/* queue the check callback */
+		aliveInterval = setTimeout(function () {
+			if (!isAlive) {
+				ws.close();
+				aliveInterval = null;
+			}
+			else {
+				queueAliveCheck(false);
+				ws.ping();
+			}
+		}, 60_000);
+	};
 
-		/* initiate the alive-check */
+	/* initiate the alive-check */
+	queueAliveCheck(true);
+
+	/* register the web-socket callbacks */
+	ws.on('pong', () => queueAliveCheck(true));
+	ws.on('close', function () {
+		gameState[name].drop(id);
+		clearTimeout(aliveInterval);
+		libLog.Log(`Socket [${id}] disconnected`);
+	});
+	ws.on('message', function (data) {
 		queueAliveCheck(true);
 
-		/* register the web-socket callbacks */
-		ws.on('pong', () => queueAliveCheck(true));
-		ws.on('close', function () {
-			gameState[name].drop(id);
-			clearTimeout(aliveInterval);
-			libLog.Log(`Socket [${id}] disconnected`);
-		});
-		ws.on('message', function (data) {
-			queueAliveCheck(true);
+		/* parse the data */
+		try {
+			let parsed = JSON.parse(data);
+			libLog.Log(`Received for socket [${id}]: ${parsed.cmd}`);
 
-			/* parse the data */
-			try {
-				let parsed = JSON.parse(data);
-				libLog.Log(`Received for socket [${id}]: ${parsed.cmd}`);
-
-				/* handle the command */
-				if (parsed.cmd == 'name' && typeof parsed.name == 'string')
-					gameState[name].updateName(id, parsed.name);
-				else if (parsed.cmd == 'update')
-					gameState[name].updateGrid(parsed.data);
-			} catch (e) {
-				libLog.Error(`Failed to parse web-socket response: ${e.message}`);
-				ws.close();
-			}
-		});
+			/* handle the command */
+			if (parsed.cmd == 'name' && typeof parsed.name == 'string')
+				gameState[name].updateName(id, parsed.name);
+			else if (parsed.cmd == 'update')
+				gameState[name].updateGrid(parsed.data);
+		} catch (e) {
+			libLog.Error(`Failed to parse web-socket response: ${e.message}`);
+			ws.close();
+		}
 	});
 }
 
@@ -454,7 +491,7 @@ export class Application {
 		/* extract the name and validate it */
 		let name = msg.relative.slice(4);
 		if (name.match(nameRegex) && name.length <= nameMaxLength) {
-			if (AcceptWebSocket(msg, name))
+			if (msg.tryAcceptWebSocket((ws) => AcceptWebSocket(ws, name)))
 				return;
 		}
 		libLog.Warning(`Invalid request for web-socket point for game [${name}]`);

@@ -71,9 +71,9 @@
 </html>
 
 <script>
-	let _state = { uploading: false, uploaded: false };
+	let _state = { dirty: false, uploading: false, uploaded: false };
 
-	window.onbeforeunload = function () { if (_state.uploaded) return null; return "Your work will be lost."; };
+	window.onbeforeunload = function () { if (!_state.dirty || _state.uploaded) return null; return "Your work will be lost."; };
 
 	_state.setup = function () {
 		/* validate the dimension */
@@ -277,6 +277,7 @@
 
 		/* setup the operation */
 		_state.updating = !_state.grid[x][y].solid;
+		_state.dirty = true;
 		_state.toggleSolid(x, y);
 		return true;
 	}

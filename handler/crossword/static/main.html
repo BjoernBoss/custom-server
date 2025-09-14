@@ -9,11 +9,25 @@
 	<title>Crosswords!</title>
 	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
-	<link rel="stylesheet" type="text/css" href="/crossword/notify/notifier.css">
-	<script src="/crossword/notify/notifier.js"></script>
+	<link rel="stylesheet" type="text/css" href="/crossword/notifier.css">
+	<script src="/crossword/notifier.js"></script>
 </head>
 
 <body contenteditable="false" onload="_state.setup();">
+	<!-- remove screen -->
+	<div id="remove" class="overlay">
+		<div class="dialog" style="min-width: 400px;">
+			<div id="remove-caption" class="caption">Remove: Caption</div>
+			<div id="remove-disclaimer" style="margin: 15px;">Disclaimer!</div>
+			<div id="error" class="error" style="margin: 0px 15px 15px 15px;">Error Message</div>
+			<div class="confirm">
+				<div class="button" style="width: 100px;" onclick="_state.doRemove()">Remove</div>
+				<div style="width: 15px;"></div>
+				<div class="button" style="width: 100px;" onclick="_state.cancelRemove()">Cancel</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- notification placeholder -->
 	<div id="notification-host" class="notification-host"></div>
 
@@ -34,19 +48,6 @@
 		<div class="footer">Crosswords can be created and edited together. Deleted crosswords cannot be recovered.</div>
 	</div>
 
-	<!-- remove screen -->
-	<div id="remove" class="overlay">
-		<div class="dialog" style="min-width: 400px;">
-			<div id="remove-caption" class="caption">Remove: Caption</div>
-			<div id="remove-disclaimer" style="margin: 15px;">Disclaimer!</div>
-			<div id="error" class="error" style="margin: 0px 15px 15px 15px;">Error Message</div>
-			<div class="confirm">
-				<div class="button" style="width: 100px;" onclick="_state.doRemove()">Remove</div>
-				<div style="width: 15px;"></div>
-				<div class="button" style="width: 100px;" onclick="_state.cancelRemove()">Cancel</div>
-			</div>
-		</div>
-	</div>
 </body>
 
 </html>

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2025 Bjoern Boss Henrichsen */
 html {
 	margin: 0;
 	height: 100%;
@@ -19,7 +21,6 @@ body {
 	display: none;
 	justify-content: center;
 	align-items: center;
-	z-index: 1;
 }
 
 .overlay.show {
@@ -73,6 +74,7 @@ body {
 
 .main .header {
 	display: flex;
+	flex-direction: row;
 	align-items: center;
 	width: 100%;
 	padding: 20px;
@@ -107,6 +109,33 @@ body {
 	user-select: none;
 	display: flex;
 	flex-direction: column;
+}
+
+.main .players {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	flex-wrap: wrap;
+	border-style: solid;
+	border-color: #202020;
+	border-width: 0 0 1px 0;
+	padding: 10px;
+}
+
+.player {
+	user-select: none;
+	margin: 2px 4px;
+	padding: 1px 6px;
+	text-align: center;
+	border: black solid 1px;
+	border-radius: 3px;
+	font-weight: 200;
+	min-width: 75px;
+}
+
+.player.online {
+	font-weight: 700;
+	text-decoration: underline;
 }
 
 .content .scroll-view {

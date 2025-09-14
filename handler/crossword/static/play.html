@@ -9,12 +9,13 @@
 	<title>Play Crossword</title>
 	<link rel="stylesheet" type="text/css" href="/crossword/button.css">
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
+	<link rel="stylesheet" type="text/css" href="/crossword/notifier.css">
+	<script src="/crossword/notifier.js"></script>
+	<script src="/crossword/sync-socket.js"></script>
+
 </head>
 
 <body contenteditable="false">
-	<!-- notification placeholder -->
-	<div id="notification-host" class="notification-host"></div>
-
 	<!-- name screen -->
 	<div id="fetch-name" class="overlay show">
 		<div class="dialog">
@@ -29,12 +30,18 @@
 		</div>
 	</div>
 
+	<!-- notification placeholder -->
+	<div id="notification-host" class="notification-host"></div>
+
 	<!-- game view -->
 	<div class="main">
 		<!-- game caption -->
 		<div class="header" style="justify-content: center;">
 			<div id="caption" class="caption">Playing!</div>
 		</div>
+
+		<!-- game players -->
+		<div class="players" id="players"></div>
 
 		<!-- game view -->
 		<div class="content" id="container">
@@ -51,7 +58,15 @@
 </html>
 
 <script>
-	let _state = { game: '', name: '', sock: {} };
+	let _state = {
+		game: '',
+		name: '',
+		sock: null,
+		dirty: false,
+		grid: null,
+		players: {},
+		usedsHues: []
+	};
 
 	window.onload = function () {
 		/* initialize the last name from the cookies */
@@ -68,8 +83,11 @@
 		else
 			document.getElementById('caption').innerText = 'Unknown Crossword!';
 
-		/* setup the socket */
-		_state.socketSetup();
+		/* setup the socket and register all corresponding callbacks */
+		_state.sock = new SyncSocket(`/crossword/ws/${_state.game}`);
+		_state.sock.onfailed = (msg) => PushNotification(msg, true);
+		_state.sock.onreceived = (data) => _state.handleData(data);
+		_state.sock.onconnected = () => _state.handleConnected();
 	}
 
 	_state.enter = function () {
@@ -89,20 +107,138 @@
 		document.cookie = `crossword-last-name=${_state.name}; expires=${new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString()};`;
 
 		/* notify the socket about the available name */
-		_state.socketName();
+		if (_state.sock.connected())
+			_state.sock.send((send) => send({ cmd: 'name', name: _state.name }));
 	}
 
-	_state.socketSetup = function () {
-		/* construct the url for the web-socket */
-		let protocol = (location.protocol == 'https:' ? 'wss' : 'ws');
-		_state.sock.url = `${protocol}://${location.host}/crossword/ws/${_state.game}`;
+	_state.nextColor = function () {
+		let hue = 0;
 
-		_state.sock.ws = new WebSocket(_state.sock.url);
-		_state.sock.ws.onmessage = function (msg) {
+		/* check if this is the first or second color */
+		if (_state.usedsHues.length == 0)
+			hue = Math.random() * 360;
+		else if (_state.usedsHues.length == 1)
+			hue = _state.usedsHues[0] + 180;
 
-		};
-	};
-	_state.socketName = function () {
+		/* find the largest distance between two hues and use its center as next color */
+		else {
+			let start = _state.usedsHues[0], end = _state.usedsHues[1];
 
-	};
+			/* find the largest distance in the used hues */
+			for (let i = 1; i < _state.usedsHues.length; ++i) {
+				let tStart = _state.usedsHues[i], tEnd = (i + 1 >= _state.usedsHues.length ? _state.usedsHues[0] + 360 : _state.usedsHues[i + 1]);
+				if (tEnd - tStart > end - start) {
+					start = tStart;
+					end = tEnd;
+				}
+			}
+			hue = (start + end) / 2;
+		}
+
+		/* sanitize the color */
+		hue = Math.floor(hue);
+		if (hue >= 360)
+			hue -= 360;
+
+		/* add the hue to the list of used hues and return the actual hsl-color */
+		_state.usedsHues.push(hue);
+		_state.usedsHues.sort();
+		return `hsl(${hue}, 75%, 75%)`;
+	}
+	_state.updatePlayers = function () {
+		let players = Object.keys(_state.players).sort();
+		const html = document.getElementById('players');
+
+		/* update all of the players */
+		for (let i = 0; i < players.length; ++i) {
+			const name = players[i];
+			let div = null;
+
+			/* fetch the next child div */
+			if (i >= html.children.length) {
+				div = document.createElement('div');
+				div.classList.add('player');
+				html.appendChild(div);
+			}
+			else
+				div = html.children[i];
+
+			/* update the name, color, and online status */
+			if (_state.players[name].online)
+				div.classList.add('online');
+			else
+				div.classList.remove('online');
+			div.innerText = name;
+			div.style.backgroundColor = _state.players[name].color;
+		}
+
+		/* remove the remaining children */
+		while (html.children.length > players.length)
+			html.lastChild.remove();
+	}
+
+	_state.handleData = function (data) {
+		/* check if invalid data have been received */
+		if (data === 'unknown-game') {
+			_state.sock.error(`Game [${_state.game}] not known by the server!`);
+			return;
+		}
+
+		/* check if the server has failed */
+		if (data.failed)
+			PushNotification('Server failed to write the game back!', true);
+
+		/* mark all players as offline until the online re-enables them */
+		for (const key in _state.players)
+			_state.players[key].online = false;
+
+		/* update the player data */
+		for (const key of data.names) {
+			if (!(key in _state.players))
+				_state.players[key] = { color: _state.nextColor(), online: false };
+		}
+		for (const key of data.online) {
+			if (key in _state.players)
+				_state.players[key].online = true;
+			else
+				console.log(`Inconsistency detected between names and online names: ${key}`);
+		}
+		_state.updatePlayers();
+
+		/* update the grid data and render it */
+		_state.grid = data;
+	}
+	_state.handleConnected = function () {
+		if (_state.name != '')
+			_state.sock.send((send) => send({ cmd: 'name', name: _state.name }));
+		_state.pushDirty();
+	}
+	_state.pushDirty = function () {
+		if (!_state.dirty)
+			return;
+		_state.dirty = false;
+
+		/* check if the grid can be sent */
+		if (_state.grid == null)
+			return;
+
+		/* build the game-state to be sent */
+		let out = {
+			width: _state.grid.width,
+			height: _state.grid.height,
+			grid: []
+		}
+		for (let y = 0; y < out.height; ++y) {
+			for (let x = 0; x < out.width; ++x) {
+				out.grid.push({
+					char: _state.grid[x][y].char,
+					certain: _state.grid[x][y].certain,
+					author: _state.grid[x][y].author
+				});
+			}
+		}
+
+		/* send the data to the server */
+		_state.sock.send((send) => send({ cmd: 'update', data: out }));
+	}
 </script>
