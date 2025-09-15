@@ -5,7 +5,8 @@
 
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- prevent user-zooming as this breaks the viewport handling for keyboard-detection -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
 	<title>Play Crossword</title>
 	<link rel="stylesheet" type="text/css" href="/crossword/style.css">
 	<script src="/crossword/notifier.js"></script>

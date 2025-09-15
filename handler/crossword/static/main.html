@@ -54,14 +54,6 @@
 	let _state = { removing: null, busy: false };
 
 	window.onload = function () {
-		/* ensure phones handle the visibility of the keyboard properly */
-		if (window.visualViewport) {
-			window.visualViewport.addEventListener("resize", function () {
-				document.body.style.height = `${window.visualViewport.height}px`;
-				document.querySelectorAll('.overlay').forEach(e => e.style.height = `${window.visualViewport.height}px`);
-			});
-		}
-
 		/* check if a notification is to be shown */
 		let name = new URLSearchParams(document.location.search).get('uploaded');
 		if (name != null)
