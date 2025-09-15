@@ -463,7 +463,7 @@ class GridFocus {
 		this._view.reset();
 	}
 	_lose() {
-		_focusLost();
+		this._focusLost();
 		this._grid.mesh[this._cell[0]][this._cell[1]].html.children[0].blur();
 	}
 	_move(x, y, back) {
@@ -532,6 +532,10 @@ class GridFocus {
 			this._focused(this._cell[0], this._cell[1], true);
 	}
 
+	lose() {
+		if (this._active)
+			this._lose();
+	}
 	focused(x, y, focus) {
 		if (focus)
 			return this._focused(x, y, false);
