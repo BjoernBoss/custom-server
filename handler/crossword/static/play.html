@@ -49,7 +49,16 @@
 
 		<!-- game footer -->
 		<div class="footer">
-			Note: Numbers are automatically assigned. Should they not match, please open issue on github.
+			<div class="button" style="height: 50px; width: 150px; margin-right: 15px;">Unsure</div>
+			<div style="display: flex; flex-direction: row;">
+				<div class="button left" style="height: 50px; width: 150px;" id="horizontal">
+					Horizontal &#x27a1;&#xFE0F;
+				</div>
+				<div class="button-separator"></div>
+				<div class="button right" style="height: 50px; width: 150px;" id="vertical">
+					Vertical &#x2b07;&#xFE0F;
+				</div>
+			</div>
 		</div>
 	</div>
 </body>
@@ -107,7 +116,21 @@
 			RenderGrid(_state.grid, _state.getAuthorHue);
 			_state.dirty = true;
 			_state.pushDirty();
+		}, function (horizontal) {
+			document.getElementById(horizontal ? 'horizontal' : 'vertical').classList.add('toggled');
+			document.getElementById(horizontal ? 'vertical' : 'horizontal').classList.remove('toggled');
 		});
+
+		/* add the toggle callbacks for horizontal/vertical and initialize the state */
+		document.getElementById('horizontal').onmousedown = function (e) {
+			e.preventDefault();
+			_state.focus.config(null, true, null);
+		};
+		document.getElementById('vertical').onmousedown = function (e) {
+			e.preventDefault();
+			_state.focus.config(null, false, null);
+		};
+		document.getElementById(_state.focus.isHorizontal() ? 'horizontal' : 'vertical').classList.add('toggled');
 	}
 
 	_state.enter = function () {
@@ -131,7 +154,16 @@
 			_state.sock.send((send) => send({ cmd: 'name', name: _state.name }));
 
 		/* update the focus to use the proper name */
-		_state.focus.config(true, true, _state.name);
+		_state.focus.config(null, null, _state.name);
+
+		/* register convenience handler (first after setting the name to prevent the input from being consumed) */
+		document.body.onkeydown = function (e) {
+			if (e.key != ' ' && e.key != 'Tab')
+				return;
+			e.stopPropagation();
+			e.preventDefault();
+			_state.focus.config(null, !_state.focus.isHorizontal(), null);
+		};
 	}
 
 	_state.nextColor = function () {

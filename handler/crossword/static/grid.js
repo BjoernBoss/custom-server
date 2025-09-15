@@ -358,7 +358,7 @@ class GridView {
 }
 
 class GridFocus {
-	constructor(view, onchange) {
+	constructor(view, onchange, onhorizontal) {
 		this._grid = null;
 		this._name = '';
 		this._view = view;
@@ -372,11 +372,26 @@ class GridFocus {
 		this._horizontal = true;
 
 		this._onchange = onchange;
+		this._onhorizontal = onhorizontal;
 	}
 
-	_focused(x, y) {
+	_testHorizontal(x, y, horizontal) {
+		/* check which of the neighboring cells is empty */
+		const leftEmpty = (x > 0 && !this._grid.mesh[x - 1][y].solid);
+		const topEmpty = (y > 0 && !this._grid.mesh[x][y - 1].solid);
+		const rightEmpty = (x < this._grid.width - 1 && !this._grid.mesh[x + 1][y].solid);
+		const bottomEmpty = (y < this._grid.height - 1 && !this._grid.mesh[x][y + 1].solid);
+		const leftRight = (leftEmpty || rightEmpty);
+		const topBottom = (topEmpty || bottomEmpty);
+
+		/* check if the horizontal should be toggled */
+		if (!leftRight && !topBottom)
+			return true;
+		return (horizontal ? leftRight : topBottom);
+	}
+	_focused(x, y, force) {
 		/* check if nothing needs to be done */
-		if (this._grid != null && this._active && x >= this._start[0] && x <= this._end[0] && y >= this._start[1] && y <= this._end[1])
+		if (!force && this._grid != null && this._active && x >= this._start[0] && x <= this._end[0] && y >= this._start[1] && y <= this._end[1])
 			return true;
 
 		/* validate the request */
@@ -389,6 +404,12 @@ class GridFocus {
 			return false;
 		}
 		this._active = true;
+
+		/* test if the horizontal alignment needs to be updated */
+		if (!this._testHorizontal(x, y, this._horizontal)) {
+			this._horizontal = !this._horizontal;
+			this._onhorizontal(this._horizontal);
+		}
 
 		/* find the start and end cell */
 		if (this._horizontal) {
@@ -464,10 +485,24 @@ class GridFocus {
 		/* notify about the changed grid */
 		this._onchange();
 	}
+	_updateHorizontal(horizontal) {
+		if (horizontal == this._horizontal)
+			return;
+
+		/* check if the request cannot be applied, as it does not fit the current configuration */
+		if (this._active && !this._testHorizontal(this._cell[0], this._cell[1], horizontal))
+			return;
+
+		/* apply the new style */
+		this._horizontal = horizontal;
+		this._onhorizontal(this._horizontal);
+		if (this._active)
+			this._focused(this._cell[0], this._cell[1], true);
+	}
 
 	focused(x, y, focus) {
 		if (focus)
-			return this._focused(x, y);
+			return this._focused(x, y, false);
 
 		/* check if the focus has been lost */
 		if (this._active && this._cell[0] == x && this._cell[1] == y) {
@@ -524,13 +559,17 @@ class GridFocus {
 	update(grid) {
 		this._grid = grid;
 		if (this._active)
-			this._focused(this._cell[0], this._cell[1]);
+			this._focused(this._cell[0], this._cell[1], true);
 	}
 	config(certain, horizontal, name) {
-		this._certain = certain;
-		this._horizontal = horizontal;
-		this._name = name;
-		if (this._active)
-			this._focused(this._cell[0], this._cell[1]);
+		if (certain != null)
+			this._certain = certain;
+		if (name != null)
+			this._name = name;
+		if (horizontal != null)
+			this._updateHorizontal(horizontal);
+	}
+	isHorizontal() {
+		return this._horizontal;
 	}
 }

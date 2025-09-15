@@ -41,7 +41,7 @@ class ActiveGame {
 		}
 	}
 
-	_notifyAll() {
+	_buildOutput() {
 		let out = {
 			failed: this.writebackFailed,
 			grid: this.data.grid,
@@ -76,9 +76,12 @@ class ActiveGame {
 				out.names.push(this.data.grid[i].author);
 			}
 		}
+		return out;
+	}
+	_notifyAll() {
+		const json = JSON.stringify(this._buildOutput());
 
 		/* send the data to all clients */
-		const json = JSON.stringify(out);
 		for (const id in this.ws)
 			this.ws[id].ws.send(json);
 	}
@@ -225,6 +228,10 @@ class ActiveGame {
 	register(ws) {
 		this.ws[++this.nextId] = { ws: ws, name: '' };
 		return this.nextId;
+	}
+	notifySingle(id) {
+		const json = JSON.stringify(this._buildOutput());
+		this.ws[id].ws.send(json);
 	}
 }
 
@@ -439,6 +446,9 @@ function AcceptWebSocket(ws, name) {
 			ws.close();
 		}
 	});
+
+	/* send the initial state to the socket */
+	gameState[name].notifySingle(id);
 }
 
 export class Application {

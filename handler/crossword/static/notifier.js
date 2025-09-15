@@ -18,7 +18,7 @@ function PushNotification(text, error) {
 	/* add the splitter */
 	const splitter = document.createElement('div');
 	notification.appendChild(splitter);
-	splitter.classList.add('menu-splitter');
+	splitter.classList.add('splitter');
 
 	/* add the close button */
 	const close = document.createElement('div');
