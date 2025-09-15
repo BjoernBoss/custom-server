@@ -36,7 +36,10 @@ function Setup(localModule) {
 	server.addHandler(new libCrossword.Application());
 }
 
+/* initialize the default configuration (before loading the local module!) */
+libConfig.initialize();
+
 /* try to load the local configuration and otherwise perform the default-setup */
-import("./local/local.js")
+import("./local-config.js")
 	.then(localModule => Setup(localModule))
 	.catch(() => Setup(null));

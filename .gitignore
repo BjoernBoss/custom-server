@@ -1,5 +1,4 @@
-local/*
-node_modules/*
+local-config.js
 package-lock.json
-handler/share/content/*
-handler/crossword/games/*
+node_modules/*
+data/*

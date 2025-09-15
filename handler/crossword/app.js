@@ -1,20 +1,12 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2025 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
-import * as libPath from "path";
 import * as libFs from "fs";
-import * as libCrypto from "crypto";
-import { StringDecoder } from "string_decoder";
+import * as libStrDec from "string_decoder";
+import * as libLocation from "../../server/location.js";
 
-function fileRelative(path) {
-	/* workaround! (7 => file://) */
-	const dirName = import.meta.dirname ?? libPath.dirname(import.meta.url.slice(7));
-	if (path.startsWith('/'))
-		return libPath.join(dirName, '.' + path);
-	if (!path.startsWith('./'))
-		return libPath.join(dirName, './' + path);
-	return libPath.join(dirName, path);
-}
+const fileStatic = libLocation.makeAppPath(import.meta.url, 'static');
+const fileStorage = libLocation.makeStoragePath('crossword');
 
 let gameState = {};
 
@@ -99,7 +91,7 @@ class ActiveGame {
 		clearTimeout(this.queued);
 		this.queued = null;
 
-		const tempPath = libPath.join(libPath.dirname(this.filePath), libCrypto.randomUUID());
+		const tempPath = `${this.filePath}.upload`;
 		let written = false;
 		try {
 			/* try to write the data back to a temporary file */
@@ -289,7 +281,7 @@ function ModifyGame(msg) {
 		return;
 	}
 	libLog.Log(`Handling Game: [${name}] as [${method}]`);
-	const filePath = fileRelative(`games/${name}.json`);
+	const filePath = fileStorage(`${name}.json`);
 
 	/* check if the game is being removed */
 	if (method == 'DELETE') {
@@ -321,7 +313,7 @@ function ModifyGame(msg) {
 		return;
 
 	/* collect all of the data */
-	const decoder = new StringDecoder('utf-8');
+	const decoder = new libStrDec.StringDecoder('utf-8');
 	let body = '';
 	msg.request.on('data', (data) => {
 		body += decoder.write(data);
@@ -360,7 +352,7 @@ function ModifyGame(msg) {
 function QueryGames(msg) {
 	let content = [];
 	try {
-		content = libFs.readdirSync(fileRelative('games'));
+		content = libFs.readdirSync(fileStorage('.'));
 	}
 	catch (e) {
 		libLog.Error(`Error while reading directory content: ${e.message}`);
@@ -383,7 +375,7 @@ function QueryGames(msg) {
 }
 function AcceptWebSocket(ws, name) {
 	libLog.Log(`Handling WebSocket to: [${name}]`);
-	const filePath = fileRelative(`games/${name}.json`);
+	const filePath = fileStorage(`${name}.json`);
 
 	/* check if the game exists */
 	if (!libFs.existsSync(filePath)) {
@@ -471,15 +463,15 @@ export class Application {
 
 		/* check if its a redirection and forward it accordingly */
 		if (msg.relative == '/' || msg.relative == '/main') {
-			msg.tryRespondFile(fileRelative('static/main.html'));
+			msg.tryRespondFile(fileStatic('main.html'));
 			return;
 		}
 		if (msg.relative == '/editor') {
-			msg.tryRespondFile(fileRelative('static/editor.html'));
+			msg.tryRespondFile(fileStatic('editor.html'));
 			return;
 		}
 		if (msg.relative == '/play') {
-			msg.tryRespondFile(fileRelative('static/play.html'));
+			msg.tryRespondFile(fileStatic('play.html'));
 			return;
 		}
 
@@ -490,7 +482,7 @@ export class Application {
 		}
 
 		/* respond to the request by trying to server the file */
-		msg.tryRespondFile(fileRelative('static' + msg.relative));
+		msg.tryRespondFile(fileStatic(msg.relative));
 	}
 	upgrade(msg) {
 		libLog.Log(`Game handler for [${msg.relative}]`);

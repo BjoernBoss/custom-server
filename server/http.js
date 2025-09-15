@@ -121,7 +121,7 @@ export class HttpMessage {
 		for (const key in this._headers)
 			this._response.setHeader(key, this._headers[key]);
 
-		this._response.setHeader('Server', libConfig.GetServerName());
+		this._response.setHeader('Server', libConfig.getServerName());
 		this._response.setHeader('Content-Type', HttpMessage._ContentType(path));
 		this._response.setHeader('Date', new Date().toUTCString());
 
@@ -336,7 +336,7 @@ export class HttpUpgrade {
 
 		let header = `HTTP/1.1 ${status}\r\n`;
 		header += `Date: ${new Date().toUTCString()}\r\n`;
-		header += `Server: ${libConfig.GetServerName()}\r\n`;
+		header += `Server: ${libConfig.getServerName()}\r\n`;
 		header += `Content-Type: ${type}\r\n`;
 		header += `Content-Length: ${buffer.length}\r\n`;
 		header += `Accept-Ranges: none\r\n`;

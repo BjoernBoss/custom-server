@@ -2,18 +2,10 @@
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
 import * as libTemplates from "../../server/templates.js";
-import * as libPath from "path";
 import * as libFs from "fs";
+import * as libLocation from "../../server/location.js";
 
-function fileRelative(path) {
-	/* workaround! (7 => file://) */
-	const dirName = import.meta.dirname ?? libPath.dirname(import.meta.url.slice(7));
-	if (path.startsWith('/'))
-		return libPath.join(dirName, '.' + path);
-	if (!path.startsWith('./'))
-		return libPath.join(dirName, './' + path);
-	return libPath.join(dirName, path);
-}
+const fileStorage = libLocation.makeStoragePath('share');
 
 function ListDirectory(msg, filePath) {
 	var content = libFs.readdirSync(filePath);
@@ -67,7 +59,7 @@ export class Application {
 		libLog.Log(`Shared handler for [${msg.relative}]`);
 
 		/* expand the path */
-		const filePath = fileRelative('content' + msg.relative);
+		const filePath = fileStorage(msg.relative);
 
 		/* ensure the request is using the Get-method */
 		if (msg.ensureMethod(['GET']) == null)

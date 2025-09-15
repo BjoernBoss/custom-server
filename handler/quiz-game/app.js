@@ -1,21 +1,14 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
-import * as libPath from "path";
 import * as libFs from "fs";
 import * as libCrypto from "crypto";
+import * as libLocation from "../../server/location.js";
 
-function fileRelative(path) {
-	/* workaround! (7 => file://) */
-	const dirName = import.meta.dirname ?? libPath.dirname(import.meta.url.slice(7));
-	if (path.startsWith('/'))
-		return libPath.join(dirName, '.' + path);
-	if (!path.startsWith('./'))
-		return libPath.join(dirName, './' + path);
-	return libPath.join(dirName, path);
-}
+const fileApp = libLocation.makeAppPath(import.meta.url);
+const fileStatic = libLocation.makeAppPath(import.meta.url, 'static');
 
-let JsonQuestions = JSON.parse(libFs.readFileSync(fileRelative('categorized-questions.json'), 'utf8'));
+let JsonQuestions = JSON.parse(libFs.readFileSync(fileApp('categorized-questions.json'), 'utf8'));
 let Sessions = {};
 
 class GameState {
@@ -403,7 +396,7 @@ export class Application {
 
 		/* check if its a root-request and forward it accordingly */
 		if (msg.relative == '/') {
-			msg.tryRespondFile(fileRelative('static/base/startup.html'));
+			msg.tryRespondFile(fileStatic('base/startup.html'));
 			return;
 		}
 
@@ -416,24 +409,24 @@ export class Application {
 
 		/* check if a session-dependent page has been requested */
 		if (msg.relative == '/session') {
-			msg.tryRespondFile(fileRelative('static/base/session.html'));
+			msg.tryRespondFile(fileStatic('base/session.html'));
 			return
 		}
 		if (msg.relative == '/client') {
-			msg.tryRespondFile(fileRelative('static/client/main.html'));
+			msg.tryRespondFile(fileStatic('client/main.html'));
 			return;
 		}
 		if (msg.relative == '/score') {
-			msg.tryRespondFile(fileRelative('static/score/main.html'));
+			msg.tryRespondFile(fileStatic('score/main.html'));
 			return;
 		}
 
 		/* respond to the request by trying to server the file */
-		msg.tryRespondFile(fileRelative('static' + msg.relative));
+		msg.tryRespondFile(fileStatic(msg.relative));
 	}
 	upgrade(msg) {
 		libLog.Log(`Game handler for [${msg.relative}]`);
-		
+
 		/* check if the websocket has been requested */
 		if (!msg.relative.startsWith('/ws/')) {
 			msg.respondNotFound();
