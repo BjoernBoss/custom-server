@@ -3,6 +3,7 @@
 import * as libConfig from "./config.js";
 import * as libTemplates from "./templates.js";
 import * as libLog from "./log.js";
+import * as libLocation from "./location.js";
 import * as libPath from "path";
 import * as libBuffer from "buffer";
 import * as libFs from "fs";
@@ -25,16 +26,18 @@ export const StatusCode = {
 	InternalError: 500
 };
 
-export class HttpMessage {
+export class HttpRequest {
 	constructor(request, response, internal) {
 		this.request = request;
 		this.internal = internal;
-		this._url = new libURL.URL(request.url, `http://${request.headers.host}`);
-		this.relative = this._url.pathname;
-		this.fullpath = this._url.pathname;
 		this._response = response;
 		this._headersDone = false;
 		this._headers = {};
+
+		const url = new libURL.URL(request.url, `http://${request.headers.host}`);
+		this.relative = libLocation.sanitize(decodeURIComponent(url.pathname));
+		this.fullpath = this.relative;
+		this.rawpath = url.pathname;
 	}
 
 	static _ParseRangeNoRange = 0;
@@ -43,11 +46,11 @@ export class HttpMessage {
 	static _ParseRangeMalformed = 3;
 	static _ParseRangeHeader(range, size) {
 		if (range == undefined)
-			return [0, size, HttpMessage._ParseRangeNoRange];
+			return [0, size, HttpRequest._ParseRangeNoRange];
 
 		/* check if it requests bytes */
 		if (!range.startsWith('bytes='))
-			return [0, size, HttpMessage._ParseRangeIssue];
+			return [0, size, HttpRequest._ParseRangeIssue];
 		range = range.substr(6);
 
 		/* extract the first number */
@@ -57,7 +60,7 @@ export class HttpMessage {
 
 		/* check if the separator exists */
 		if (firstSize >= range.length || range[firstSize] != '-')
-			return [0, 0, HttpMessage._ParseRangeMalformed];
+			return [0, 0, HttpRequest._ParseRangeMalformed];
 
 		/* extract the second number */
 		let secondSize = firstSize + 1;
@@ -67,10 +70,10 @@ export class HttpMessage {
 		/* check if a valid end has been found or another range (only the first
 		*	range will be respected) and that at least one number has been given */
 		if (secondSize < range.length && range[secondSize] != ',')
-			return [0, 0, HttpMessage._ParseRangeMalformed];
+			return [0, 0, HttpRequest._ParseRangeMalformed];
 		secondSize -= firstSize + 1;
 		if (firstSize == 0 && secondSize == 0)
-			return [0, 0, HttpMessage._ParseRangeMalformed];
+			return [0, 0, HttpRequest._ParseRangeMalformed];
 
 		/* parse the two numbers */
 		const begin = (firstSize == 0 ? undefined : parseInt(range.substr(0, firstSize)));
@@ -79,23 +82,23 @@ export class HttpMessage {
 		/* check if only an offset has been requested */
 		if (end == undefined) {
 			if (begin >= size)
-				return [0, 0, HttpMessage._ParseRangeIssue];
-			return [begin, size - begin, HttpMessage._ParseRangeValid];
+				return [0, 0, HttpRequest._ParseRangeIssue];
+			return [begin, size - begin, HttpRequest._ParseRangeValid];
 		}
 
 		/* check if only a suffix has been requested */
 		if (begin == undefined) {
 			if (end >= size)
-				return [0, 0, HttpMessage._ParseRangeIssue];
-			return [size - end, end, HttpMessage._ParseRangeValid];
+				return [0, 0, HttpRequest._ParseRangeIssue];
+			return [size - end, end, HttpRequest._ParseRangeValid];
 		}
 
 		/* check that the range is well defined */
 		if (end < begin || begin >= size || end >= size)
-			return [0, 0, HttpMessage._ParseRangeIssue];
+			return [0, 0, HttpRequest._ParseRangeIssue];
 
 		/* setup the corrected range */
-		return [begin, end - begin + 1, HttpMessage._ParseRangeValid];
+		return [begin, end - begin + 1, HttpRequest._ParseRangeValid];
 	}
 	static _contentTypeMap = {
 		'.html': 'text/html; charset=utf-8',
@@ -112,8 +115,8 @@ export class HttpMessage {
 	};
 	static _ContentType(filePath) {
 		const fileExtension = libPath.extname(filePath).toLowerCase();
-		if (fileExtension in HttpMessage._contentTypeMap)
-			return HttpMessage._contentTypeMap[fileExtension];
+		if (fileExtension in HttpRequest._contentTypeMap)
+			return HttpRequest._contentTypeMap[fileExtension];
 		return 'application/octet-stream';
 	}
 	_closeHeader(statusCode, path, length = undefined) {
@@ -122,7 +125,7 @@ export class HttpMessage {
 			this._response.setHeader(key, this._headers[key]);
 
 		this._response.setHeader('Server', libConfig.getServerName());
-		this._response.setHeader('Content-Type', HttpMessage._ContentType(path));
+		this._response.setHeader('Content-Type', HttpRequest._ContentType(path));
 		this._response.setHeader('Date', new Date().toUTCString());
 
 		if (!('Accept-Ranges' in this._headers))
@@ -138,10 +141,10 @@ export class HttpMessage {
 	}
 
 	translate(path) {
-		if (this._url.pathname == path)
+		if (this.relative == path)
 			this.relative = '/';
 		else
-			this.relative = this._url.pathname.substring(path.length);
+			this.relative = this.relative.substring(path.length);
 	}
 	addHeader(key, value) {
 		this._headers[key] = value;
@@ -152,7 +155,7 @@ export class HttpMessage {
 		libLog.Log(`Request used unsupported method [${this.request.method}]`);
 
 		const content = libTemplates.LoadExpanded(libTemplates.ErrorInvalidMethod,
-			{ path: this._url.pathname, method: this.request.method, allowed: methods.join(",") });
+			{ path: this.rawpath, method: this.request.method, allowed: methods.join(",") });
 		this._responseString(StatusCode.MethodNotAllowed, 'f.html', content);
 		return null;
 	}
@@ -167,7 +170,7 @@ export class HttpMessage {
 		libLog.Log(`Responded with Unsupported Media Type for [${type}]`);
 
 		const content = libTemplates.LoadExpanded(libTemplates.ErrorUnsupportedMediaType,
-			{ path: this._url.pathname, used: type, allowed: types.join(",") });
+			{ path: this.rawpath, used: type, allowed: types.join(",") });
 		this._responseString(StatusCode.UnsupportedMediaType, 'f.html', content);
 		return null;
 	}
@@ -180,7 +183,7 @@ export class HttpMessage {
 		libLog.Log(`Request is too large or has no size [${length}]`);
 
 		const content = libTemplates.LoadExpanded(libTemplates.ErrorContentTooLarge,
-			{ path: this._url.pathname, length: `${length}`, allowed: `${maxLength}` });
+			{ path: this.rawpath, length: `${length}`, allowed: `${maxLength}` });
 		this._responseString(StatusCode.ContentTooLarge, 'f.html', content);
 		return false;
 	}
@@ -198,7 +201,7 @@ export class HttpMessage {
 		if (msg != undefined)
 			this._responseString(StatusCode.Ok, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.SuccessOk, { path: this._url.pathname, operation: operation });
+			const content = libTemplates.LoadExpanded(libTemplates.SuccessOk, { path: this.rawpath, operation: operation });
 			this._responseString(StatusCode.Ok, 'f.html', content);
 		}
 	}
@@ -208,7 +211,7 @@ export class HttpMessage {
 		if (msg != undefined)
 			this._responseString(StatusCode.NotFound, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this._url.pathname });
+			const content = libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this.rawpath });
 			this._responseString(StatusCode.NotFound, 'f.html', content);
 		}
 	}
@@ -218,7 +221,7 @@ export class HttpMessage {
 		if (msg != undefined)
 			this._responseString(StatusCode.Conflict, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorConflict, { path: this._url.pathname, conflict: conflict });
+			const content = libTemplates.LoadExpanded(libTemplates.ErrorConflict, { path: this.rawpath, conflict: conflict });
 			this._responseString(StatusCode.Conflict, 'f.html', content);
 		}
 	}
@@ -229,18 +232,8 @@ export class HttpMessage {
 		if (msg != undefined)
 			this._responseString(StatusCode.PermanentlyMoved, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.PermanentlyMoved, { path: this._url.pathname, new: target });
+			const content = libTemplates.LoadExpanded(libTemplates.PermanentlyMoved, { path: this.rawpath, new: target });
 			this._responseString(StatusCode.PermanentlyMoved, 'f.html', content);
-		}
-	}
-	respondBadRequest(reason, msg = undefined) {
-		libLog.Log(`Responded with Bad-Request`);
-
-		if (msg != undefined)
-			this._responseString(StatusCode.BadRequest, 'f.txt', msg);
-		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorBadRequest, { path: this._url.pathname, reason: reason });
-			this._responseString(StatusCode.BadRequest, 'f.html', content);
 		}
 	}
 	respondRedirect(target, msg = undefined) {
@@ -250,8 +243,18 @@ export class HttpMessage {
 		if (msg != undefined)
 			this._responseString(StatusCode.TemporaryRedirect, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.TemporaryRedirect, { path: this._url.pathname, new: target });
+			const content = libTemplates.LoadExpanded(libTemplates.TemporaryRedirect, { path: this.rawpath, new: target });
 			this._responseString(StatusCode.TemporaryRedirect, 'f.html', content);
+		}
+	}
+	respondBadRequest(reason, msg = undefined) {
+		libLog.Log(`Responded with Bad-Request`);
+
+		if (msg != undefined)
+			this._responseString(StatusCode.BadRequest, 'f.txt', msg);
+		else {
+			const content = libTemplates.LoadExpanded(libTemplates.ErrorBadRequest, { path: this.rawpath, reason: reason });
+			this._responseString(StatusCode.BadRequest, 'f.html', content);
 		}
 	}
 	respondHtml(content) {
@@ -273,19 +276,19 @@ export class HttpMessage {
 		this._headers['Accept-Ranges'] = 'bytes';
 
 		/* parse the range and check if it is invalid */
-		const [offset, size, rangeResult] = HttpMessage._ParseRangeHeader(this.request.headers.range, fileSize);
-		if (rangeResult == HttpMessage._ParseRangeMalformed) {
+		const [offset, size, rangeResult] = HttpRequest._ParseRangeHeader(this.request.headers.range, fileSize);
+		if (rangeResult == HttpRequest._ParseRangeMalformed) {
 			libLog.Log(`Malformed range-request encountered [${this.request.headers.range}]`);
 			const content = libTemplates.LoadExpanded(libTemplates.ErrorBadRequest,
-				{ path: this._url.pathname, reason: `Issues while parsing http-header range: [${this.request.headers.range}]` });
+				{ path: this.rawpath, reason: `Issues while parsing http-header range: [${this.request.headers.range}]` });
 			this._responseString(StatusCode.BadRequest, 'f.html', content);
 			return;
 		}
-		else if (rangeResult == HttpMessage._ParseRangeIssue) {
+		else if (rangeResult == HttpRequest._ParseRangeIssue) {
 			libLog.Log(`Unsatisfiable range-request encountered [${range}] with file-size [${fileSize}]`);
 			this._headers['Content-Range'] = `bytes */${fileSize}`;
 			const content = libTemplates.LoadExpanded(libTemplates.ErrorRangeIssue,
-				{ path: this._url.pathname, range: this.request.headers.range, size: String(fileSize) });
+				{ path: this.rawpath, range: this.request.headers.range, size: String(fileSize) });
 			this._responseString(StatusCode.RangeIssue, 'f.html', content);
 			return;
 		}
@@ -293,7 +296,7 @@ export class HttpMessage {
 		/* check if the file is empty (can only happen for unused ranges) */
 		if (size == 0) {
 			libLog.Log('Sending empty content');
-			this._responseString(StatusCode.Ok, this._url.pathname, '');
+			this._responseString(StatusCode.Ok, this.rawpath, '');
 			return;
 		}
 
@@ -303,9 +306,9 @@ export class HttpMessage {
 		});
 
 		/* setup the response */
-		if (rangeResult == HttpMessage._ParseRangeValid)
+		if (rangeResult == HttpRequest._ParseRangeValid)
 			this._headers['Content-Range'] = `bytes ${offset}-${offset + size - 1}/${fileSize}`;
-		this._closeHeader((rangeResult == HttpMessage._ParseRangeNoRange ? StatusCode.Ok : StatusCode.PartialContent), filePath, size);
+		this._closeHeader((rangeResult == HttpRequest._ParseRangeNoRange ? StatusCode.Ok : StatusCode.PartialContent), filePath, size);
 
 		/* write the content to the stream */
 		libLog.Log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
@@ -326,9 +329,11 @@ export class HttpUpgrade {
 		this.internal = internal;
 		this._socket = socket;
 		this._head = head;
-		this._url = new libURL.URL(request.url, `http://${request.headers.host}`);
-		this.relative = this._url.pathname;
-		this.fullpath = this._url.pathname;
+
+		const url = new libURL.URL(request.url, `http://${request.headers.host}`);
+		this.relative = libLocation.sanitize(decodeURIComponent(url.pathname));
+		this.fullpath = this.relative;
+		this.rawpath = url.pathname;
 	}
 
 	_responseString(status, type, string) {
@@ -350,10 +355,10 @@ export class HttpUpgrade {
 	}
 
 	translate(path) {
-		if (this._url.pathname == path)
+		if (this.relative == path)
 			this.relative = '/';
 		else
-			this.relative = this._url.pathname.substring(path.length);
+			this.relative = this.relative.substring(path.length);
 	}
 	respondNotFound(msg = undefined) {
 		libLog.Log(`Responded with Not-Found`);
@@ -361,7 +366,7 @@ export class HttpUpgrade {
 		if (msg != undefined)
 			this._responseString(`${StatusCode.NotFound} Not Found`, 'text/plain; charset=utf-8', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this._url.pathname });
+			const content = libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this.rawpath });
 			this._responseString(`${StatusCode.NotFound} Not Found`, 'text/html; charset=utf-8', content);
 		}
 	}

@@ -49,7 +49,7 @@ export class Server {
 
 			/* add the default [not-found] response */
 			libLog.Error(`No handler registered for [${msg.relative}]`)
-			msg.respondNotFound(`No handler registered for [${msg.relative}]`);
+			msg.respondNotFound(`No handler registered for [${msg.rawpath}]`);
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
 			libLog.Error(`Uncaught exception encountered: ${err}`)
@@ -61,7 +61,7 @@ export class Server {
 	_handleRequest(request, response, internal) {
 		this._handleWrapper(true, function () {
 			libLog.Info(`New ${internal ? "internal" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
-			return new libHttp.HttpMessage(request, response, internal);
+			return new libHttp.HttpRequest(request, response, internal);
 		});
 	}
 	_handleUpgrade(request, socket, head, internal) {

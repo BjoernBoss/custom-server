@@ -7,10 +7,11 @@ import * as libConfig from "./config.js";
 export function sanitize(path) {
 	let out = '/';
 
-	/* iterate over the characters and write them to the output */
-	for (let i = 0; i < path.length; ++i) {
+	/* iterate over the characters and write them to the output
+	*	(i == path.length is a final implicit slash to catch '/..') */
+	for (let i = 0; i <= path.length; ++i) {
 		/* check if the character can just be written out */
-		if (path[i] != '/' && path[i] != '\\') {
+		if (i < path.length && path[i] != '/' && path[i] != '\\') {
 			out += path[i];
 			continue;
 		}
@@ -21,18 +22,21 @@ export function sanitize(path) {
 
 		/* check if its a relative path step and remove it */
 		if (out.endsWith('/.'))
-			out = out.slice(0, out.length - 1);
-		else if (!out.endsWith('/..'))
+			out = out.substring(0, out.length - 1);
+		else if (!out.endsWith('/..')) {
+			if (i + 1 >= path.length)
+				return out;
 			out += '/';
+		}
 		else if (out == '/..')
 			out = '/';
 		else
-			out = out.slice(0, out.lastIndexOf('/', out.length - 4) + 1);
+			out = out.substring(0, out.lastIndexOf('/', out.length - 4) + 1);
 	}
 
 	/* remove any trailing slashes */
 	if (out.endsWith('/') && out != '/')
-		out = out.slice(0, out.length);
+		out = out.substring(0, out.length - 1);
 	return out;
 }
 
