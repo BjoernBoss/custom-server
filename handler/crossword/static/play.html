@@ -49,7 +49,7 @@
 
 		<!-- game footer -->
 		<div class="footer">
-			<div class="button" style="height: 50px; width: 150px; margin-right: 15px;">Unsure</div>
+			<div class="button" style="height: 50px; width: 150px; margin-right: 15px;" id="guess">Guess</div>
 			<div style="display: flex; flex-direction: row;">
 				<div class="button left" style="height: 50px; width: 150px;" id="horizontal">
 					Horizontal &#x27a1;&#xFE0F;
@@ -119,18 +119,31 @@
 		}, function (horizontal) {
 			document.getElementById(horizontal ? 'horizontal' : 'vertical').classList.add('toggled');
 			document.getElementById(horizontal ? 'vertical' : 'horizontal').classList.remove('toggled');
+		}, function (certain) {
+			if (certain)
+				document.getElementById('guess').classList.remove('toggled');
+			else
+				document.getElementById('guess').classList.add('toggled');
 		});
 
-		/* add the toggle callbacks for horizontal/vertical and initialize the state */
+		/* add the toggle callbacks for horizontal/vertical and guess */
 		document.getElementById('horizontal').onmousedown = function (e) {
 			e.preventDefault();
-			_state.focus.config(null, true, null);
+			_state.focus.config(true, null, null);
 		};
 		document.getElementById('vertical').onmousedown = function (e) {
 			e.preventDefault();
-			_state.focus.config(null, false, null);
+			_state.focus.config(false, null, null);
 		};
+		document.getElementById('guess').onmousedown = function (e) {
+			e.preventDefault();
+			_state.focus.config(null, !_state.focus.isCertain(), null);
+		};
+
+		/* initialize the ui-state based on the focus-object */
 		document.getElementById(_state.focus.isHorizontal() ? 'horizontal' : 'vertical').classList.add('toggled');
+		if (!_state.focus.isCertain())
+			document.getElementById('guess').classList.add('toggled');
 	}
 
 	_state.enter = function () {
@@ -158,11 +171,21 @@
 
 		/* register convenience handler (first after setting the name to prevent the input from being consumed) */
 		document.body.onkeydown = function (e) {
-			if (e.key != ' ' && e.key != 'Tab')
+			if (e.key != ' ' && e.key != 'Tab' && e.key != 'Shift')
 				return;
 			e.stopPropagation();
 			e.preventDefault();
-			_state.focus.config(null, !_state.focus.isHorizontal(), null);
+			if (e.key == 'Shift')
+				_state.focus.config(null, false, null);
+			else
+				_state.focus.config(!_state.focus.isHorizontal(), null, null);
+		};
+		document.body.onkeyup = function (e) {
+			if (e.key == 'Shift') {
+				e.stopPropagation();
+				e.preventDefault();
+				_state.focus.config(null, true, null);
+			}
 		};
 	}
 

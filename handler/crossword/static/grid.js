@@ -358,7 +358,7 @@ class GridView {
 }
 
 class GridFocus {
-	constructor(view, onchange, onhorizontal) {
+	constructor(view, onchange, onhorizontal, oncertain) {
 		this._grid = null;
 		this._name = '';
 		this._view = view;
@@ -366,13 +366,14 @@ class GridFocus {
 		this._cell = [0, 0];
 		this._start = [0, 0];
 		this._end = [0, 0];
-
 		this._active = false;
-		this._certain = false;
+
+		this._certain = true;
 		this._horizontal = true;
 
 		this._onchange = onchange;
 		this._onhorizontal = onhorizontal;
+		this._oncertain = oncertain;
 	}
 
 	_testHorizontal(x, y, horizontal) {
@@ -561,9 +562,11 @@ class GridFocus {
 		if (this._active)
 			this._focused(this._cell[0], this._cell[1], true);
 	}
-	config(certain, horizontal, name) {
-		if (certain != null)
+	config(horizontal, certain, name) {
+		if (certain != null && this._certain != certain) {
 			this._certain = certain;
+			this._oncertain(this._certain);
+		}
 		if (name != null)
 			this._name = name;
 		if (horizontal != null)
@@ -571,5 +574,8 @@ class GridFocus {
 	}
 	isHorizontal() {
 		return this._horizontal;
+	}
+	isCertain() {
+		return this._certain;
 	}
 }
