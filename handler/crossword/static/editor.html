@@ -80,7 +80,7 @@
 		if (window.visualViewport) {
 			window.visualViewport.addEventListener("resize", function () {
 				document.body.style.height = `${window.visualViewport.height}px`;
-				document.querySelectorAll('.overlay').forEach(el => el.style.height = `${window.visualViewport.height}px`);
+				document.querySelectorAll('.overlay').forEach(e => e.style.height = `${window.visualViewport.height}px`);
 			});
 		}
 	}

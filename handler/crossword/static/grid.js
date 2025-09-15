@@ -213,7 +213,7 @@ function FullSerializeGrid(grid) {
 
 class GridView {
 	constructor(container, content) {
-		this._duration = 225;
+		this._duration = 150;
 
 		this._container = container;
 		this._content = content;
@@ -228,7 +228,14 @@ class GridView {
 		new ResizeObserver(() => this._update()).observe(this._container);
 	}
 
+	_resetScroll() {
+		/* the opened keyboard might move the focus-spot and auto-scroll elements on the grid */
+		this._container.scrollTop = 0;
+		this._container.scrollLeft = 0;
+	}
 	_animateNext() {
+		this._resetScroll();
+
 		/* check if the grid has been removed, in which case nothing needs to be done */
 		if (this._grid == null)
 			return;
@@ -263,6 +270,8 @@ class GridView {
 		this._animateNext();
 	}
 	_update() {
+		this._resetScroll();
+
 		/* check if no grid is available, in which case nothing needs to be done */
 		if (this._grid == null)
 			return;
@@ -390,18 +399,35 @@ class GridFocus {
 			return true;
 		return (horizontal ? leftRight : topBottom);
 	}
+	_updateHighlight(clear) {
+		/* check if the highlight can be cleared */
+		if (this._grid == null || this._end[0] >= this._grid.width || this._end[1] >= this._grid.height)
+			return;
+
+		/* apply the change */
+		for (let y = this._start[1]; y <= this._end[1]; ++y) {
+			for (let x = this._start[0]; x <= this._end[0]; ++x) {
+				if (clear)
+					this._grid.mesh[x][y].html.classList.remove('highlighted');
+				else
+					this._grid.mesh[x][y].html.classList.add('highlighted');
+			}
+		}
+	}
 	_focused(x, y, force) {
 		/* check if nothing needs to be done */
 		if (!force && this._grid != null && this._active && x >= this._start[0] && x <= this._end[0] && y >= this._start[1] && y <= this._end[1])
 			return true;
 
-		/* validate the request */
-		this._cell = [x, y];
+		/* reset the old highlight */
+		this._updateHighlight(true);
 		this._start = [x, y];
 		this._end = [x, y];
+
+		/* validate the request */
+		this._cell = [x, y];
 		if (this._grid == null || x < 0 || y < 0 || x >= this._grid.width || y >= this._grid.height || this._grid.mesh[x][y].solid) {
-			this._active = false;
-			this._view.reset();
+			this._focusLost();
 			return false;
 		}
 		this._active = true;
@@ -425,14 +451,19 @@ class GridFocus {
 			while (this._end[1] + 1 < this._grid.height && !this._grid.mesh[x][this._end[1] + 1].solid)
 				++this._end[1];
 		}
+		this._updateHighlight(false);
 
 		/* update the view */
 		this._view.target(this._start, this._end);
 		return true;
 	}
-	_lose() {
+	_focusLost() {
 		this._active = false;
+		this._updateHighlight(true);
 		this._view.reset();
+	}
+	_lose() {
+		_focusLost();
 		this._grid.mesh[this._cell[0]][this._cell[1]].html.children[0].blur();
 	}
 	_move(x, y, back) {
@@ -506,10 +537,8 @@ class GridFocus {
 			return this._focused(x, y, false);
 
 		/* check if the focus has been lost */
-		if (this._active && this._cell[0] == x && this._cell[1] == y) {
-			this._active = false;
-			this._view.reset();
-		}
+		if (this._active && this._cell[0] == x && this._cell[1] == y)
+			this._focusLost();
 		return true;
 	}
 	input(c) {

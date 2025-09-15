@@ -191,8 +191,14 @@ body {
 	font-size: 2.75em;
 	height: calc(100% - 4px);
 	padding-bottom: 4px;
-	user-select: text;
+	user-select: none;
 	caret-color: transparent;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+
+.cell.highlighted .char {
+	background-color: #00000030;
 }
 
 .uncertain .char {
