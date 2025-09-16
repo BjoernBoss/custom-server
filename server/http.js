@@ -28,8 +28,8 @@ export const StatusCode = {
 
 export class HttpRequest {
 	constructor(request, response, internal) {
-		this.request = request;
 		this.internal = internal;
+		this._request = request;
 		this._response = response;
 		this._headersDone = false;
 		this._headers = {};
@@ -150,21 +150,21 @@ export class HttpRequest {
 		this._headers[key] = value;
 	}
 	ensureMethod(methods) {
-		if (methods.indexOf(this.request.method) >= 0)
-			return this.request.method;
-		libLog.Log(`Request used unsupported method [${this.request.method}]`);
+		if (methods.indexOf(this._request.method) >= 0)
+			return this._request.method;
+		libLog.Log(`Request used unsupported method [${this._request.method}]`);
 
 		const content = libTemplates.LoadExpanded(libTemplates.ErrorInvalidMethod,
-			{ path: this.rawpath, method: this.request.method, allowed: methods.join(",") });
+			{ path: this.rawpath, method: this._request.method, allowed: methods.join(",") });
 		this._responseString(StatusCode.MethodNotAllowed, 'f.html', content);
 		return null;
 	}
 	ensureMediaType(types) {
-		const type = this.request.headers['content-type'];
+		const type = this._request.headers['content-type'];
 		if (type === undefined)
 			return types[0];
 		for (let i = 0; i < types.length; ++i) {
-			if (type === types[i] || type.startsWith(`${types[i]};`) || type.startsWith(`${types[i]} `))
+			if (type === types[i] || type.startsWith(`${types[i]};`))
 				return types[i];
 		}
 		libLog.Log(`Responded with Unsupported Media Type for [${type}]`);
@@ -174,10 +174,28 @@ export class HttpRequest {
 		this._responseString(StatusCode.UnsupportedMediaType, 'f.html', content);
 		return null;
 	}
+	getMediaTypeCharset(defEncoding) {
+		const type = this._request.headers['content-type'];
+		if (type === undefined)
+			return defEncoding;
+
+		let index = type.indexOf('charset=');
+		if (index == -1)
+			return defEncoding;
+		index += 8;
+
+		let end = index;
+		while (end < type.length && type[end] != ';')
+			++end;
+
+		if (index == end)
+			return defEncoding;
+		return type.substring(index, end);
+	}
 	ensureContentLength(maxLength) {
-		let length = NaN;
-		if (this.request.headers['content-length'] != undefined)
-			length = parseInt(this.request.headers['content-length']);
+		let length = 0;
+		if (this._request.headers['content-length'] != undefined)
+			length = parseInt(this._request.headers['content-length']);
 		if (isFinite(length) && length >= 0 && length <= maxLength)
 			return true;
 		libLog.Log(`Request is too large or has no size [${length}]`);
@@ -276,11 +294,11 @@ export class HttpRequest {
 		this._headers['Accept-Ranges'] = 'bytes';
 
 		/* parse the range and check if it is invalid */
-		const [offset, size, rangeResult] = HttpRequest._ParseRangeHeader(this.request.headers.range, fileSize);
+		const [offset, size, rangeResult] = HttpRequest._ParseRangeHeader(this._request.headers.range, fileSize);
 		if (rangeResult == HttpRequest._ParseRangeMalformed) {
-			libLog.Log(`Malformed range-request encountered [${this.request.headers.range}]`);
+			libLog.Log(`Malformed range-request encountered [${this._request.headers.range}]`);
 			const content = libTemplates.LoadExpanded(libTemplates.ErrorBadRequest,
-				{ path: this.rawpath, reason: `Issues while parsing http-header range: [${this.request.headers.range}]` });
+				{ path: this.rawpath, reason: `Issues while parsing http-header range: [${this._request.headers.range}]` });
 			this._responseString(StatusCode.BadRequest, 'f.html', content);
 			return;
 		}
@@ -288,7 +306,7 @@ export class HttpRequest {
 			libLog.Log(`Unsatisfiable range-request encountered [${range}] with file-size [${fileSize}]`);
 			this._headers['Content-Range'] = `bytes */${fileSize}`;
 			const content = libTemplates.LoadExpanded(libTemplates.ErrorRangeIssue,
-				{ path: this.rawpath, range: this.request.headers.range, size: String(fileSize) });
+				{ path: this.rawpath, range: this._request.headers.range, size: String(fileSize) });
 			this._responseString(StatusCode.RangeIssue, 'f.html', content);
 			return;
 		}
@@ -302,7 +320,7 @@ export class HttpRequest {
 
 		/* setup the filestream object */
 		let stream = libFs.createReadStream(filePath, {
-			start: offset, end: offset + size - 1
+			flags: 'r', start: offset, end: offset + size - 1
 		});
 
 		/* setup the response */
@@ -318,15 +336,41 @@ export class HttpRequest {
 			libLog.Log(`While sending content: [${err}]`);
 		});
 	}
-
+	receiveChunks(cb) {
+		this._request.on('data', (data) => cb(data, null));
+		this._request.on('error', (e) => cb(null, e));
+		this._request.on('end', () => cb(null, null));
+	}
+	receiveAllBuffer(cb) {
+		const body = [];
+		this._request.on('data', (data) => body.push(data));
+		this._request.on('error', (e) => cb(null, e));
+		this._request.on('end', () => cb(libBuffer.Buffer.concat(body), null));
+	}
+	receiveAllText(encoding, cb) {
+		const body = [];
+		this._request.on('data', (data) => body.push(data));
+		this._request.on('error', (e) => cb(null, e));
+		this._request.on('end', function () {
+			const total = libBuffer.Buffer.concat(body);
+			let str = null;
+			try {
+				str = total.toString(encoding);
+			} catch (e) {
+				cb(null, e);
+				return;
+			}
+			cb(str, null);
+		});
+	}
 };
 
 const webSocketServer = new libWs.WebSocketServer({ noServer: true });
 
 export class HttpUpgrade {
 	constructor(request, socket, head, internal) {
-		this.request = request;
 		this.internal = internal;
+		this._request = request;
 		this._socket = socket;
 		this._head = head;
 
@@ -375,11 +419,11 @@ export class HttpUpgrade {
 		this._responseString(`${StatusCode.InternalError} Internal Server Error`, 'text/plain; charset=utf-8', msg);
 	}
 	tryAcceptWebSocket(callback) {
-		let connection = this.request.headers.connection.toLowerCase().split(',').map((v) => v.trim());
-		if (connection.indexOf('upgrade') == -1 || this.request.headers.upgrade.toLowerCase() != 'websocket' || this.request.method != 'GET')
+		let connection = this._request.headers.connection.toLowerCase().split(',').map((v) => v.trim());
+		if (connection.indexOf('upgrade') == -1 || this._request.headers.upgrade.toLowerCase() != 'websocket' || this._request.method != 'GET')
 			return false;
 
-		webSocketServer.handleUpgrade(this.request, this._socket, this._head, function (ws, request) {
+		webSocketServer.handleUpgrade(this._request, this._socket, this._head, function (ws, request) {
 			webSocketServer.emit('connection', ws, request);
 			callback(ws);
 		});

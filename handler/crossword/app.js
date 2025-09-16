@@ -4,6 +4,7 @@ import * as libLog from "../../server/log.js";
 import * as libFs from "fs";
 import * as libStrDec from "string_decoder";
 import * as libLocation from "../../server/location.js";
+import * as libBuffer from "buffer";
 
 const fileStatic = libLocation.makeAppPath(import.meta.url, 'static');
 const fileStorage = libLocation.makeStoragePath('crossword');
@@ -12,6 +13,9 @@ let gameState = {};
 
 const nameRegex = '[a-zA-Z0-9]([-_.]?[a-zA-Z0-9])*';
 const nameMaxLength = 255;
+const maxFileSize = 1_000_000;
+const pingTimeout = 60_000;
+const writeBackDelay = 20_000;
 
 class ActiveGame {
 	constructor(name, filePath) {
@@ -83,7 +87,7 @@ class ActiveGame {
 		/* kill the last queue */
 		if (this.queued != null)
 			clearTimeout(this.queued);
-		this.queued = setTimeout(() => this._writeBack(false), 10_000);
+		this.queued = setTimeout(() => this._writeBack(false), writeBackDelay);
 	}
 	_writeBack(final) {
 		/* check if the data are dirty */
@@ -309,22 +313,22 @@ function ModifyGame(msg) {
 		return;
 
 	/* validate the content length */
-	if (!msg.ensureContentLength(1_000_000))
+	if (!msg.ensureContentLength(maxFileSize))
 		return;
 
 	/* collect all of the data */
-	const decoder = new libStrDec.StringDecoder('utf-8');
-	let body = '';
-	msg.request.on('data', (data) => {
-		body += decoder.write(data);
-	});
-	msg.request.on('end', () => {
-		body += decoder.end();
+	msg.receiveAllText(msg.getMediaTypeCharset('utf-8'), function (text, err) {
+		/* check if an error occurred */
+		if (err) {
+			libLog.Error(`Error occurred while posting to [${filePath}]: ${err.message}`);
+			msg.respondInternalError('Network issue regarding the post payload');
+			return;
+		}
 
 		/* parse the data */
 		let parsed = null;
 		try {
-			parsed = ParseAndValidateGame(body);
+			parsed = ParseAndValidateGame(text);
 		} catch (e) {
 			libLog.Error(`Error while parsing the game: ${e.message}`);
 			msg.respondBadRequest(e.message);
@@ -343,10 +347,6 @@ function ModifyGame(msg) {
 
 		/* validate the post content */
 		msg.respondOk('upload');
-	});
-	msg.request.on('error', (err) => {
-		libLog.Error(`Error occurred while posting to [${filePath}]: ${err.message}`);
-		msg.respondInternalError('Network issue regarding the post payload');
 	});
 }
 function QueryGames(msg) {
@@ -407,7 +407,7 @@ function AcceptWebSocket(ws, name) {
 				queueAliveCheck(false);
 				ws.ping();
 			}
-		}, 60_000);
+		}, pingTimeout);
 	};
 
 	/* initiate the alive-check */
