@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-/* Copyright (c) 2024 Bjoern Boss Henrichsen */
+/* Copyright (c) 2024-2025 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
 import * as libTemplates from "../../server/templates.js";
 import * as libFs from "fs";
