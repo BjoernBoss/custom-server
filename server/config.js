@@ -10,7 +10,7 @@ export const MaxFileLoggingLength = 10_000_000;
 let _serverName = '';
 export function setServerName(name) {
 	_serverName = name;
-	libLog.Log(`Server name configured as: [${_serverName}]`);
+	libLog.Info(`Server name configured as: [${_serverName}]`);
 }
 export function getServerName() {
 	return _serverName;
@@ -19,7 +19,7 @@ export function getServerName() {
 let _storagePath = '';
 export function setStoragePath(path) {
 	_storagePath = path;
-	libLog.Log(`Storage path configured as: [${_storagePath}]`);
+	libLog.Info(`Storage path configured as: [${_storagePath}]`);
 }
 export function getStoragePath() {
 	return _storagePath;
