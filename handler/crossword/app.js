@@ -2,9 +2,7 @@
 /* Copyright (c) 2025 Bjoern Boss Henrichsen */
 import * as libLog from "../../server/log.js";
 import * as libFs from "fs";
-import * as libStrDec from "string_decoder";
 import * as libLocation from "../../server/location.js";
-import * as libBuffer from "buffer";
 
 const fileStatic = libLocation.makeAppPath(import.meta.url, 'static');
 const fileStorage = libLocation.makeStoragePath('crossword');

@@ -337,9 +337,22 @@ export class HttpRequest {
 		});
 	}
 	receiveChunks(cb) {
-		this._request.on('data', (data) => cb(data, null));
-		this._request.on('error', (e) => cb(null, e));
-		this._request.on('end', () => cb(null, null));
+		let _failed = false, that = this;
+		this._request.on('data', function (data) {
+			if (_failed)
+				that._request.socket.destroy();
+			else
+				_failed = cb(data, null);
+
+		});
+		this._request.on('error', function (e) {
+			if (!_failed)
+				cb(null, e);
+		});
+		this._request.on('end', function () {
+			if (!_failed)
+				cb(null, null);
+		});
 	}
 	receiveAllBuffer(cb) {
 		const body = [];
@@ -361,6 +374,74 @@ export class HttpRequest {
 				return;
 			}
 			cb(str, null);
+		});
+	}
+	receiveToFile(file, cb) {
+		libLog.Log(`Collecting data from [${this.rawpath}] to: [${file}]`);
+
+		let queue = [], busy = true, fd = null, closed = false;
+		const failure = function (e) {
+			/* mark the object as permanently busy */
+			busy = true;
+
+			/* check if the file has not yet been opened */
+			if (fd == null) {
+				cb(e);
+				return;
+			}
+
+			/* close the file and try to delete it */
+			libFs.close(fd, function () {
+				try {
+					libFs.unlinkSync(file);
+				} catch (e2) {
+					libLog.Warning(`Failed to remove file [${file}] after writing uploaded data to it failed: ${e2.message}`);
+				}
+				cb(e);
+			});
+		};
+		const flushData = function (done) {
+			closed = (closed || done);
+			if (busy)
+				return;
+
+			/* check if further data exist to be written out */
+			if (queue.length == 0) {
+				if (closed) libFs.close(fd, () => cb(null));
+				return;
+			}
+
+			/* write the next data out */
+			busy = true;
+			libFs.write(fd, queue[0], function (e, written) {
+				busy = false;
+				if (e) {
+					failure(e);
+					return;
+				}
+
+				/* consume the given data and flush the remaining data */
+				if (written >= queue[0].length)
+					queue = queue.splice(1);
+				else
+					queue[0] = queue[0].subarray(written);
+				flushData(false);
+			});
+		};
+
+		this._request.on('data', function (data) { queue.push(data); flushData(false); });
+		this._request.on('error', (e) => failure(e));
+		this._request.on('end', () => flushData(true));
+
+		/* open the actual file for writing */
+		libFs.open(file, 'wx', function (e, f) {
+			busy = false;
+			if (e)
+				failure(e);
+			else {
+				fd = f;
+				flushData(false);
+			}
 		});
 	}
 };
