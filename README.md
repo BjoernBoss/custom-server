@@ -14,10 +14,10 @@ Note: This server is primarily used for internal/private usage and is therefore 
 ## Using the Server
 To setup this server simply clone the project:
 
-    $ git clone https://github.com/BjoernBoss/arsox-server.git
+    $ git clone https://github.com/BjoernBoss/custom-server.git
 
 Afterwards install the dependencies, and start the server:
 
-    $ cd arsox-server
+    $ cd custom-server
     $ npm install
     $ node main.js
