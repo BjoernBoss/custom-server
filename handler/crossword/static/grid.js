@@ -127,6 +127,7 @@ function ApplyGridUpdate(grid, data, authorHue) {
 			cell.char = next.char;
 			cell.author = next.author;
 			cell.certain = next.certain;
+			cell.time = next.time;
 		}
 	}
 
@@ -204,7 +205,8 @@ function FullSerializeGrid(grid) {
 			out.push({
 				char: grid.mesh[x][y].char,
 				certain: grid.mesh[x][y].certain,
-				author: grid.mesh[x][y].author
+				author: grid.mesh[x][y].author,
+				time: grid.mesh[x][y].time
 			});
 		}
 	}
@@ -513,6 +515,7 @@ class GridFocus {
 		else if (cell.certain == certain)
 			return;
 		cell.certain = certain;
+		++cell.time;
 
 		/* notify about the changed grid */
 		this._onchange();

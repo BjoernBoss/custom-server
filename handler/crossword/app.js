@@ -79,6 +79,10 @@ class ActiveGame {
 		for (const id in this.ws)
 			this.ws[id].ws.send(json);
 	}
+	_notifySingle(id) {
+		const json = JSON.stringify(this._buildOutput());
+		this.ws[id].ws.send(json);
+	}
 	_queueWriteBack() {
 		if (this.data == null) return;
 
@@ -133,7 +137,7 @@ class ActiveGame {
 			this._notifyAll();
 		this.writebackFailed = true;
 	}
-	updateGrid(grid) {
+	updateGrid(id, grid) {
 		let valid = (this.data != null && this.data.grid.length == grid.length);
 
 		/* validate the grid structure */
@@ -141,9 +145,15 @@ class ActiveGame {
 		if (valid) {
 			for (let i = 0; i < grid.length; ++i) {
 				/* validate the data-types */
-				if (typeof grid[i].char != 'string' || typeof grid[i].certain != 'boolean' || typeof grid[i].author != 'string') {
+				if (typeof grid[i].char != 'string' || typeof grid[i].certain != 'boolean' || typeof grid[i].author != 'string' || typeof grid[i].time != 'number') {
 					valid = false;
 					break;
+				}
+
+				/* check if the grid is not newer than the current grid */
+				if (grid[i].time <= this.data.grid[i].time) {
+					merged.push(this.data.grid[i]);
+					continue;
 				}
 
 				/* setup the sanitized data */
@@ -160,6 +170,8 @@ class ActiveGame {
 					author = '';
 					certain = false;
 				}
+				else if (char == this.data.grid[i].char)
+					author = this.data.grid[i].author;
 
 				/* check if the data actually have changed */
 				if (char == this.data.grid[i].char && certain == this.data.grid[i].certain && author == this.data.grid[i].author) {
@@ -172,21 +184,24 @@ class ActiveGame {
 					solid: this.data.grid[i].solid,
 					char: char,
 					certain: certain,
-					author: author
+					author: author,
+					time: grid[i].time
 				});
 				dirty = true;
 			}
 		}
 
-		/* check if the grid data are valid and otherwise silently discard the changes */
+		/* check if the grid data are valid and otherwise notify the user */
 		if (!valid) {
-			libLog.Log(`Silently discarding grid changes of [${this.filePath}]`);
+			libLog.Log(`Discarding invalid grid update [${this.filePath}]`);
+			this._notifySingle(id);
 			return;
 		}
 
 		/* check if the data are not dirty */
 		if (!dirty) {
-			libLog.Log(`Silently discarding empty grid update of [${this.filePath}]`);
+			libLog.Log(`Discarding empty grid update of [${this.filePath}]`);
+			this._notifySingle(id);
 			return;
 		}
 
@@ -224,8 +239,7 @@ class ActiveGame {
 		return this.nextId;
 	}
 	notifySingle(id) {
-		const json = JSON.stringify(this._buildOutput());
-		this.ws[id].ws.send(json);
+		this._notifySingle(id);
 	}
 }
 
@@ -265,7 +279,8 @@ function ParseAndValidateGame(data) {
 			solid: obj.grid[i],
 			char: '',
 			certain: false,
-			author: ''
+			author: '',
+			time: 0
 		};
 	}
 	return obj;
@@ -430,7 +445,7 @@ function AcceptWebSocket(ws, name) {
 			if (parsed.cmd == 'name' && typeof parsed.name == 'string')
 				gameState[name].updateName(id, parsed.name);
 			else if (parsed.cmd == 'update')
-				gameState[name].updateGrid(parsed.data);
+				gameState[name].updateGrid(id, parsed.data);
 		} catch (e) {
 			libLog.Error(`Failed to parse web-socket response: ${e.message}`);
 			ws.close();

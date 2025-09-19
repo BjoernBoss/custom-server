@@ -112,7 +112,7 @@
 
 		/* setup the socket and register all corresponding callbacks */
 		_state.sock = new SyncSocket(`/crossword/ws/${_state.game}`);
-		_state.sock.onfailed = (msg) => PushNotification(msg, true);
+		_state.sock.onfailed = (msg) => PushNotification(msg, true, () => _state.sock.retry());
 		_state.sock.onreceived = (data) => _state.handleData(data);
 		_state.sock.onconnected = () => _state.handleConnected();
 
@@ -300,7 +300,7 @@
 
 		/* check if the server has failed */
 		if (data.failed)
-			PushNotification('Server failed to write the game back!', true);
+			PushNotification('Server failed to write the game back!', true, null);
 
 		/* mark all players as offline until the online re-enables them */
 		for (const key in _state.players)

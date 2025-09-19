@@ -17,7 +17,7 @@ class SyncSocket {
 		this._queued = [];
 
 		/* delay before trying to restart the connection again */
-		this._delay = 128;
+		this._delay = 0;
 
 		/* has the connection already existed */
 		this._wasConnected = false;
@@ -34,6 +34,7 @@ class SyncSocket {
 		this._url = `${protocol}://${location.host}${path}`;
 
 		/* try to establish the first connection */
+		this._resetTimeout();
 		this._establish();
 	}
 
@@ -55,8 +56,10 @@ class SyncSocket {
 
 	/* retry to establish a connection */
 	retry() {
-		if (this._state == 'failed')
+		if (this._state == 'failed') {
+			this._resetTimeout();
 			this._establish();
+		}
 	}
 
 	/* kill a current connection and prevent retrying to connect and log the error */
@@ -67,6 +70,9 @@ class SyncSocket {
 		}
 	}
 
+	_resetTimeout() {
+		this._delay = 128;
+	}
 	_handleQueue() {
 		/* check if a connection is valid */
 		if (this._state != 'ready' || this._queued.length == 0)
@@ -107,10 +113,10 @@ class SyncSocket {
 			console.log(`Connection established to [${that._url}]`);
 			that._state = 'ready';
 			that._wasConnected = true;
-			that._delay = 128;
+			that._resetTimeout();
 
 			/* clear the old queue and notify the client about the established connection */
-			this._queued = [];
+			that._queued = [];
 			if (that.onconnected != null)
 				that.onconnected();
 

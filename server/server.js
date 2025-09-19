@@ -29,7 +29,7 @@ export class Server {
 		}
 		return bestKey;
 	}
-	_handleWrapper(request, establish) {
+	_handleWrapper(wasRequest, request, establish) {
 		let msg = null;
 		try {
 			msg = establish();
@@ -40,7 +40,7 @@ export class Server {
 			/* check if a handler has been found */
 			if (key != null) {
 				msg.translate(key);
-				if (request)
+				if (wasRequest)
 					this._handler[key].request(msg);
 				else
 					this._handler[key].upgrade(msg);
@@ -59,13 +59,13 @@ export class Server {
 		}
 	}
 	_handleRequest(request, response, internal) {
-		this._handleWrapper(true, function () {
+		this._handleWrapper(true, request, function () {
 			libLog.Info(`New ${internal ? "internal" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
 			return new libHttp.HttpRequest(request, response, internal);
 		});
 	}
 	_handleUpgrade(request, socket, head, internal) {
-		this._handleWrapper(false, function () {
+		this._handleWrapper(false, request, function () {
 			libLog.Info(`New ${internal ? "internal" : "external"} upgrade: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
 			return new libHttp.HttpUpgrade(request, socket, head, internal);
 		});

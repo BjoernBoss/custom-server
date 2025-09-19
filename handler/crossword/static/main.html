@@ -57,7 +57,7 @@
 		/* check if a notification is to be shown */
 		let name = new URLSearchParams(document.location.search).get('uploaded');
 		if (name != null)
-			PushNotification(`Crossword [${name}] uploaded!`, false);
+			PushNotification(`Crossword [${name}] uploaded!`, false, null);
 
 		/* patch the history to prevent the banner from being shown again */
 		if (window.history.replaceState) {
@@ -126,7 +126,7 @@
 				}
 			})
 			.catch(function (e) {
-				PushNotification(`Failed to fetch the list of games: ${e.message}\n...reload page to try again!`, true);
+				PushNotification(`Failed to fetch the list of games: ${e.message}!`, true, () => window.location.reload());
 			});
 	}
 
