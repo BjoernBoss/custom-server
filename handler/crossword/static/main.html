@@ -100,23 +100,23 @@
 					text.classList.add('menu-text');
 					entry.appendChild(text);
 
-					let hsep = document.createElement('div');
-					hsep.classList.add('splitter');
-					entry.appendChild(hsep);
+					//let hsep = document.createElement('div');
+					//hsep.classList.add('splitter');
+					//entry.appendChild(hsep);
 
-					let button = document.createElement('div');
-					button.classList.add('button');
-					button.innerText = '\u2716';
-					entry.appendChild(button);
+					//let button = document.createElement('div');
+					//button.classList.add('button');
+					//button.innerText = '\u2716';
+					//entry.appendChild(button);
 
 					/* add the inner html */
 					text.innerText = name;
 
 					/* add the delete callback */
-					button.onclick = function (e) {
-						e.stopPropagation();
-						_state.removeEntry(name);
-					};
+					//button.onclick = function (e) {
+					//	e.stopPropagation();
+					//	_state.removeEntry(name);
+					//};
 
 					/* add the main handling callback */
 					entry.onclick = function (e) {
