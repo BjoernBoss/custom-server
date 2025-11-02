@@ -3,8 +3,6 @@
 import * as libPath from "path";
 import * as libLog from "./log.js";
 
-export const PortInternalHttp = 10024;
-
 let _serverName = '';
 export function setServerName(name: string): void {
 	_serverName = name;
@@ -25,6 +23,6 @@ export function getStoragePath(): string {
 
 /* initialize the default configuration */
 export function initialize(): void {
-	setServerName('custom server');
+	setServerName('ma-web-server');
 	setStoragePath(libPath.join(process.cwd(), './data'));
 }

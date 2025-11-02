@@ -1,21 +1,16 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024-2025 Bjoern Boss Henrichsen */
-import * as libLog from "./log.js";
-import * as libHttp from "./http.js";
+import * as libLog from "core/log.js";
+import * as libHttp from "core/http.js";
+import * as libCommon from "core/common.js";
 import * as libNodeHttps from "https";
 import * as libNodeHttp from "http";
 import * as libFs from "fs";
 import * as libStream from "stream";
 import { AddressInfo } from "net";
 
-export interface Handler {
-	path: string;
-	request(request: libHttp.HttpRequest): void;
-	upgrade(upgrade: libHttp.HttpUpgrade): void;
-}
-
-export class Server {
-	private handler: Record<string, Handler>;
+export class Server implements libCommon.ServerInterface {
+	private handler: Record<string, libCommon.AppInterface>;
 
 	constructor() {
 		libLog.Info(`Server object created`);
@@ -51,9 +46,9 @@ export class Server {
 			if (key != null) {
 				msg.translate(key);
 				if (wasRequest)
-					this.handler[key].request(msg as libHttp.HttpRequest);
+					this.handler[key].request(key, msg as libHttp.HttpRequest);
 				else
-					this.handler[key].upgrade(msg as libHttp.HttpUpgrade);
+					this.handler[key].upgrade(key, msg as libHttp.HttpUpgrade);
 				return;
 			}
 
@@ -81,15 +76,15 @@ export class Server {
 		});
 	}
 
-	addHandler(handler: Handler) {
-		if (handler.path in this.handler)
-			libLog.Error(`Path [${handler.path}] is already being handled`);
+	public registerPath(path: string, handler: libCommon.AppInterface): void {
+		if (path in this.handler)
+			libLog.Error(`Path [${path}] is already being handled`);
 		else {
-			libLog.Info(`Registered path handler for [${handler.path}]`);
-			this.handler[handler.path] = handler;
+			libLog.Info(`Registered path handler for [${path}]`);
+			this.handler[path] = handler;
 		}
 	}
-	listenHttp(port: number, internal: boolean): void {
+	public listenHttp(port: number, internal: boolean): void {
 		try {
 			/* start the actual server */
 			const server = libNodeHttp.createServer((req, resp) => this.handleRequest(req, resp, internal)).listen(port);
@@ -104,7 +99,7 @@ export class Server {
 			libLog.Error(`While listening to port ${port} using http: ${err}`);
 		}
 	}
-	listenHttps(port: number, key: string, cert: string, internal: boolean): void {
+	public listenHttps(port: number, key: string, cert: string, internal: boolean): void {
 		try {
 			/* load the key and certificate */
 			const config = {

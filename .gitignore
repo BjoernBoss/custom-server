@@ -1,6 +1,8 @@
 local-config.js
 package-lock.json
 node_modules/*
-data/*
 core/*.js
-*.js
+server/*.js
+apps/*
+!apps/setup.d.ts
+data/*

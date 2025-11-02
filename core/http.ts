@@ -32,7 +32,7 @@ enum RangeParseState {
 	valid,
 	issue,
 	malformed
-}
+};
 function ParseRangeHeader(range: string | undefined, size: number): [number, number, RangeParseState] {
 	if (range == undefined)
 		return [0, size, RangeParseState.noRange];
@@ -131,7 +131,7 @@ export class HttpRequest {
 		this.headers = {};
 
 		const url = new libURL.URL(request.url!, `http://${request.headers.host}`);
-		this.relative = libLocation.sanitize(decodeURIComponent(url.pathname));
+		this.relative = libLocation.Sanitize(decodeURIComponent(url.pathname));
 		this.fullpath = this.relative;
 		this.rawpath = url.pathname;
 	}
@@ -475,7 +475,7 @@ export class HttpUpgrade {
 		this.head = head;
 
 		const url = new libURL.URL(request.url!, `http://${request.headers.host}`);
-		this.relative = libLocation.sanitize(decodeURIComponent(url.pathname));
+		this.relative = libLocation.Sanitize(decodeURIComponent(url.pathname));
 		this.fullpath = this.relative;
 		this.rawpath = url.pathname;
 	}
