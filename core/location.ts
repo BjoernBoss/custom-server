@@ -4,7 +4,7 @@ import * as libUrl from 'url';
 import * as libPath from "path";
 import * as libConfig from "./config.js";
 
-export function sanitize(path) {
+export function sanitize(path: string): string {
 	let out = '/';
 
 	/* iterate over the characters and write them to the output
@@ -40,7 +40,7 @@ export function sanitize(path) {
 	return out;
 }
 
-export function makeAppPath(urlFilePath, path) {
+export function makeAppPath(urlFilePath: string, path: string): (path: string) => string {
 	let dirName = libPath.dirname(libUrl.fileURLToPath(urlFilePath));
 	if (path != undefined)
 		dirName = libPath.join(dirName, path);
@@ -49,7 +49,7 @@ export function makeAppPath(urlFilePath, path) {
 	};
 }
 
-export function makeStoragePath(name) {
+export function makeStoragePath(name: string): (path: string) => string {
 	/* path must be built new everytime, as the storage path might change throughout */
 	return function (path) {
 		const dirName = libPath.join(libConfig.getStoragePath(), name);

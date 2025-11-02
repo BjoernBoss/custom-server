@@ -1,22 +1,32 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024-2025 Bjoern Boss Henrichsen */
 import * as libFs from "fs";
-import * as libConfig from './config.js';
 
-var logIntoConsole = true;
-var logFile = {
+interface FileLoggingConfig {
+	configured: boolean;
+	logFilePath: string;
+	oldFilePath: string;
+	logFileSize: number;
+	fs: null | number,
+	buffer: string[];
+	flushId: null | NodeJS.Timeout;
+}
+const FileFlushingDelay: number = 1_500;
+const FileBufMaximumLines = 1_500;
+const FileLoggingMaxLength = 10_000_000;
+
+var logIntoConsole: boolean = true;
+var logFile: FileLoggingConfig = {
 	configured: false,
-	logFilePath: null,
-	oldFilePath: null,
+	logFilePath: '',
+	oldFilePath: '',
 	logFileSize: 0,
-	bufMaximumLines: 1500,
 	fs: null,
 	buffer: [],
-	flushId: null,
-	flushDelay: 1500
+	flushId: null
 };
 
-function FlushToFile() {
+function FlushToFile(): void {
 	console.log('flushing into file');
 
 	/* write the buffer to the file */
@@ -33,7 +43,7 @@ function FlushToFile() {
 		logFile.flushId = null;
 	}
 }
-function MakeActualLog(level, msg) {
+function MakeActualLog(level: string, msg: string): void {
 	const log = `[${new Date().toUTCString()}] ${level}: ${msg}`;
 
 	/* check if the log should be written to the console */
@@ -46,16 +56,16 @@ function MakeActualLog(level, msg) {
 
 	/* write the log to the buffer and check if the data need to be flushed inplace, or if the flushing can be delayed */
 	logFile.buffer.push(`${log}\n`);
-	if (logFile.buffer.length >= logFile.bufMaximumLines)
+	if (logFile.buffer.length >= FileBufMaximumLines)
 		FlushToFile();
 	else {
 		if (logFile.flushId != null)
 			clearTimeout(logFile.flushId);
-		logFile.flushId = setTimeout(FlushToFile, logFile.flushDelay);
+		logFile.flushId = setTimeout(FlushToFile, FileFlushingDelay);
 	}
 
 	/* check if the log-files need to be swapped */
-	if (logFile.logFileSize < libConfig.MaxFileLoggingLength)
+	if (logFile.logFileSize < FileLoggingMaxLength)
 		return;
 
 	/* flush the buffered entries */
@@ -73,13 +83,13 @@ function MakeActualLog(level, msg) {
 	logFile.logFileSize = 0;
 };
 
-export function SetLogConsole(logConsole) {
+export function SetLogConsole(logConsole: boolean): void {
 	logIntoConsole = logConsole;
 }
-export function SetFileLogging(filePath) {
+export function SetFileLogging(filePath: string): void {
 	/* check if a logging-file already exists */
 	if (logFile.configured)
-		return false;
+		return;
 	logFile.configured = true;
 
 	/* setup the two paths */
@@ -88,17 +98,17 @@ export function SetFileLogging(filePath) {
 
 	/* setup the logging state */
 	try { logFile.fs = libFs.openSync(logFile.logFilePath, 'a'); } catch (err) { }
-	try { logFile.logFileSize = libFs.fstatSync(logFile.fs).size; } catch (err) { }
+	try { logFile.logFileSize = libFs.fstatSync(logFile.fs as number).size; } catch (err) { }
 }
-export function Error(msg) {
+export function Error(msg: string): void {
 	MakeActualLog('Error', msg);
 };
-export function Info(msg) {
+export function Info(msg: string): void {
 	MakeActualLog('Info', msg);
 };
-export function Warning(msg) {
+export function Warning(msg: string): void {
 	MakeActualLog('Warning', msg);
 };
-export function Log(msg) {
+export function Log(msg: string): void {
 	MakeActualLog('Log', msg);
 };

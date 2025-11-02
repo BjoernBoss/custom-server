@@ -4,7 +4,7 @@ import * as libLog from "./log.js";
 import * as libFs from "fs";
 import * as libPath from "path";
 
-function fileRelative(path) {
+function fileRelative(path: string): string {
 	/* workaround! (7 => file://) */
 	const dirName = import.meta.dirname ?? libPath.dirname(import.meta.url.slice(7));
 	if (path.startsWith('/'))
@@ -92,7 +92,7 @@ export const ListDir = {
 	empty: fileRelative('templates/list-dir/empty.txt')
 };
 
-function ExpandPlaceholders(content, map) {
+function ExpandPlaceholders(content: string, map: Record<string, string>) {
 	var out = '', name = '';
 
 	/* construct the new output content */
@@ -148,12 +148,12 @@ function ExpandPlaceholders(content, map) {
 	return out;
 };
 
-export function Expand(content, args) {
+export function Expand(content: string, args: Record<string, string>) {
 	return ExpandPlaceholders(content, args);
 };
-export function Load(name) {
+export function Load(name: string) {
 	return libFs.readFileSync(name, 'utf-8');
 };
-export function LoadExpanded(name, args) {
+export function LoadExpanded(name: string, args: Record<string, string>) {
 	return ExpandPlaceholders(libFs.readFileSync(name, 'utf-8'), args);
 };

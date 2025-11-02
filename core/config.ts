@@ -5,28 +5,26 @@ import * as libLog from "./log.js";
 
 export const PortInternalHttp = 10024;
 
-export const MaxFileLoggingLength = 10_000_000;
-
 let _serverName = '';
-export function setServerName(name) {
+export function setServerName(name: string): void {
 	_serverName = name;
 	libLog.Info(`Server name configured as: [${_serverName}]`);
 }
-export function getServerName() {
+export function getServerName(): string {
 	return _serverName;
 }
 
 let _storagePath = '';
-export function setStoragePath(path) {
+export function setStoragePath(path: string) {
 	_storagePath = path;
 	libLog.Info(`Storage path configured as: [${_storagePath}]`);
 }
-export function getStoragePath() {
+export function getStoragePath(): string {
 	return _storagePath;
 }
 
 /* initialize the default configuration */
-export function initialize() {
+export function initialize(): void {
 	setServerName('custom server');
 	setStoragePath(libPath.join(process.cwd(), './data'));
 }
