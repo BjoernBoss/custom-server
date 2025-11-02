@@ -171,8 +171,7 @@ export class HttpRequest {
 			return this.request.method!;
 		libLog.Log(`Request used unsupported method [${this.request.method}]`);
 
-		const content = libTemplates.LoadExpanded(libTemplates.ErrorInvalidMethod,
-			{ path: this.rawpath, method: this.request.method!, allowed: methods.join(",") });
+		const content = libTemplates.ErrorInvalidMethod({ path: this.rawpath, method: this.request.method!, allowed: methods });
 		this.responseString(StatusCode.MethodNotAllowed, 'f.html', content);
 		return null;
 	}
@@ -186,8 +185,7 @@ export class HttpRequest {
 		}
 		libLog.Log(`Responded with Unsupported Media Type for [${type}]`);
 
-		const content = libTemplates.LoadExpanded(libTemplates.ErrorUnsupportedMediaType,
-			{ path: this.rawpath, used: type, allowed: types.join(",") });
+		const content = libTemplates.ErrorUnsupportedMediaType({ path: this.rawpath, used: type, allowed: types });
 		this.responseString(StatusCode.UnsupportedMediaType, 'f.html', content);
 		return null;
 	}
@@ -217,8 +215,7 @@ export class HttpRequest {
 			return true;
 		libLog.Log(`Request is too large or has no size [${length}]`);
 
-		const content = libTemplates.LoadExpanded(libTemplates.ErrorContentTooLarge,
-			{ path: this.rawpath, length: `${length}`, allowed: `${maxLength}` });
+		const content = libTemplates.ErrorContentTooLarge({ path: this.rawpath, allowedLength: maxLength, providedLength: length });
 		this.responseString(StatusCode.ContentTooLarge, 'f.html', content);
 		return false;
 	}
@@ -236,7 +233,7 @@ export class HttpRequest {
 		if (msg != null)
 			this.responseString(StatusCode.Ok, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.SuccessOk, { path: this.rawpath, operation: operation });
+			const content = libTemplates.SuccessOk({ path: this.rawpath, operation: operation });
 			this.responseString(StatusCode.Ok, 'f.html', content);
 		}
 	}
@@ -246,7 +243,7 @@ export class HttpRequest {
 		if (msg != null)
 			this.responseString(StatusCode.NotFound, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this.rawpath });
+			const content = libTemplates.ErrorNotFound({ path: this.rawpath });
 			this.responseString(StatusCode.NotFound, 'f.html', content);
 		}
 	}
@@ -256,7 +253,7 @@ export class HttpRequest {
 		if (msg != null)
 			this.responseString(StatusCode.Conflict, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorConflict, { path: this.rawpath, conflict: conflict });
+			const content = libTemplates.ErrorConflict({ path: this.rawpath, conflict: conflict });
 			this.responseString(StatusCode.Conflict, 'f.html', content);
 		}
 	}
@@ -267,7 +264,7 @@ export class HttpRequest {
 		if (msg != null)
 			this.responseString(StatusCode.PermanentlyMoved, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.PermanentlyMoved, { path: this.rawpath, new: target });
+			const content = libTemplates.PermanentlyMoved({ path: this.rawpath, destination: target });
 			this.responseString(StatusCode.PermanentlyMoved, 'f.html', content);
 		}
 	}
@@ -278,7 +275,7 @@ export class HttpRequest {
 		if (msg != null)
 			this.responseString(StatusCode.TemporaryRedirect, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.TemporaryRedirect, { path: this.rawpath, new: target });
+			const content = libTemplates.TemporaryRedirect({ path: this.rawpath, destination: target });
 			this.responseString(StatusCode.TemporaryRedirect, 'f.html', content);
 		}
 	}
@@ -288,7 +285,7 @@ export class HttpRequest {
 		if (msg != null)
 			this.responseString(StatusCode.BadRequest, 'f.txt', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorBadRequest, { path: this.rawpath, reason: reason });
+			const content = libTemplates.ErrorBadRequest({ path: this.rawpath, reason: reason });
 			this.responseString(StatusCode.BadRequest, 'f.html', content);
 		}
 	}
@@ -314,16 +311,14 @@ export class HttpRequest {
 		const [offset, size, rangeResult] = ParseRangeHeader(this.request.headers.range, fileSize);
 		if (rangeResult == RangeParseState.malformed) {
 			libLog.Log(`Malformed range-request encountered [${this.request.headers.range}]`);
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorBadRequest,
-				{ path: this.rawpath, reason: `Issues while parsing http-header range: [${this.request.headers.range}]` });
+			const content = libTemplates.ErrorBadRequest({ path: this.rawpath, reason: `Issues while parsing http-header range: [${this.request.headers.range}]` });
 			this.responseString(StatusCode.BadRequest, 'f.html', content);
 			return;
 		}
 		else if (rangeResult == RangeParseState.issue) {
 			libLog.Log(`Unsatisfiable range-request encountered [${this.request.headers.range}] with file-size [${fileSize}]`);
 			this.headers['Content-Range'] = `bytes */${fileSize}`;
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorRangeIssue,
-				{ path: this.rawpath, range: this.request.headers.range!, size: String(fileSize) });
+			const content = libTemplates.ErrorRangeIssue({ path: this.rawpath, range: this.request.headers.range!, fileSize: fileSize });
 			this.responseString(StatusCode.RangeIssue, 'f.html', content);
 			return;
 		}
@@ -515,7 +510,7 @@ export class HttpUpgrade {
 		if (msg != null)
 			this.responseString(`${StatusCode.NotFound} Not Found`, 'text/plain; charset=utf-8', msg);
 		else {
-			const content = libTemplates.LoadExpanded(libTemplates.ErrorNotFound, { path: this.rawpath });
+			const content = libTemplates.ErrorNotFound({ path: this.rawpath });
 			this.responseString(`${StatusCode.NotFound} Not Found`, 'text/html; charset=utf-8', content);
 		}
 	}

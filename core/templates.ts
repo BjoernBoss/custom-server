@@ -4,95 +4,20 @@ import * as libLog from "./log.js";
 import * as libFs from "fs";
 import * as libPath from "path";
 
-function fileRelative(path: string): string {
+function LoadRelative(path: string): string {
 	/* workaround! (7 => file://) */
 	const dirName = import.meta.dirname ?? libPath.dirname(import.meta.url.slice(7));
 	if (path.startsWith('/'))
-		return libPath.join(dirName, '.' + path);
+		path = libPath.join(dirName, '.' + path);
 	if (!path.startsWith('./'))
-		return libPath.join(dirName, './' + path);
-	return libPath.join(dirName, path);
+		path = libPath.join(dirName, './' + path);
+	else
+		path = libPath.join(dirName, path);
+
+	/* try to load the actual file */
+	return libFs.readFileSync(path, 'utf-8');
 }
-
-/*	Defines:
-*		{path}: requested path
-*		{operation}: operation
-*/
-export const SuccessOk = fileRelative('templates/200.html');
-
-/*	Defines:
-*		{path}: requested path
-*		{new}: new destination
-*/
-export const PermanentlyMoved = fileRelative('templates/301.html');
-
-/*	Defines:
-*		{path}: requested path
-*		{new}: new destination
-*/
-export const TemporaryRedirect = fileRelative('templates/307.html');
-
-/*	Defines:
-*		{path}: requested path
-*		{reason}: description of issue
-*/
-export const ErrorBadRequest = fileRelative('templates/400.html');
-
-/*	Defines:
-*		{path}: requested path
-*/
-export const ErrorNotFound = fileRelative('templates/404.html');
-
-/*	Defines:
-*		{method}: requested method
-*		{allowed}: allowed methods
-*		{path}: requested path
-*/
-export const ErrorInvalidMethod = fileRelative('templates/405.html');
-
-/*	Defines:
-*		{conflict}: conflict description
-*		{path}: requested path
-*/
-export const ErrorConflict = fileRelative('templates/409.html');
-
-/*	Defines:
-*		{length}: used content length
-*		{allowed}: allowed maximum
-*		{path}: requested path
-*/
-export const ErrorContentTooLarge = fileRelative('templates/413.html');
-
-/*	Defines:
-*		{used}: used content/media type
-*		{allowed}: allowed types
-*		{path}: requested path
-*/
-export const ErrorUnsupportedMediaType = fileRelative('templates/415.html');
-
-/*	Defines:
-*		{range}: range
-*		{path}: requested path
-*		{size}: file-size
-*/
-export const ErrorRangeIssue = fileRelative('templates/416.html');
-
-/*	Base defines:
-*		{path}: path of directory
-*		{entries}: appended list of children
-*	Entry defines:
-*		{path}: path to entry
-*		{name}: name of entry
-*	Empty defines:
-		%none%
-*/
-export const ListDir = {
-	base: fileRelative('templates/list-dir/page.html'),
-	entry: fileRelative('templates/list-dir/entry.txt'),
-	empty: fileRelative('templates/list-dir/empty.txt')
-};
-
-function ExpandPlaceholders(content: string, map: Record<string, string>) {
+function ExpandPlaceholders(content: string, map: Record<string, string>): string {
 	var out = '', name = '';
 
 	/* construct the new output content */
@@ -148,12 +73,56 @@ function ExpandPlaceholders(content: string, map: Record<string, string>) {
 	return out;
 };
 
+export function SuccessOk(payload: { path: string, operation: string }): string {
+	const content: string = LoadRelative('templates/200.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'op': payload.operation });
+}
+
+export function PermanentlyMoved(payload: { path: string, destination: string }): string {
+	const content: string = LoadRelative('templates/301.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'new': payload.destination });
+}
+
+export function TemporaryRedirect(payload: { path: string, destination: string }): string {
+	const content: string = LoadRelative('templates/307.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'new': payload.destination });
+}
+
+export function ErrorBadRequest(payload: { path: string, reason: string }): string {
+	const content: string = LoadRelative('templates/400.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'reason': payload.reason });
+}
+
+export function ErrorNotFound(payload: { path: string }): string {
+	const content: string = LoadRelative('templates/404.html');
+	return ExpandPlaceholders(content, { 'path': payload.path });
+}
+
+export function ErrorInvalidMethod(payload: { path: string, method: string, allowed: string[] }): string {
+	const content: string = LoadRelative('templates/405.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'method': payload.method, 'allowed': payload.allowed.join(",") });
+}
+
+export function ErrorConflict(payload: { path: string, conflict: string }): string {
+	const content: string = LoadRelative('templates/409.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'conflict': payload.conflict });
+}
+
+export function ErrorContentTooLarge(payload: { path: string, allowedLength: number, providedLength: number }): string {
+	const content: string = LoadRelative('templates/413.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'allowed': payload.allowedLength.toString(), 'length': payload.providedLength.toString() });
+}
+
+export function ErrorUnsupportedMediaType(payload: { path: string, allowed: string[], used: string }): string {
+	const content: string = LoadRelative('templates/415.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'used': payload.used, 'allowed': payload.allowed.join(",") });
+}
+
+export function ErrorRangeIssue(payload: { path: string, range: string, fileSize: number }): string {
+	const content: string = LoadRelative('templates/416.html');
+	return ExpandPlaceholders(content, { 'path': payload.path, 'range': payload.range, 'size': payload.fileSize.toString() });
+}
+
 export function Expand(content: string, args: Record<string, string>) {
 	return ExpandPlaceholders(content, args);
-};
-export function Load(name: string) {
-	return libFs.readFileSync(name, 'utf-8');
-};
-export function LoadExpanded(name: string, args: Record<string, string>) {
-	return ExpandPlaceholders(libFs.readFileSync(name, 'utf-8'), args);
 };
