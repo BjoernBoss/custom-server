@@ -11,10 +11,12 @@ import { AddressInfo } from "net";
 
 export class Server implements libCommon.ServerInterface {
 	private handler: Record<string, libCommon.AppInterface>;
+	private stopList: (() => void)[];
 
 	constructor() {
 		libLog.Info(`Server object created`);
 		this.handler = {};
+		this.stopList = [];
 	}
 
 	private lookupHandler(pathname: string): string | null {
@@ -93,6 +95,10 @@ export class Server implements libCommon.ServerInterface {
 			if (!server.listening)
 				return;
 
+			/* register the stop-function */
+			this.stopList.push(() => server.close());
+
+			/* log the established listener */
 			const address = server.address() as AddressInfo;
 			libLog.Info(`Http-server${internal ? " flagged as internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
@@ -114,10 +120,18 @@ export class Server implements libCommon.ServerInterface {
 			if (!server.listening)
 				return;
 
+			/* register the stop-function */
+			this.stopList.push(() => server.close());
+
+			/* log the established listener */
 			const address = server.address() as AddressInfo;
 			libLog.Info(`Https-server${internal ? " flagged as internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using https: ${err}`);
 		}
+	}
+	public stop(): void {
+		for (const cb of this.stopList)
+			cb();
 	}
 };

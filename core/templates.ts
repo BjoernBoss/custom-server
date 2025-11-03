@@ -75,52 +75,52 @@ function ExpandPlaceholders(content: string, map: Record<string, string>): strin
 
 export function SuccessOk(payload: { path: string, operation: string }): string {
 	const content: string = LoadRelative('templates/200.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'op': payload.operation });
+	return ExpandPlaceholders(content, { path: payload.path, op: payload.operation });
 }
 
 export function PermanentlyMoved(payload: { path: string, destination: string }): string {
 	const content: string = LoadRelative('templates/301.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'new': payload.destination });
+	return ExpandPlaceholders(content, { path: payload.path, new: payload.destination });
 }
 
 export function TemporaryRedirect(payload: { path: string, destination: string }): string {
 	const content: string = LoadRelative('templates/307.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'new': payload.destination });
+	return ExpandPlaceholders(content, { path: payload.path, new: payload.destination });
 }
 
 export function ErrorBadRequest(payload: { path: string, reason: string }): string {
 	const content: string = LoadRelative('templates/400.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'reason': payload.reason });
+	return ExpandPlaceholders(content, { path: payload.path, reason: payload.reason });
 }
 
 export function ErrorNotFound(payload: { path: string }): string {
 	const content: string = LoadRelative('templates/404.html');
-	return ExpandPlaceholders(content, { 'path': payload.path });
+	return ExpandPlaceholders(content, { path: payload.path });
 }
 
 export function ErrorInvalidMethod(payload: { path: string, method: string, allowed: string[] }): string {
 	const content: string = LoadRelative('templates/405.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'method': payload.method, 'allowed': payload.allowed.join(",") });
+	return ExpandPlaceholders(content, { path: payload.path, method: payload.method, allowed: payload.allowed.join(",") });
 }
 
 export function ErrorConflict(payload: { path: string, conflict: string }): string {
 	const content: string = LoadRelative('templates/409.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'conflict': payload.conflict });
+	return ExpandPlaceholders(content, { path: payload.path, conflict: payload.conflict });
 }
 
 export function ErrorContentTooLarge(payload: { path: string, allowedLength: number, providedLength: number }): string {
 	const content: string = LoadRelative('templates/413.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'allowed': payload.allowedLength.toString(), 'length': payload.providedLength.toString() });
+	return ExpandPlaceholders(content, { path: payload.path, allowed: payload.allowedLength.toString(), length: payload.providedLength.toString() });
 }
 
 export function ErrorUnsupportedMediaType(payload: { path: string, allowed: string[], used: string }): string {
 	const content: string = LoadRelative('templates/415.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'used': payload.used, 'allowed': payload.allowed.join(",") });
+	return ExpandPlaceholders(content, { path: payload.path, used: payload.used, allowed: payload.allowed.join(",") });
 }
 
 export function ErrorRangeIssue(payload: { path: string, range: string, fileSize: number }): string {
 	const content: string = LoadRelative('templates/416.html');
-	return ExpandPlaceholders(content, { 'path': payload.path, 'range': payload.range, 'size': payload.fileSize.toString() });
+	return ExpandPlaceholders(content, { path: payload.path, range: payload.range, size: payload.fileSize.toString() });
 }
 
 export function Expand(content: string, args: Record<string, string>) {

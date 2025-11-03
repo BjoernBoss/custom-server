@@ -118,9 +118,16 @@ export class HttpRequest {
 	private headersDone: boolean;
 	private headers: Record<string, string>;
 
+	/* has the connection been flagged to have come across an internal port */
 	public internal: boolean;
+
+	/* path relative to current application base-path */
 	public relative: string;
+
+	/* absolute path on web-server */
 	public fullpath: string;
+
+	/* raw (URI encoded) absolute path */
 	public rawpath: string;
 
 	constructor(request: IncomingMessage, response: ServerResponse, internal: boolean) {
@@ -463,9 +470,16 @@ export class HttpUpgrade {
 	private socket: libStream.Duplex;
 	private head: Buffer;
 
+	/* has the connection been flagged to have come across an internal port */
 	public internal: boolean;
+
+	/* path relative to current application base-path */
 	public relative: string;
+
+	/* absolute path on web-server */
 	public fullpath: string;
+
+	/* raw (URI encoded) absolute path */
 	public rawpath: string;
 
 	constructor(request: IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean) {
