@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2024-2025 Bjoern Boss Henrichsen */
 import * as libLog from "core/log.js";
-import * as libHttp from "core/http.js";
+import * as libClient from "core/client.js";
 import * as libCommon from "core/common.js";
-import * as libNodeHttps from "https";
-import * as libNodeHttp from "http";
+import * as libHttps from "https";
+import * as libHttp from "http";
 import * as libFs from "fs";
 import * as libStream from "stream";
 import { AddressInfo } from "net";
@@ -34,45 +34,45 @@ export class Server implements libCommon.ServerInterface {
 		}
 		return bestKey;
 	}
-	private handleWrapper(wasRequest: boolean, request: libNodeHttp.IncomingMessage, establish: () => libHttp.HttpRequest | libHttp.HttpUpgrade): void {
-		let msg = null;
+	private handleWrapper(wasRequest: boolean, request: libHttp.IncomingMessage, establish: () => libClient.HttpRequest | libClient.HttpUpgrade): void {
+		let client = null;
 		try {
-			msg = establish();
+			client = establish();
 
 			/* find the handler to use */
-			let key = this.lookupHandler(msg.relative);
+			let key = this.lookupHandler(client.relative);
 
 			/* check if a handler has been found */
 			if (key != null) {
-				msg.translate(key);
+				client.translate(key);
 				if (wasRequest)
-					this.handler[key].request(key, msg as libHttp.HttpRequest);
+					this.handler[key].request(key, client as libClient.HttpRequest);
 				else
-					this.handler[key].upgrade(key, msg as libHttp.HttpUpgrade);
+					this.handler[key].upgrade(key, client as libClient.HttpUpgrade);
 				return;
 			}
 
 			/* add the default [not-found] response */
-			libLog.Error(`No handler registered for [${msg.relative}]`)
-			msg.respondNotFound(`No handler registered for [${msg.rawpath}]`);
+			libLog.Error(`No handler registered for [${client.relative}]`)
+			client.respondNotFound(`No handler registered for [${client.rawpath}]`);
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
 			libLog.Error(`Uncaught exception encountered: ${err}`)
-			if (msg != null)
-				msg.respondInternalError('Unknown internal error encountered');
+			if (client != null)
+				client.respondInternalError('Unknown internal error encountered');
 			request.destroy();
 		}
 	}
-	private handleRequest(request: libNodeHttp.IncomingMessage, response: libNodeHttp.ServerResponse, internal: boolean): void {
-		this.handleWrapper(true, request, function () {
+	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, internal: boolean): void {
+		this.handleWrapper(true, request, function (): libClient.HttpRequest {
 			libLog.Info(`New ${internal ? "internal" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
-			return new libHttp.HttpRequest(request, response, internal);
+			return new libClient.HttpRequest(request, response, internal);
 		});
 	}
-	private handleUpgrade(request: libNodeHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean): void {
-		this.handleWrapper(false, request, function (): libHttp.HttpUpgrade {
+	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean): void {
+		this.handleWrapper(false, request, function (): libClient.HttpUpgrade {
 			libLog.Info(`New ${internal ? "internal" : "external"} upgrade: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
-			return new libHttp.HttpUpgrade(request, socket, head, internal);
+			return new libClient.HttpUpgrade(request, socket, head, internal);
 		});
 	}
 
@@ -87,7 +87,7 @@ export class Server implements libCommon.ServerInterface {
 	public listenHttp(port: number, internal: boolean): void {
 		try {
 			/* start the actual server */
-			const server = libNodeHttp.createServer((req, resp) => this.handleRequest(req, resp, internal)).listen(port);
+			const server = libHttp.createServer((req, resp) => this.handleRequest(req, resp, internal)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using http: ${err}`));
 			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal));
 			if (!server.listening)
@@ -108,7 +108,7 @@ export class Server implements libCommon.ServerInterface {
 			};
 
 			/* start the actual server */
-			const server = libNodeHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, internal)).listen(port);
+			const server = libHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, internal)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using https: ${err}`));
 			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal));
 			if (!server.listening)

@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* Copyright (c) 2025 Bjoern Boss Henrichsen */
-import * as libHttp from './http.js';
+import * as libClient from './client.js';
 
 export interface AppInterface {
-	request(basePath: string, msg: libHttp.HttpRequest): void;
-	upgrade(basePath: string, msg: libHttp.HttpUpgrade): void;
+	request(basePath: string, client: libClient.HttpRequest): void;
+	upgrade(basePath: string, client: libClient.HttpUpgrade): void;
 }
 export interface ServerInterface {
 	registerPath(path: string, handler: AppInterface): void;
