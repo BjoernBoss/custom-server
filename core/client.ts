@@ -115,12 +115,14 @@ enum HttpRequestState {
 	none,
 	responded,
 	awaiting,
-	received
+	upgrading,
+	received,
+	finalized
 }
 
 abstract class HttpBaseClass {
 	protected request: libHttp.IncomingMessage;
-	protected state: HttpRequestState;
+	protected _state: HttpRequestState;
 
 	/* has the connection been flagged to have come across an internal port */
 	public internal: boolean;
@@ -140,7 +142,7 @@ abstract class HttpBaseClass {
 	protected abstract respondInternalError(msg: string): void;
 
 	constructor(request: libHttp.IncomingMessage, internal: boolean) {
-		this.state = HttpRequestState.none;
+		this._state = HttpRequestState.none;
 		this.internal = internal;
 		this.request = request;
 
@@ -160,11 +162,18 @@ abstract class HttpBaseClass {
 			this.path = `/${this.path}`;
 	}
 	public finalize() {
-		if (this.state != HttpRequestState.awaiting && this.state != HttpRequestState.responded)
+		if (this._state == HttpRequestState.none || this._state == HttpRequestState.received)
 			throw new Error('Request has not been handled');
+		if (this._state != HttpRequestState.responded)
+			return;
+		let that = this;
+		this.request.on('data', function () {
+			libLog.Warning(`Connection sent unexpected data: [${that.rawpath}]`);
+			that.request.destroy();
+		});
 	}
 	public internalError(msg: string): void {
-		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
+		if (this._state != HttpRequestState.none && this._state != HttpRequestState.received)
 			return;
 		libLog.Log(`Responded with Internal error [${msg}]`);
 		this.respondInternalError(msg);
@@ -184,9 +193,9 @@ export class HttpRequest extends HttpBaseClass {
 
 	private closeHeader(statusCode: number, path: string, length: number | null = null): void {
 		/* check if the header has already been sent */
-		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
+		if (this._state != HttpRequestState.none && this._state != HttpRequestState.received)
 			throw new Error('Request has already been handled');
-		this.state = HttpRequestState.responded;
+		this._state = (this._state == HttpRequestState.received ? HttpRequestState.finalized : HttpRequestState.responded);
 
 		/* setup the response */
 		this.response.statusCode = statusCode;
@@ -209,20 +218,23 @@ export class HttpRequest extends HttpBaseClass {
 		let failed = false, accumulated = 0, that = this;
 
 		/* check if a receiver has already been attached */
-		if (this.state != HttpRequestState.none)
+		if (this._state != HttpRequestState.none)
 			throw new Error('Request has already been handled');
 
 		/* check if too many data have been promised */
 		if (maxLength != null && this.request.headers['content-length'] != undefined) {
 			const length = parseInt(this.request.headers['content-length']);
+
+			/* check if the length is valid and otherwise mark the state as 'handled' */
 			if (!isFinite(length) || length < 0 || length > maxLength) {
+				this._state = HttpRequestState.received;
 				libLog.Log(`Request is too large or has no size [${length}]`);
 				const content = libTemplates.ErrorContentTooLarge({ path: this.rawpath, allowedLength: maxLength, providedLength: length });
 				this.responseString(StatusCode.ContentTooLarge, 'f.html', content);
 				return false;
 			}
 		}
-		this.state = HttpRequestState.awaiting;
+		this._state = HttpRequestState.awaiting;
 
 		/* register the data recipient */
 		this.request.on('data', function (data: Buffer) {
@@ -252,7 +264,7 @@ export class HttpRequest extends HttpBaseClass {
 		});
 		this.request.on('end', function () {
 			if (failed) return;
-			that.state = HttpRequestState.received;
+			that._state = HttpRequestState.received;
 			cb(null, null);
 			that.finalize();
 		});
@@ -552,10 +564,10 @@ export class HttpUpgrade extends HttpBaseClass {
 	private responseString(status: string, type: string, text: string): void {
 		const buffer = libBuffer.Buffer.from(text, 'utf-8');
 
-		/* check if the header has already been sent */
-		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
+		/* check if the header has already been sent (always set to finalized, as it is closed) */
+		if (this._state != HttpRequestState.none && this._state != HttpRequestState.received)
 			throw new Error('Request has already been handled');
-		this.state = HttpRequestState.responded;
+		this._state = HttpRequestState.finalized;
 
 		let header = `HTTP/1.1 ${status}\r\n`;
 		header += `Date: ${new Date().toUTCString()}\r\n`;
@@ -592,9 +604,9 @@ export class HttpUpgrade extends HttpBaseClass {
 			return false;
 
 		/* ensure the connection can be accepted */
-		if (this.state != HttpRequestState.none)
+		if (this._state != HttpRequestState.none)
 			throw new Error('Request has already been handled');
-		this.state = HttpRequestState.awaiting;
+		this._state = HttpRequestState.upgrading;
 
 		webSocketServer.handleUpgrade(this.request, this.socket, this.head, function (ws, request) {
 			webSocketServer.emit('connection', ws, request);
