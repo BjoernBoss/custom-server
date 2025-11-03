@@ -1,5 +1,5 @@
-# [MAWS] Multi-App-WebServer to Host various Applications and Server Files and Small Games
-![C++](https://img.shields.io/badge/language-Javascript-blue?style=flat-square)
+# \[MAWS\] Multi-App-WebServer to Host various Applications and Server Files and Small Games
+![JavaScript](https://img.shields.io/badge/language-JavaScript-blue?style=flat-square)
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-brightgreen?style=flat-square)](LICENSE.txt)
 
 Small custom webserver written in typescript/javascript, capable to host mutliple separate apps with support for simple http requests and websockets.
