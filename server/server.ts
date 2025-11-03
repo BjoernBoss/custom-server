@@ -3,6 +3,7 @@
 import * as libLog from "core/log.js";
 import * as libClient from "core/client.js";
 import * as libCommon from "core/common.js";
+import * as libLocation from "core/location.js";
 import * as libHttps from "https";
 import * as libHttp from "http";
 import * as libFs from "fs";
@@ -42,20 +43,20 @@ export class Server implements libCommon.ServerInterface {
 			client = establish();
 
 			/* find the handler to use */
-			let key = this.lookupHandler(client.relative);
+			let key = this.lookupHandler(client.path);
 
 			/* check if a handler has been found */
 			if (key != null) {
 				client.translate(key);
 				if (wasRequest)
-					this.handler[key].request(key, client as libClient.HttpRequest);
+					this.handler[key].request(client as libClient.HttpRequest);
 				else
-					this.handler[key].upgrade(key, client as libClient.HttpUpgrade);
+					this.handler[key].upgrade(client as libClient.HttpUpgrade);
 				return;
 			}
 
 			/* add the default [not-found] response */
-			libLog.Error(`No handler registered for [${client.relative}]`)
+			libLog.Error(`No handler registered for [${client.path}]`)
 			client.respondNotFound(`No handler registered for [${client.rawpath}]`);
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
@@ -79,6 +80,7 @@ export class Server implements libCommon.ServerInterface {
 	}
 
 	public registerPath(path: string, handler: libCommon.AppInterface): void {
+		path = libLocation.Sanitize(path);
 		if (path in this.handler)
 			libLog.Error(`Path [${path}] is already being handled`);
 		else {

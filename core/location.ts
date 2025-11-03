@@ -4,6 +4,7 @@ import * as libUrl from 'url';
 import * as libPath from "path";
 import * as libConfig from "./config.js";
 
+/* sanitize path and remove relative path components */
 export function Sanitize(path: string): string {
 	let out = '/';
 
@@ -40,19 +41,33 @@ export function Sanitize(path: string): string {
 	return out;
 }
 
-export function MakeAppPath(urlFilePath: string, path: string): (path: string) => string {
+/* join two sanitized paths */
+export function Join(a: string, b: string): string {
+	if (a.length == 0 || b.length == 0)
+		return (a.length == 0 ? b : a);
+	const aSlash = a.endsWith('/'), bSlash = b.startsWith('/');
+	if (aSlash)
+		return (bSlash ? a + b.substring(1) : a + b);
+	return (bSlash ? a + b : `${a}/${b}`);
+}
+
+export function MakeAppPath(urlFilePath: string, path: string | null = null): (path: string) => string {
 	let dirName = libPath.dirname(libUrl.fileURLToPath(urlFilePath));
-	if (path != undefined)
-		dirName = libPath.join(dirName, path);
+	if (path != null)
+		dirName = libPath.join(dirName, Sanitize(path));
 	return function (path) {
-		return dirName + Sanitize(path);
+		return libPath.join(dirName, Sanitize(path));
 	};
 }
 
-export function MakeStoragePath(name: string): (path: string) => string {
+export function MakeStoragePath(path: string | null = null): (path: string) => string {
+	const append = (path == null ? null : Sanitize(path));
+
 	/* path must be built new everytime, as the storage path might change throughout */
 	return function (path) {
-		const dirName = libPath.join(libConfig.getStoragePath(), name);
-		return dirName + Sanitize(path);
+		let storagePath = libConfig.getStoragePath();
+		if (append != null)
+			storagePath = libPath.join(storagePath, append);
+		return libPath.join(storagePath, Sanitize(path));
 	};
 }

@@ -3,8 +3,8 @@
 import * as libClient from './client.js';
 
 export interface AppInterface {
-	request(basePath: string, client: libClient.HttpRequest): void;
-	upgrade(basePath: string, client: libClient.HttpUpgrade): void;
+	request(client: libClient.HttpRequest): void;
+	upgrade(client: libClient.HttpUpgrade): void;
 }
 export interface ServerInterface {
 	registerPath(path: string, handler: AppInterface): void;

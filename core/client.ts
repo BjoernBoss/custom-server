@@ -111,36 +111,55 @@ function MakeContentType(filePath: string): string {
 	return 'application/octet-stream';
 }
 
-
-export class HttpRequest {
-	private request: IncomingMessage;
-	private response: ServerResponse;
-	private headersDone: boolean;
-	private headers: Record<string, string>;
+class HttpBaseClass {
+	protected request: IncomingMessage;
 
 	/* has the connection been flagged to have come across an internal port */
 	public internal: boolean;
 
 	/* path relative to current application base-path */
-	public relative: string;
+	public path: string;
 
 	/* absolute path on web-server */
 	public fullpath: string;
 
+	/* base path between the fullpath and path  */
+	public basepath: string;
+
 	/* raw (URI encoded) absolute path */
 	public rawpath: string;
 
-	constructor(request: IncomingMessage, response: ServerResponse, internal: boolean) {
+	constructor(request: IncomingMessage, internal: boolean) {
 		this.internal = internal;
 		this.request = request;
+
+		const url = new libURL.URL(request.url!, `http://${request.headers.host}`);
+		this.path = libLocation.Sanitize(decodeURIComponent(url.pathname));
+		this.fullpath = this.path;
+		this.basepath = '/';
+		this.rawpath = url.pathname;
+	}
+	public translate(path: string): void {
+		if (path.length > this.path.length || !this.path.startsWith(path) || (path.length < this.path.length && this.path[path.length] != '/' && !path.endsWith('/')))
+			throw new Error(`Path [${path}] is not a base of [${this.path}]`);
+
+		this.basepath = libLocation.Join(this.basepath, path);
+		this.path = this.path.substring(path.length);
+		if (!this.path.startsWith('/'))
+			this.path = `/${this.path}`;
+	}
+}
+
+export class HttpRequest extends HttpBaseClass {
+	private response: ServerResponse;
+	private headersDone: boolean;
+	private headers: Record<string, string>;
+
+	constructor(request: IncomingMessage, response: ServerResponse, internal: boolean) {
+		super(request, internal);
 		this.response = response;
 		this.headersDone = false;
 		this.headers = {};
-
-		const url = new libURL.URL(request.url!, `http://${request.headers.host}`);
-		this.relative = libLocation.Sanitize(decodeURIComponent(url.pathname));
-		this.fullpath = this.relative;
-		this.rawpath = url.pathname;
 	}
 
 	private closeHeader(statusCode: number, path: string, length: number | null = null): void {
@@ -164,12 +183,6 @@ export class HttpRequest {
 		this.response.end(buffer);
 	}
 
-	public translate(path: string): void {
-		if (this.relative == path)
-			this.relative = '/';
-		else
-			this.relative = this.relative.substring(path.length);
-	}
 	public addHeader(key: string, value: string): void {
 		this.headers[key] = value;
 	}
@@ -465,33 +478,14 @@ export class HttpRequest {
 
 const webSocketServer: libWs.Server = new libWs.WebSocketServer({ noServer: true });
 
-export class HttpUpgrade {
-	private request: IncomingMessage;
+export class HttpUpgrade extends HttpBaseClass {
 	private socket: libStream.Duplex;
 	private head: Buffer;
 
-	/* has the connection been flagged to have come across an internal port */
-	public internal: boolean;
-
-	/* path relative to current application base-path */
-	public relative: string;
-
-	/* absolute path on web-server */
-	public fullpath: string;
-
-	/* raw (URI encoded) absolute path */
-	public rawpath: string;
-
 	constructor(request: IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean) {
-		this.internal = internal;
-		this.request = request;
+		super(request, internal);
 		this.socket = socket;
 		this.head = head;
-
-		const url = new libURL.URL(request.url!, `http://${request.headers.host}`);
-		this.relative = libLocation.Sanitize(decodeURIComponent(url.pathname));
-		this.fullpath = this.relative;
-		this.rawpath = url.pathname;
 	}
 
 	private responseString(status: string, type: string, text: string): void {
@@ -512,12 +506,6 @@ export class HttpUpgrade {
 		this.socket.destroy();
 	}
 
-	public translate(path: string): void {
-		if (this.relative == path)
-			this.relative = '/';
-		else
-			this.relative = this.relative.substring(path.length);
-	}
 	public respondNotFound(msg: string | null = null): void {
 		libLog.Log(`Responded with Not-Found`);
 
