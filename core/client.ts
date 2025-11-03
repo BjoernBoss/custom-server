@@ -10,7 +10,7 @@ import * as libFs from "fs";
 import * as libStream from "stream";
 import * as libURL from "url";
 import * as libWs from "ws";
-import { IncomingMessage, ServerResponse } from "http";
+import * as libHttp from "http";
 
 export const StatusCode = {
 	Ok: 200,
@@ -111,8 +111,16 @@ function MakeContentType(filePath: string): string {
 	return 'application/octet-stream';
 }
 
-class HttpBaseClass {
-	protected request: IncomingMessage;
+enum HttpRequestState {
+	none,
+	responded,
+	awaiting,
+	received
+}
+
+abstract class HttpBaseClass {
+	protected request: libHttp.IncomingMessage;
+	protected state: HttpRequestState;
 
 	/* has the connection been flagged to have come across an internal port */
 	public internal: boolean;
@@ -129,7 +137,10 @@ class HttpBaseClass {
 	/* raw (URI encoded) absolute path */
 	public rawpath: string;
 
-	constructor(request: IncomingMessage, internal: boolean) {
+	protected abstract respondInternalError(msg: string): void;
+
+	constructor(request: libHttp.IncomingMessage, internal: boolean) {
+		this.state = HttpRequestState.none;
 		this.internal = internal;
 		this.request = request;
 
@@ -148,39 +159,107 @@ class HttpBaseClass {
 		if (!this.path.startsWith('/'))
 			this.path = `/${this.path}`;
 	}
+	public finalize() {
+		if (this.state != HttpRequestState.awaiting && this.state != HttpRequestState.responded)
+			throw new Error('Request has not been handled');
+	}
+	public internalError(msg: string): void {
+		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
+			return;
+		libLog.Log(`Responded with Internal error [${msg}]`);
+		this.respondInternalError(msg);
+		this.request.destroy();
+	}
 }
 
 export class HttpRequest extends HttpBaseClass {
-	private response: ServerResponse;
-	private headersDone: boolean;
+	private response: libHttp.ServerResponse;
 	private headers: Record<string, string>;
 
-	constructor(request: IncomingMessage, response: ServerResponse, internal: boolean) {
+	constructor(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, internal: boolean) {
 		super(request, internal);
 		this.response = response;
-		this.headersDone = false;
 		this.headers = {};
 	}
 
 	private closeHeader(statusCode: number, path: string, length: number | null = null): void {
+		/* check if the header has already been sent */
+		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
+			throw new Error('Request has already been handled');
+		this.state = HttpRequestState.responded;
+
+		/* setup the response */
 		this.response.statusCode = statusCode;
 		for (const key in this.headers)
 			this.response.setHeader(key, this.headers[key]);
-
 		this.response.setHeader('Server', libConfig.getServerName());
 		this.response.setHeader('Content-Type', MakeContentType(path));
 		this.response.setHeader('Date', new Date().toUTCString());
-
 		if (!('Accept-Ranges' in this.headers))
 			this.response.setHeader('Accept-Ranges', 'none');
 		if (length != null)
 			this.response.setHeader('Content-Length', length);
-		this.headersDone = true;
 	}
 	private responseString(code: number, path: string, string: string): void {
 		const buffer = libBuffer.Buffer.from(string, 'utf-8');
 		this.closeHeader(code, path, buffer.length);
 		this.response.end(buffer);
+	}
+	private receiveClientChunks(cb: (data: Buffer | null, error: Error | null) => boolean, maxLength: number | null): boolean {
+		let failed = false, accumulated = 0, that = this;
+
+		/* check if a receiver has already been attached */
+		if (this.state != HttpRequestState.none)
+			throw new Error('Request has already been handled');
+
+		/* check if too many data have been promised */
+		if (maxLength != null && this.request.headers['content-length'] != undefined) {
+			const length = parseInt(this.request.headers['content-length']);
+			if (!isFinite(length) || length < 0 || length > maxLength) {
+				libLog.Log(`Request is too large or has no size [${length}]`);
+				const content = libTemplates.ErrorContentTooLarge({ path: this.rawpath, allowedLength: maxLength, providedLength: length });
+				this.responseString(StatusCode.ContentTooLarge, 'f.html', content);
+				return false;
+			}
+		}
+		this.state = HttpRequestState.awaiting;
+
+		/* register the data recipient */
+		this.request.on('data', function (data: Buffer) {
+			if (failed) return;
+
+			/* check the maximum count */
+			accumulated += data.byteLength;
+			if (maxLength != null && accumulated > maxLength) {
+				libLog.Log(`Request payload is too large [${accumulated} > ${maxLength}]`);
+				failed = true;
+				that.request.destroy();
+				cb(null, new Error('Request is too large'));
+			}
+
+			/* pass the data to the handler */
+			else if (failed = !cb(data, null))
+				that.request.destroy();
+		});
+
+		/* register the error and end handler */
+		this.request.on('error', function (e) {
+			if (!failed) {
+				libLog.Log(`Error while receiving data [${e.message}]`);
+				failed = true;
+				cb(null, e);
+			}
+		});
+		this.request.on('end', function () {
+			if (failed) return;
+			that.state = HttpRequestState.received;
+			cb(null, null);
+			that.finalize();
+		});
+		return true;
+	}
+	protected respondInternalError(msg: string): void {
+		this.responseString(StatusCode.InternalError, 'f.txt', msg);
 	}
 
 	public addHeader(key: string, value: string): void {
@@ -226,26 +305,6 @@ export class HttpRequest extends HttpBaseClass {
 		if (index == end)
 			return defEncoding;
 		return type.substring(index, end);
-	}
-	public ensureContentLength(maxLength: number): boolean {
-		let length = 0;
-		if (this.request.headers['content-length'] != undefined)
-			length = parseInt(this.request.headers['content-length']);
-		if (isFinite(length) && length >= 0 && length <= maxLength)
-			return true;
-		libLog.Log(`Request is too large or has no size [${length}]`);
-
-		const content = libTemplates.ErrorContentTooLarge({ path: this.rawpath, allowedLength: maxLength, providedLength: length });
-		this.responseString(StatusCode.ContentTooLarge, 'f.html', content);
-		return false;
-	}
-	public respondInternalError(msg: string): void {
-		if (this.headersDone)
-			return;
-		this.headers = {};
-
-		libLog.Log(`Responded with Internal error [${msg}]`);
-		this.responseString(StatusCode.InternalError, 'f.txt', msg);
 	}
 	public respondOk(operation: string, msg: string | null = null): void {
 		libLog.Log(`Responded with Ok`);
@@ -366,113 +425,115 @@ export class HttpRequest extends HttpBaseClass {
 			libLog.Log(err == undefined ? `All content has been sent` : `Error while sending content: [${err}]`);
 		});
 	}
-	public receiveChunks(cb: (data: Buffer | null, error: Error | null) => boolean): void {
-		let _failed = false, that = this;
-		this.request.on('data', function (data) {
-			if (_failed)
-				that.request.socket.destroy();
-			else
-				_failed = cb(data, null);
+	public receiveChunks(cb: (data: Buffer | null, error: Error | null) => boolean, maxLength: number | null = null): boolean {
+		return this.receiveClientChunks(cb, maxLength);
+	}
+	public receiveAllBuffer(cb: (data: Buffer | null, error: Error | null) => void, maxLength: number | null = null): boolean {
+		const body: Buffer[] = [];
 
-		});
-		this.request.on('error', function (e) {
-			if (!_failed)
-				cb(null, e);
-		});
-		this.request.on('end', function () {
-			if (!_failed)
-				cb(null, null);
-		});
+		return this.receiveClientChunks(function (buf, err): boolean {
+			if (err != null)
+				cb(null, err);
+			else if (buf != null)
+				body.push(buf);
+			else
+				cb(libBuffer.Buffer.concat(body), null);
+			return true;
+		}, maxLength);
 	}
-	public receiveAllBuffer(cb: (data: Buffer | null, error: Error | null) => void): void {
+	public receiveAllText(encoding: BufferEncoding, cb: (text: string | null, error: Error | null) => void, maxLength: number | null = null): boolean {
 		const body: Buffer[] = [];
-		this.request.on('data', (data) => body.push(data));
-		this.request.on('error', (e) => cb(null, e));
-		this.request.on('end', () => cb(libBuffer.Buffer.concat(body), null));
-	}
-	public receiveAllText(encoding: BufferEncoding, cb: (text: string | null, error: Error | null) => void): void {
-		const body: Buffer[] = [];
-		this.request.on('data', (data) => body.push(data));
-		this.request.on('error', (e) => cb(null, e));
-		this.request.on('end', function () {
-			const total = libBuffer.Buffer.concat(body);
-			let str = null;
-			try {
-				str = total.toString(encoding);
+
+		return this.receiveClientChunks(function (buf, err): boolean {
+			if (err != null)
+				cb(null, err);
+			else if (buf != null)
+				body.push(buf);
+
+			/* convert the buffers to a string */
+			else try {
+				cb(libBuffer.Buffer.concat(body).toString(encoding), null);
 			} catch (e: any) {
 				cb(null, e);
-				return;
 			}
-			cb(str, null);
-		});
+			return true;
+		}, maxLength);
 	}
-	public receiveToFile(file: string, cb: (error: Error | null) => void): void {
+	public receiveToFile(file: string, cb: (error: Error | null) => void, maxLength: number | null = null): boolean {
 		libLog.Log(`Collecting data from [${this.rawpath}] to: [${file}]`);
 
-		let queue: Buffer[] = [], fd: number | null = null, busy = true, closed = false;
+		/* initialize busy until the file has been opened */
+		let queue: Buffer[] = [], fd: number | null = null, cbResult: Error | null = null;
+		let fdBusy = true, fdClose = false;
 		const failure = function (e: Error): void {
-			/* mark the object as permanently busy */
-			busy = true;
+			if (cbResult == null)
+				cbResult = e;
+			fdClose = true;
+			queue = [];
+		};
+		const process = function (): void {
+			if (fdBusy)
+				return;
 
-			/* check if the file has not yet been opened */
-			if (fd == null) {
-				cb(e);
+			/* check if the fd is to be closed (leave if busy indefinitely) */
+			if (fdClose) {
+				fdBusy = true;
+				if (fd == null)
+					cb(cbResult);
+
+				/* close the file and check if it should be removed */
+				else libFs.close(fd, function () {
+					if (cbResult != null) try {
+						libFs.unlinkSync(file);
+					} catch (e: any) {
+						libLog.Warning(`Failed to remove file [${file}] after writing uploaded data to it failed: ${e.message}`);
+					}
+					cb(cbResult);
+				});
 				return;
 			}
-
-			/* close the file and try to delete it */
-			libFs.close(fd, function () {
-				try {
-					libFs.unlinkSync(file);
-				} catch (e2: any) {
-					libLog.Warning(`Failed to remove file [${file}] after writing uploaded data to it failed: ${e2.message}`);
-				}
-				cb(e);
-			});
-		};
-		const flushData = function (done: boolean): void {
-			closed = (closed || done);
-			if (busy)
-				return;
 
 			/* check if further data exist to be written out */
-			if (queue.length == 0) {
-				if (closed) libFs.close(fd!, () => cb(null));
+			if (queue.length == 0)
 				return;
-			}
 
 			/* write the next data out */
-			busy = true;
+			fdBusy = true;
 			libFs.write(fd!, queue[0], function (e, written) {
-				busy = false;
-				if (e) {
-					failure(e);
-					return;
-				}
+				fdBusy = false;
 
-				/* consume the given data and flush the remaining data */
-				if (written >= queue[0].length)
+				/* check if the write failed and otherwise consume the written data */
+				if (e)
+					failure(e);
+				else if (written >= queue[0].length)
 					queue = queue.splice(1);
 				else
 					queue[0] = queue[0].subarray(written);
-				flushData(false);
+				process();
 			});
 		};
 
-		this.request.on('data', function (data) { queue.push(data); flushData(false); });
-		this.request.on('error', (e) => failure(e));
-		this.request.on('end', () => flushData(true));
-
 		/* open the actual file for writing */
 		libFs.open(file, 'wx', function (e, f) {
-			busy = false;
+			fdBusy = false;
 			if (e)
 				failure(e);
-			else {
+			else
 				fd = f;
-				flushData(false);
-			}
+			process();
 		});
+
+		/* setup the chunk receivers */
+		return this.receiveClientChunks(function (buf, err): boolean {
+			if (err != null)
+				failure(err);
+			else if (buf == null)
+				fdClose = true;
+			else if (!fdClose)
+				queue.push(buf);
+			process();
+			return !fdClose;
+		}, maxLength);
 	}
 };
 
@@ -482,7 +543,7 @@ export class HttpUpgrade extends HttpBaseClass {
 	private socket: libStream.Duplex;
 	private head: Buffer;
 
-	constructor(request: IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean) {
+	constructor(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean) {
 		super(request, internal);
 		this.socket = socket;
 		this.head = head;
@@ -490,6 +551,11 @@ export class HttpUpgrade extends HttpBaseClass {
 
 	private responseString(status: string, type: string, text: string): void {
 		const buffer = libBuffer.Buffer.from(text, 'utf-8');
+
+		/* check if the header has already been sent */
+		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
+			throw new Error('Request has already been handled');
+		this.state = HttpRequestState.responded;
 
 		let header = `HTTP/1.1 ${status}\r\n`;
 		header += `Date: ${new Date().toUTCString()}\r\n`;
@@ -505,10 +571,12 @@ export class HttpUpgrade extends HttpBaseClass {
 		this.socket.write(buffer);
 		this.socket.destroy();
 	}
+	protected respondInternalError(msg: string): void {
+		this.responseString(`${StatusCode.InternalError} Internal Server Error`, 'text/plain; charset=utf-8', msg);
+	}
 
 	public respondNotFound(msg: string | null = null): void {
 		libLog.Log(`Responded with Not-Found`);
-
 		if (msg != null)
 			this.responseString(`${StatusCode.NotFound} Not Found`, 'text/plain; charset=utf-8', msg);
 		else {
@@ -516,16 +584,17 @@ export class HttpUpgrade extends HttpBaseClass {
 			this.responseString(`${StatusCode.NotFound} Not Found`, 'text/html; charset=utf-8', content);
 		}
 	}
-	public respondInternalError(msg: string): void {
-		libLog.Log(`Responded with Internal error [${msg}]`);
-		this.responseString(`${StatusCode.InternalError} Internal Server Error`, 'text/plain; charset=utf-8', msg);
-	}
 	public tryAcceptWebSocket(cb: (ws: libWs.WebSocket | null) => void): boolean {
 		let connection = this.request.headers?.connection?.toLowerCase().split(',').map((v) => v.trim());
 		if (connection == undefined || connection.indexOf('upgrade') == -1)
 			return false;
 		if (this.request.headers?.upgrade?.toLowerCase() != 'websocket' || this.request.method != 'GET')
 			return false;
+
+		/* ensure the connection can be accepted */
+		if (this.state != HttpRequestState.none)
+			throw new Error('Request has already been handled');
+		this.state = HttpRequestState.awaiting;
 
 		webSocketServer.handleUpgrade(this.request, this.socket, this.head, function (ws, request) {
 			webSocketServer.emit('connection', ws, request);

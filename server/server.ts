@@ -52,17 +52,20 @@ export class Server implements libCommon.ServerInterface {
 					this.handler[key].request(client as libClient.HttpRequest);
 				else
 					this.handler[key].upgrade(client as libClient.HttpUpgrade);
-				return;
 			}
 
 			/* add the default [not-found] response */
-			libLog.Error(`No handler registered for [${client.path}]`)
-			client.respondNotFound(`No handler registered for [${client.rawpath}]`);
+			else {
+				libLog.Error(`No handler registered for [${client.path}]`)
+				client.respondNotFound(`No handler registered for [${client.rawpath}]`);
+			}
+
+			client.finalize();
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
 			libLog.Error(`Uncaught exception encountered: ${err}`)
 			if (client != null)
-				client.respondInternalError('Unknown internal error encountered');
+				client.internalError('Unknown internal error encountered');
 			request.destroy();
 		}
 	}
