@@ -63,7 +63,7 @@ export class Server implements libCommon.ServerInterface {
 				/* check if the port of the host-name does not match */
 				if (lastColon != -1) {
 					if (parseInt(hostName.substring(lastColon + 1), 10) != port) {
-						libLog.Error(`Host [${hostName}] port does not match [${port}]`);
+						client.error(`Host [${hostName}] port does not match [${port}]`);
 						return this.respondNotFound(request, client);
 					}
 					hostName = hostName.substring(0, lastColon);
@@ -72,14 +72,14 @@ export class Server implements libCommon.ServerInterface {
 
 			/* validate the host name */
 			if (check != null && !check(hostName)) {
-				libLog.Error(`Host [${hostName}] now allowed for this endpoint [${port}]`);
+				client.error(`Host [${hostName}] now allowed for this endpoint [${port}]`);
 				return this.respondNotFound(request, client);
 			}
 
 			/* find the handler to use */
 			let key = this.lookupHandler(client.path, hostName, port);
 			if (key == null) {
-				libLog.Error(`No handler registered for [${client.path}]`)
+				client.error(`No handler registered for [${client.path}]`)
 				return this.respondNotFound(request, client);
 			}
 
@@ -92,22 +92,24 @@ export class Server implements libCommon.ServerInterface {
 			client.finalize();
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
-			libLog.Error(`Uncaught exception encountered: ${err}`)
+			libLog.Error(`Uncaught exception encountered for client [${client != null ? client.id : null}]: ${err}`)
 			if (client != null)
 				client.respondInternalError('Unknown internal error encountered');
 			request.destroy();
 		}
 	}
 	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, check: libCommon.CheckHost, port: number): void {
-		libLog.Info(`Request:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 		this.handleWrapper(true, request, check, port, function (): libClient.HttpRequest {
-			return new libClient.HttpRequest(request, response);
+			const client = new libClient.HttpRequest(request, response);
+			client.log(`Request:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+			return client;
 		});
 	}
 	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, check: libCommon.CheckHost, port: number): void {
-		libLog.Info(`Upgrade:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 		this.handleWrapper(false, request, check, port, function (): libClient.HttpUpgrade {
-			return new libClient.HttpUpgrade(request, socket, head);
+			let client = new libClient.HttpUpgrade(request, socket, head);
+			client.log(`Upgrade:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+			return client;
 		});
 	}
 

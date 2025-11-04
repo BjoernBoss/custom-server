@@ -119,6 +119,8 @@ enum HttpRequestState {
 	finalized
 }
 
+var NextClientId: number = 0;
+
 abstract class HttpBaseClass {
 	protected request: libHttp.IncomingMessage;
 	protected state: HttpRequestState;
@@ -130,11 +132,14 @@ abstract class HttpBaseClass {
 	/* absolute path on web-server */
 	public fullpath: string;
 
-	/* base path between the fullpath and path  */
+	/* base path between the fullpath and path */
 	public basepath: string;
 
 	/* raw (URI encoded) absolute path */
 	public rawpath: string;
+
+	/* unique id to identify client in logs */
+	readonly id: number;
 
 	protected abstract setupResponse(status: number, message: string, content: string, fileType: string): void;
 
@@ -142,6 +147,7 @@ abstract class HttpBaseClass {
 		this.state = HttpRequestState.none;
 		this.request = request;
 		this.headers = {};
+		this.id = ++NextClientId;
 
 		const url = new libURL.URL(`http://host.server${request.url}`);
 		this.path = libLocation.Sanitize(decodeURIComponent(url.pathname));
@@ -165,25 +171,38 @@ abstract class HttpBaseClass {
 			return;
 		let that = this;
 		this.request.on('data', function () {
-			libLog.Warning(`Connection sent unexpected data: [${that.rawpath}]`);
+			that.log(`Connection sent unexpected data: [${that.rawpath}]`);
 			that.request.destroy();
 		});
 	}
 	public respondInternalError(msg: string): void {
 		if (this.state == HttpRequestState.none || this.state == HttpRequestState.received) {
-			libLog.Log(`Responded with Internal error [${msg}]`);
+			this.log(`Responded with Internal error [${msg}]`);
 			this.headers = {};
 			this.setupResponse(StatusCode.InternalError.code, StatusCode.InternalError.msg, msg, 'txt');
 		}
 	}
 	public respondNotFound(msg: string | null = null): void {
-		libLog.Log(`Responded with Not-Found`);
+		this.log(`Responded with Not-Found`);
 		if (msg != null)
 			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, msg, 'txt');
 		else {
 			const content = libTemplates.ErrorNotFound({ path: this.rawpath });
 			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, content, 'html');
 		}
+	}
+
+	public log(msg: string) {
+		libLog.Log(`Client[${this.id}]: ${msg}`);
+	}
+	public ingo(msg: string) {
+		libLog.Info(`Client[${this.id}]: ${msg}`);
+	}
+	public warning(msg: string) {
+		libLog.Warning(`Client[${this.id}]: ${msg}`);
+	}
+	public error(msg: string) {
+		libLog.Error(`Client[${this.id}]: ${msg}`);
 	}
 }
 
@@ -232,7 +251,7 @@ export class HttpRequest extends HttpBaseClass {
 			/* check if the length is valid and otherwise mark the state as 'handled' */
 			if (!isFinite(length) || length < 0 || length > maxLength) {
 				this.state = HttpRequestState.received;
-				libLog.Log(`Request is too large or has no size [${length}]`);
+				this.log(`Request is too large or has no size [${length}]`);
 				const content = libTemplates.ErrorContentTooLarge({ path: this.rawpath, allowedLength: maxLength, providedLength: length });
 				this.respondString(StatusCode.ContentTooLarge, 'html', content);
 				return false;
@@ -247,7 +266,7 @@ export class HttpRequest extends HttpBaseClass {
 			/* check the maximum count */
 			accumulated += data.byteLength;
 			if (maxLength != null && accumulated > maxLength) {
-				libLog.Log(`Request payload is too large [${accumulated} > ${maxLength}]`);
+				that.log(`Request payload is too large [${accumulated} > ${maxLength}]`);
 				failed = true;
 				that.request.destroy();
 				cb(null, new Error('Request is too large'));
@@ -261,7 +280,7 @@ export class HttpRequest extends HttpBaseClass {
 		/* register the error and end handler */
 		this.request.on('error', function (e) {
 			if (!failed) {
-				libLog.Log(`Error while receiving data [${e.message}]`);
+				that.log(`Error while receiving data [${e.message}]`);
 				failed = true;
 				cb(null, e);
 			}
@@ -284,7 +303,7 @@ export class HttpRequest extends HttpBaseClass {
 	public ensureMethod(methods: string[]): string | null {
 		if (methods.indexOf(this.request.method!) >= 0)
 			return this.request.method!;
-		libLog.Log(`Request used unsupported method [${this.request.method}]`);
+		this.log(`Request used unsupported method [${this.request.method}]`);
 
 		const content = libTemplates.ErrorInvalidMethod({ path: this.rawpath, method: this.request.method!, allowed: methods });
 		this.respondString(StatusCode.MethodNotAllowed, 'html', content);
@@ -298,7 +317,7 @@ export class HttpRequest extends HttpBaseClass {
 			if (type === types[i] || type.startsWith(`${types[i]};`))
 				return types[i];
 		}
-		libLog.Log(`Responded with Unsupported Media Type for [${type}]`);
+		this.log(`Responded with Unsupported Media Type for [${type}]`);
 
 		const content = libTemplates.ErrorUnsupportedMediaType({ path: this.rawpath, used: type, allowed: types });
 		this.respondString(StatusCode.UnsupportedMediaType, 'html', content);
@@ -323,7 +342,7 @@ export class HttpRequest extends HttpBaseClass {
 		return type.substring(index, end);
 	}
 	public respondOk(operation: string, msg: string | null = null): void {
-		libLog.Log(`Responded with Ok`);
+		this.log(`Responded with Ok`);
 
 		if (msg != null)
 			this.respondString(StatusCode.Ok, 'txt', msg);
@@ -333,7 +352,7 @@ export class HttpRequest extends HttpBaseClass {
 		}
 	}
 	public respondConflict(conflict: string, msg: string | null = null): void {
-		libLog.Log(`Responded with Conflict of [${conflict}]`);
+		this.log(`Responded with Conflict of [${conflict}]`);
 
 		if (msg != null)
 			this.respondString(StatusCode.Conflict, 'txt', msg);
@@ -343,7 +362,7 @@ export class HttpRequest extends HttpBaseClass {
 		}
 	}
 	public respondMoved(target: string, msg: string | null = null): void {
-		libLog.Log(`Responded with Permanently-Moved to [${target}]`);
+		this.log(`Responded with Permanently-Moved to [${target}]`);
 		this.response.setHeader('Location', target);
 
 		if (msg != null)
@@ -354,7 +373,7 @@ export class HttpRequest extends HttpBaseClass {
 		}
 	}
 	public respondRedirect(target: string, msg: string | null = null): void {
-		libLog.Log(`Responded with Redirect to [${target}]`);
+		this.log(`Responded with Redirect to [${target}]`);
 		this.response.setHeader('Location', target);
 
 		if (msg != null)
@@ -365,7 +384,7 @@ export class HttpRequest extends HttpBaseClass {
 		}
 	}
 	public respondBadRequest(reason: string, msg: string | null = null): void {
-		libLog.Log(`Responded with Bad-Request`);
+		this.log(`Responded with Bad-Request`);
 
 		if (msg != null)
 			this.respondString(StatusCode.BadRequest, 'txt', msg);
@@ -375,15 +394,17 @@ export class HttpRequest extends HttpBaseClass {
 		}
 	}
 	public respondHtml(content: string): void {
+		this.log(`Responded with html: [${content.substring(0, 16).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
 		this.respondString(StatusCode.Ok, 'html', content);
 	}
 	public respondJson(content: string): void {
+		this.log(`Responded with json: [${content.substring(0, 16).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
 		this.respondString(StatusCode.Ok, 'json', content);
 	}
 	public tryRespondFile(filePath: string): void {
 		/* check if the file exists */
 		if (!libFs.existsSync(filePath) || !libFs.lstatSync(filePath).isFile()) {
-			libLog.Log(`Request to unknown resource`);
+			this.log(`Request to unknown resource`);
 			this.respondNotFound();
 			return;
 		}
@@ -395,13 +416,13 @@ export class HttpRequest extends HttpBaseClass {
 		/* parse the range and check if it is invalid */
 		const [offset, size, rangeResult] = ParseRangeHeader(this.request.headers.range, fileSize);
 		if (rangeResult == RangeParseState.malformed) {
-			libLog.Log(`Malformed range-request encountered [${this.request.headers.range}]`);
+			this.log(`Malformed range-request encountered [${this.request.headers.range}]`);
 			const content = libTemplates.ErrorBadRequest({ path: this.rawpath, reason: `Issues while parsing http-header range: [${this.request.headers.range}]` });
 			this.respondString(StatusCode.BadRequest, 'html', content);
 			return;
 		}
 		else if (rangeResult == RangeParseState.issue) {
-			libLog.Log(`Unsatisfiable range-request encountered [${this.request.headers.range}] with file-size [${fileSize}]`);
+			this.log(`Unsatisfiable range-request encountered [${this.request.headers.range}] with file-size [${fileSize}]`);
 			this.headers['Content-Range'] = `bytes */${fileSize}`;
 			const content = libTemplates.ErrorRangeIssue({ path: this.rawpath, range: this.request.headers.range!, fileSize: fileSize });
 			this.respondString(StatusCode.RangeIssue, 'html', content);
@@ -415,7 +436,7 @@ export class HttpRequest extends HttpBaseClass {
 
 		/* check if the file is empty (can only happen for unused ranges) */
 		if (size == 0) {
-			libLog.Log('Sending empty content');
+			this.log('Sending empty content');
 			this.respondString(StatusCode.Ok, fileType, '');
 			return;
 		}
@@ -431,9 +452,9 @@ export class HttpRequest extends HttpBaseClass {
 		this.closeHeader((rangeResult == RangeParseState.noRange ? StatusCode.Ok : StatusCode.PartialContent), fileType, size);
 
 		/* write the content to the stream */
-		libLog.Log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
+		this.log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
 		libStream.pipeline(stream, this.response, (err) => {
-			libLog.Log(err == undefined ? `All content has been sent` : `Error while sending content: [${err}]`);
+			this.log(err == undefined ? `All content has been sent` : `Error while sending content: [${err}]`);
 		});
 	}
 	public receiveChunks(maxLength: number | null, cb: (data: Buffer | null, error: Error | null) => boolean): boolean {
@@ -471,11 +492,11 @@ export class HttpRequest extends HttpBaseClass {
 		}, maxLength);
 	}
 	public receiveToFile(maxLength: number | null, file: string, cb: (error: Error | null) => void): boolean {
-		libLog.Log(`Collecting data from [${this.rawpath}] to: [${file}]`);
+		this.log(`Collecting data from [${this.rawpath}] to: [${file}]`);
 
 		/* initialize busy until the file has been opened */
 		let queue: Buffer[] = [], fd: number | null = null, cbResult: Error | null = null;
-		let fdBusy = true, fdClose = false;
+		let fdBusy = true, fdClose = false, that = this;
 		const failure = function (e: Error): void {
 			if (cbResult == null)
 				cbResult = e;
@@ -497,7 +518,7 @@ export class HttpRequest extends HttpBaseClass {
 					if (cbResult != null) try {
 						libFs.unlinkSync(file);
 					} catch (e: any) {
-						libLog.Warning(`Failed to remove file [${file}] after writing uploaded data to it failed: ${e.message}`);
+						that.warning(`Failed to remove file [${file}] after writing uploaded data to it failed: ${e.message}`);
 					}
 					cb(cbResult);
 				});
