@@ -99,13 +99,13 @@ export class Server implements libCommon.ServerInterface {
 		}
 	}
 	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, check: libCommon.CheckHost, port: number): void {
-		libLog.Info(`New ${port} request from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+		libLog.Info(`Request:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 		this.handleWrapper(true, request, check, port, function (): libClient.HttpRequest {
 			return new libClient.HttpRequest(request, response);
 		});
 	}
 	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, check: libCommon.CheckHost, port: number): void {
-		libLog.Info(`New ${port} upgrade from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+		libLog.Info(`Upgrade:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 		this.handleWrapper(false, request, check, port, function (): libClient.HttpUpgrade {
 			return new libClient.HttpUpgrade(request, socket, head);
 		});

@@ -90,24 +90,23 @@ function ParseRangeHeader(range: string | undefined, size: number): [number, num
 	return [begin, end - begin + 1, RangeParseState.valid];
 }
 
-function MakeContentType(filePath: string): string {
+function MakeContentType(fileType: string): string {
 	const typeMap: Record<string, string> = {
-		'.html': 'text/html; charset=utf-8',
-		'.css': 'text/css; charset=utf-8',
-		'.js': 'text/javascript; charset=utf-8',
-		'.txt': 'text/plain; charset=utf-8',
-		'.json': 'application/json; charset=utf-8',
-		'.mp4': 'video/mp4',
-		'.png': 'image/png',
-		'.gif': 'image/gif',
-		'.jpg': 'image/jpeg',
-		'.jpeg': 'image/jpeg',
-		'.svg': 'image/svg+xml'
+		'html': 'text/html; charset=utf-8',
+		'css': 'text/css; charset=utf-8',
+		'js': 'text/javascript; charset=utf-8',
+		'txt': 'text/plain; charset=utf-8',
+		'json': 'application/json; charset=utf-8',
+		'mp4': 'video/mp4',
+		'png': 'image/png',
+		'gif': 'image/gif',
+		'jpg': 'image/jpeg',
+		'jpeg': 'image/jpeg',
+		'svg': 'image/svg+xml'
 	};
 
-	const fileExtension = libPath.extname(filePath).toLowerCase();
-	if (fileExtension in typeMap)
-		return typeMap[fileExtension];
+	if (fileType in typeMap)
+		return typeMap[fileType];
 	return 'application/octet-stream';
 }
 
@@ -137,18 +136,18 @@ abstract class HttpBaseClass {
 	/* raw (URI encoded) absolute path */
 	public rawpath: string;
 
-	protected abstract setupResponse(status: number, message: string, content: string, path: string): void;
+	protected abstract setupResponse(status: number, message: string, content: string, fileType: string): void;
 
 	constructor(request: libHttp.IncomingMessage) {
 		this.state = HttpRequestState.none;
 		this.request = request;
 		this.headers = {};
 
-		const url = new libURL.URL(request.url!, `http://${request.headers.host}`);
+		const url = new libURL.URL(`http://host.server${request.url}`);
 		this.path = libLocation.Sanitize(decodeURIComponent(url.pathname));
+		this.rawpath = url.pathname;
 		this.fullpath = this.path;
 		this.basepath = '/';
-		this.rawpath = url.pathname;
 	}
 	public translate(path: string): void {
 		if (path.length > this.path.length || !this.path.startsWith(path) || (path.length < this.path.length && this.path[path.length] != '/' && !path.endsWith('/')))
@@ -174,16 +173,16 @@ abstract class HttpBaseClass {
 		if (this.state == HttpRequestState.none || this.state == HttpRequestState.received) {
 			libLog.Log(`Responded with Internal error [${msg}]`);
 			this.headers = {};
-			this.setupResponse(StatusCode.InternalError.code, StatusCode.InternalError.msg, msg, 'f.txt');
+			this.setupResponse(StatusCode.InternalError.code, StatusCode.InternalError.msg, msg, 'txt');
 		}
 	}
 	public respondNotFound(msg: string | null = null): void {
 		libLog.Log(`Responded with Not-Found`);
 		if (msg != null)
-			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, msg, 'f.txt');
+			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, msg, 'txt');
 		else {
 			const content = libTemplates.ErrorNotFound({ path: this.rawpath });
-			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, content, 'f.html');
+			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, content, 'html');
 		}
 	}
 }
@@ -194,10 +193,9 @@ export class HttpRequest extends HttpBaseClass {
 	constructor(request: libHttp.IncomingMessage, response: libHttp.ServerResponse) {
 		super(request);
 		this.response = response;
-		this.headers = {};
 	}
 
-	private closeHeader(statusCode: number, path: string, length: number | null = null): void {
+	private closeHeader(statusCode: number, fileType: string, length: number | null = null): void {
 		/* check if the header has already been sent */
 		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
 			throw new Error('Request has already been handled');
@@ -208,16 +206,16 @@ export class HttpRequest extends HttpBaseClass {
 		for (const key in this.headers)
 			this.response.setHeader(key, this.headers[key]);
 		this.response.setHeader('Server', libConfig.getServerName());
-		this.response.setHeader('Content-Type', MakeContentType(path));
+		this.response.setHeader('Content-Type', MakeContentType(fileType));
 		this.response.setHeader('Date', new Date().toUTCString());
 		if (!('Accept-Ranges' in this.headers))
 			this.response.setHeader('Accept-Ranges', 'none');
 		if (length != null)
 			this.response.setHeader('Content-Length', length);
 	}
-	private responseString(code: number, path: string, string: string): void {
+	private respondString(code: number, fileType: string, string: string): void {
 		const buffer = libBuffer.Buffer.from(string, 'utf-8');
-		this.closeHeader(code, path, buffer.length);
+		this.closeHeader(code, fileType, buffer.length);
 		this.response.end(buffer);
 	}
 	private receiveClientChunks(cb: (data: Buffer | null, error: Error | null) => boolean, maxLength: number | null): boolean {
@@ -236,7 +234,7 @@ export class HttpRequest extends HttpBaseClass {
 				this.state = HttpRequestState.received;
 				libLog.Log(`Request is too large or has no size [${length}]`);
 				const content = libTemplates.ErrorContentTooLarge({ path: this.rawpath, allowedLength: maxLength, providedLength: length });
-				this.responseString(StatusCode.ContentTooLarge, 'f.html', content);
+				this.respondString(StatusCode.ContentTooLarge, 'html', content);
 				return false;
 			}
 		}
@@ -276,8 +274,8 @@ export class HttpRequest extends HttpBaseClass {
 		});
 		return true;
 	}
-	protected setupResponse(status: number, message: string, content: string, path: string): void {
-		this.responseString(status, path, content);
+	protected setupResponse(status: number, message: string, content: string, fileType: string): void {
+		this.respondString(status, fileType, content);
 	}
 
 	public addHeader(key: string, value: string): void {
@@ -289,7 +287,7 @@ export class HttpRequest extends HttpBaseClass {
 		libLog.Log(`Request used unsupported method [${this.request.method}]`);
 
 		const content = libTemplates.ErrorInvalidMethod({ path: this.rawpath, method: this.request.method!, allowed: methods });
-		this.responseString(StatusCode.MethodNotAllowed, 'f.html', content);
+		this.respondString(StatusCode.MethodNotAllowed, 'html', content);
 		return null;
 	}
 	public ensureMediaType(types: string[]): string | null {
@@ -303,7 +301,7 @@ export class HttpRequest extends HttpBaseClass {
 		libLog.Log(`Responded with Unsupported Media Type for [${type}]`);
 
 		const content = libTemplates.ErrorUnsupportedMediaType({ path: this.rawpath, used: type, allowed: types });
-		this.responseString(StatusCode.UnsupportedMediaType, 'f.html', content);
+		this.respondString(StatusCode.UnsupportedMediaType, 'html', content);
 		return null;
 	}
 	public getMediaTypeCharset(defEncoding: string): string {
@@ -328,20 +326,20 @@ export class HttpRequest extends HttpBaseClass {
 		libLog.Log(`Responded with Ok`);
 
 		if (msg != null)
-			this.responseString(StatusCode.Ok, 'f.txt', msg);
+			this.respondString(StatusCode.Ok, 'txt', msg);
 		else {
 			const content = libTemplates.SuccessOk({ path: this.rawpath, operation: operation });
-			this.responseString(StatusCode.Ok, 'f.html', content);
+			this.respondString(StatusCode.Ok, 'html', content);
 		}
 	}
 	public respondConflict(conflict: string, msg: string | null = null): void {
 		libLog.Log(`Responded with Conflict of [${conflict}]`);
 
 		if (msg != null)
-			this.responseString(StatusCode.Conflict, 'f.txt', msg);
+			this.respondString(StatusCode.Conflict, 'txt', msg);
 		else {
 			const content = libTemplates.ErrorConflict({ path: this.rawpath, conflict: conflict });
-			this.responseString(StatusCode.Conflict, 'f.html', content);
+			this.respondString(StatusCode.Conflict, 'html', content);
 		}
 	}
 	public respondMoved(target: string, msg: string | null = null): void {
@@ -349,10 +347,10 @@ export class HttpRequest extends HttpBaseClass {
 		this.response.setHeader('Location', target);
 
 		if (msg != null)
-			this.responseString(StatusCode.PermanentlyMoved, 'f.txt', msg);
+			this.respondString(StatusCode.PermanentlyMoved, 'txt', msg);
 		else {
 			const content = libTemplates.PermanentlyMoved({ path: this.rawpath, destination: target });
-			this.responseString(StatusCode.PermanentlyMoved, 'f.html', content);
+			this.respondString(StatusCode.PermanentlyMoved, 'html', content);
 		}
 	}
 	public respondRedirect(target: string, msg: string | null = null): void {
@@ -360,27 +358,27 @@ export class HttpRequest extends HttpBaseClass {
 		this.response.setHeader('Location', target);
 
 		if (msg != null)
-			this.responseString(StatusCode.TemporaryRedirect, 'f.txt', msg);
+			this.respondString(StatusCode.TemporaryRedirect, 'txt', msg);
 		else {
 			const content = libTemplates.TemporaryRedirect({ path: this.rawpath, destination: target });
-			this.responseString(StatusCode.TemporaryRedirect, 'f.html', content);
+			this.respondString(StatusCode.TemporaryRedirect, 'html', content);
 		}
 	}
 	public respondBadRequest(reason: string, msg: string | null = null): void {
 		libLog.Log(`Responded with Bad-Request`);
 
 		if (msg != null)
-			this.responseString(StatusCode.BadRequest, 'f.txt', msg);
+			this.respondString(StatusCode.BadRequest, 'txt', msg);
 		else {
 			const content = libTemplates.ErrorBadRequest({ path: this.rawpath, reason: reason });
-			this.responseString(StatusCode.BadRequest, 'f.html', content);
+			this.respondString(StatusCode.BadRequest, 'html', content);
 		}
 	}
 	public respondHtml(content: string): void {
-		this.responseString(StatusCode.Ok, 'f.html', content);
+		this.respondString(StatusCode.Ok, 'html', content);
 	}
 	public respondJson(content: string): void {
-		this.responseString(StatusCode.Ok, 'f.json', content);
+		this.respondString(StatusCode.Ok, 'json', content);
 	}
 	public tryRespondFile(filePath: string): void {
 		/* check if the file exists */
@@ -399,21 +397,26 @@ export class HttpRequest extends HttpBaseClass {
 		if (rangeResult == RangeParseState.malformed) {
 			libLog.Log(`Malformed range-request encountered [${this.request.headers.range}]`);
 			const content = libTemplates.ErrorBadRequest({ path: this.rawpath, reason: `Issues while parsing http-header range: [${this.request.headers.range}]` });
-			this.responseString(StatusCode.BadRequest, 'f.html', content);
+			this.respondString(StatusCode.BadRequest, 'html', content);
 			return;
 		}
 		else if (rangeResult == RangeParseState.issue) {
 			libLog.Log(`Unsatisfiable range-request encountered [${this.request.headers.range}] with file-size [${fileSize}]`);
 			this.headers['Content-Range'] = `bytes */${fileSize}`;
 			const content = libTemplates.ErrorRangeIssue({ path: this.rawpath, range: this.request.headers.range!, fileSize: fileSize });
-			this.responseString(StatusCode.RangeIssue, 'f.html', content);
+			this.respondString(StatusCode.RangeIssue, 'html', content);
 			return;
 		}
+
+		/* extract the file-type */
+		let fileType = libPath.extname(filePath).toLowerCase();
+		if (fileType.startsWith('.'))
+			fileType = fileType.substring(1);
 
 		/* check if the file is empty (can only happen for unused ranges) */
 		if (size == 0) {
 			libLog.Log('Sending empty content');
-			this.responseString(StatusCode.Ok, this.rawpath, '');
+			this.respondString(StatusCode.Ok, fileType, '');
 			return;
 		}
 
@@ -425,7 +428,7 @@ export class HttpRequest extends HttpBaseClass {
 		/* setup the response */
 		if (rangeResult == RangeParseState.valid)
 			this.headers['Content-Range'] = `bytes ${offset}-${offset + size - 1}/${fileSize}`;
-		this.closeHeader((rangeResult == RangeParseState.noRange ? StatusCode.Ok : StatusCode.PartialContent), filePath, size);
+		this.closeHeader((rangeResult == RangeParseState.noRange ? StatusCode.Ok : StatusCode.PartialContent), fileType, size);
 
 		/* write the content to the stream */
 		libLog.Log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
@@ -557,7 +560,7 @@ export class HttpUpgrade extends HttpBaseClass {
 		this.head = head;
 	}
 
-	private responseString(status: string, path: string, text: string): void {
+	private responseString(status: string, fileType: string, text: string): void {
 		const buffer = libBuffer.Buffer.from(text, 'utf-8');
 
 		/* check if the header has already been sent (always set to finalized, as it is closed) */
@@ -568,7 +571,7 @@ export class HttpUpgrade extends HttpBaseClass {
 		let header = `HTTP/1.1 ${status}\r\n`;
 		header += `Date: ${new Date().toUTCString()}\r\n`;
 		header += `Server: ${libConfig.getServerName()}\r\n`;
-		header += `Content-Type: ${MakeContentType(path)}\r\n`;
+		header += `Content-Type: ${MakeContentType(fileType)}\r\n`;
 		header += `Content-Length: ${buffer.length}\r\n`;
 		header += `Accept-Ranges: none\r\n`;
 		header += 'Connection: keep-alive\r\n';
@@ -579,8 +582,8 @@ export class HttpUpgrade extends HttpBaseClass {
 		this.socket.write(buffer);
 		this.socket.destroy();
 	}
-	protected setupResponse(status: number, message: string, content: string, path: string): void {
-		this.responseString(`${status} ${message}`, path, content);
+	protected setupResponse(status: number, message: string, content: string, fileType: string): void {
+		this.responseString(`${status} ${message}`, fileType, content);
 	}
 
 	public tryAcceptWebSocket(cb: (ws: libWs.WebSocket | null) => void): boolean {
