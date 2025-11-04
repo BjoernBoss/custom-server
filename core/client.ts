@@ -586,7 +586,7 @@ export class HttpUpgrade extends HttpBaseClass {
 		this.responseString(`${status} ${message}`, fileType, content);
 	}
 
-	public tryAcceptWebSocket(cb: (ws: libWs.WebSocket | null) => void): boolean {
+	public tryAcceptWebSocket(cb: (ws: libWs.WebSocket) => void): boolean {
 		let connection = this.request.headers?.connection?.toLowerCase().split(',').map((v) => v.trim());
 		if (connection == undefined || connection.indexOf('upgrade') == -1)
 			return false;
