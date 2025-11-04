@@ -125,6 +125,7 @@ export abstract class HttpBaseClass {
 	protected request: libHttp.IncomingMessage;
 	protected state: HttpRequestState;
 	protected headers: Record<string, string>;
+	protected logLayer: string;
 
 	/* path relative to current module base-path */
 	public path: string;
@@ -147,6 +148,8 @@ export abstract class HttpBaseClass {
 		this.state = HttpRequestState.none;
 		this.request = request;
 		this.headers = {};
+		this.logLayer = '';
+
 		this.id = ++NextClientId;
 
 		const url = new libURL.URL(`http://host.server${request.url}`);
@@ -171,7 +174,7 @@ export abstract class HttpBaseClass {
 			return;
 		let that = this;
 		this.request.on('data', function () {
-			that.log(`Connection sent unexpected data: [${that.rawpath}]`);
+			that.error(`Connection sent unexpected data: [${that.rawpath}]`);
 			that.request.destroy();
 		});
 	}
@@ -192,19 +195,16 @@ export abstract class HttpBaseClass {
 		}
 	}
 
+	public pushLog(name: string) {
+		this.logLayer = `${this.logLayer}:${name}`;
+	}
 	public log(msg: string) {
-		libLog.Log(`Client[${this.id}]: ${msg}`);
-	}
-	public ingo(msg: string) {
-		libLog.Info(`Client[${this.id}]: ${msg}`);
-	}
-	public warning(msg: string) {
-		libLog.Warning(`Client[${this.id}]: ${msg}`);
+		libLog.Log(`Client[${this.id}]${this.logLayer}: ${msg}`);
 	}
 	public error(msg: string) {
-		libLog.Error(`Client[${this.id}]: ${msg}`);
+		libLog.Error(`Client[${this.id}]${this.logLayer}: ${msg}`);
 	}
-}
+};
 
 export class HttpRequest extends HttpBaseClass {
 	private response: libHttp.ServerResponse;
@@ -280,7 +280,7 @@ export class HttpRequest extends HttpBaseClass {
 		/* register the error and end handler */
 		this.request.on('error', function (e) {
 			if (!failed) {
-				that.log(`Error while receiving data [${e.message}]`);
+				that.error(`Error while receiving data [${e.message}]`);
 				failed = true;
 				cb(null, e);
 			}
@@ -518,7 +518,7 @@ export class HttpRequest extends HttpBaseClass {
 					if (cbResult != null) try {
 						libFs.unlinkSync(file);
 					} catch (e: any) {
-						that.warning(`Failed to remove file [${file}] after writing uploaded data to it failed: ${e.message}`);
+						that.error(`Failed to remove file [${file}] after writing uploaded data to it failed: ${e.message}`);
 					}
 					cb(cbResult);
 				});
