@@ -121,7 +121,7 @@ enum HttpRequestState {
 
 var NextClientId: number = 0;
 
-abstract class HttpBaseClass {
+export abstract class HttpBaseClass {
 	protected request: libHttp.IncomingMessage;
 	protected state: HttpRequestState;
 	protected headers: Record<string, string>;
@@ -156,13 +156,11 @@ abstract class HttpBaseClass {
 		this.basepath = '/';
 	}
 	public translate(path: string): void {
-		if (path.length > this.path.length || !this.path.startsWith(path) || (path.length < this.path.length && this.path[path.length] != '/' && !path.endsWith('/')))
+		if (!libLocation.IsSubDirectory(path, this.path))
 			throw new Error(`Path [${path}] is not a base of [${this.path}]`);
 
 		this.basepath = libLocation.Join(this.basepath, path);
-		this.path = this.path.substring(path.length);
-		if (!this.path.startsWith('/'))
-			this.path = `/${this.path}`;
+		this.path = this.path.substring(path.endsWith('/') ? path.length - 1 : path.length);
 	}
 	public finalize() {
 		if (this.state == HttpRequestState.none || this.state == HttpRequestState.received)

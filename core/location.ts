@@ -40,7 +40,7 @@ export function Sanitize(path: string): string {
 	return out;
 }
 
-/* join two sanitized paths */
+/* join two sanitized paths into the sanitized server path-environment */
 export function Join(a: string, b: string): string {
 	if (a.length == 0 || b.length == 0)
 		return (a.length == 0 ? b : a);
@@ -48,6 +48,17 @@ export function Join(a: string, b: string): string {
 	if (aSlash)
 		return (bSlash ? a + b.substring(1) : a + b);
 	return (bSlash ? a + b : `${a}/${b}`);
+}
+
+/* check if the sanitized path is a true sub-path of the sanitized base path (same root is also a sub-directory) */
+export function IsSubDirectory(base: string, path: string): boolean {
+	if (base.length > path.length)
+		return false;
+	if (base.length == path.length)
+		return (base == path);
+	if (!path.startsWith(base))
+		return false;
+	return (path[base.length] == '/' || base.endsWith('/'));
 }
 
 /* create path-creator, which returns sanitized paths relative to [path] */
