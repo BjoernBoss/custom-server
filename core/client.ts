@@ -18,13 +18,13 @@ export const StatusCode = {
 	PermanentlyMoved: 301,
 	TemporaryRedirect: 307,
 	BadRequest: 400,
-	NotFound: 404,
+	NotFound: { code: 404, msg: 'Not Fouund' },
 	MethodNotAllowed: 405,
 	Conflict: 409,
 	ContentTooLarge: 413,
 	UnsupportedMediaType: 415,
 	RangeIssue: 416,
-	InternalError: 500
+	InternalError: { code: 500, msg: 'Internal Server Error' }
 };
 
 enum RangeParseState {
@@ -122,10 +122,8 @@ enum HttpRequestState {
 
 abstract class HttpBaseClass {
 	protected request: libHttp.IncomingMessage;
-	protected _state: HttpRequestState;
-
-	/* has the connection been flagged to have come across an internal port */
-	public internal: boolean;
+	protected state: HttpRequestState;
+	protected headers: Record<string, string>;
 
 	/* path relative to current application base-path */
 	public path: string;
@@ -139,12 +137,12 @@ abstract class HttpBaseClass {
 	/* raw (URI encoded) absolute path */
 	public rawpath: string;
 
-	protected abstract respondInternalError(msg: string): void;
+	protected abstract setupResponse(status: number, message: string, content: string, path: string): void;
 
-	constructor(request: libHttp.IncomingMessage, internal: boolean) {
-		this._state = HttpRequestState.none;
-		this.internal = internal;
+	constructor(request: libHttp.IncomingMessage) {
+		this.state = HttpRequestState.none;
 		this.request = request;
+		this.headers = {};
 
 		const url = new libURL.URL(request.url!, `http://${request.headers.host}`);
 		this.path = libLocation.Sanitize(decodeURIComponent(url.pathname));
@@ -162,9 +160,9 @@ abstract class HttpBaseClass {
 			this.path = `/${this.path}`;
 	}
 	public finalize() {
-		if (this._state == HttpRequestState.none || this._state == HttpRequestState.received)
+		if (this.state == HttpRequestState.none || this.state == HttpRequestState.received)
 			throw new Error('Request has not been handled');
-		if (this._state != HttpRequestState.responded)
+		if (this.state != HttpRequestState.responded)
 			return;
 		let that = this;
 		this.request.on('data', function () {
@@ -172,30 +170,38 @@ abstract class HttpBaseClass {
 			that.request.destroy();
 		});
 	}
-	public internalError(msg: string): void {
-		if (this._state != HttpRequestState.none && this._state != HttpRequestState.received)
-			return;
-		libLog.Log(`Responded with Internal error [${msg}]`);
-		this.respondInternalError(msg);
-		this.request.destroy();
+	public respondInternalError(msg: string): void {
+		if (this.state == HttpRequestState.none || this.state == HttpRequestState.received) {
+			libLog.Log(`Responded with Internal error [${msg}]`);
+			this.headers = {};
+			this.setupResponse(StatusCode.InternalError.code, StatusCode.InternalError.msg, msg, 'f.txt');
+		}
+	}
+	public respondNotFound(msg: string | null = null): void {
+		libLog.Log(`Responded with Not-Found`);
+		if (msg != null)
+			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, msg, 'f.txt');
+		else {
+			const content = libTemplates.ErrorNotFound({ path: this.rawpath });
+			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, content, 'f.html');
+		}
 	}
 }
 
 export class HttpRequest extends HttpBaseClass {
 	private response: libHttp.ServerResponse;
-	private headers: Record<string, string>;
 
-	constructor(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, internal: boolean) {
-		super(request, internal);
+	constructor(request: libHttp.IncomingMessage, response: libHttp.ServerResponse) {
+		super(request);
 		this.response = response;
 		this.headers = {};
 	}
 
 	private closeHeader(statusCode: number, path: string, length: number | null = null): void {
 		/* check if the header has already been sent */
-		if (this._state != HttpRequestState.none && this._state != HttpRequestState.received)
+		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
 			throw new Error('Request has already been handled');
-		this._state = (this._state == HttpRequestState.received ? HttpRequestState.finalized : HttpRequestState.responded);
+		this.state = (this.state == HttpRequestState.received ? HttpRequestState.finalized : HttpRequestState.responded);
 
 		/* setup the response */
 		this.response.statusCode = statusCode;
@@ -218,7 +224,7 @@ export class HttpRequest extends HttpBaseClass {
 		let failed = false, accumulated = 0, that = this;
 
 		/* check if a receiver has already been attached */
-		if (this._state != HttpRequestState.none)
+		if (this.state != HttpRequestState.none)
 			throw new Error('Request has already been handled');
 
 		/* check if too many data have been promised */
@@ -227,14 +233,14 @@ export class HttpRequest extends HttpBaseClass {
 
 			/* check if the length is valid and otherwise mark the state as 'handled' */
 			if (!isFinite(length) || length < 0 || length > maxLength) {
-				this._state = HttpRequestState.received;
+				this.state = HttpRequestState.received;
 				libLog.Log(`Request is too large or has no size [${length}]`);
 				const content = libTemplates.ErrorContentTooLarge({ path: this.rawpath, allowedLength: maxLength, providedLength: length });
 				this.responseString(StatusCode.ContentTooLarge, 'f.html', content);
 				return false;
 			}
 		}
-		this._state = HttpRequestState.awaiting;
+		this.state = HttpRequestState.awaiting;
 
 		/* register the data recipient */
 		this.request.on('data', function (data: Buffer) {
@@ -264,14 +270,14 @@ export class HttpRequest extends HttpBaseClass {
 		});
 		this.request.on('end', function () {
 			if (failed) return;
-			that._state = HttpRequestState.received;
+			that.state = HttpRequestState.received;
 			cb(null, null);
 			that.finalize();
 		});
 		return true;
 	}
-	protected respondInternalError(msg: string): void {
-		this.responseString(StatusCode.InternalError, 'f.txt', msg);
+	protected setupResponse(status: number, message: string, content: string, path: string): void {
+		this.responseString(status, path, content);
 	}
 
 	public addHeader(key: string, value: string): void {
@@ -326,16 +332,6 @@ export class HttpRequest extends HttpBaseClass {
 		else {
 			const content = libTemplates.SuccessOk({ path: this.rawpath, operation: operation });
 			this.responseString(StatusCode.Ok, 'f.html', content);
-		}
-	}
-	public respondNotFound(msg: string | null = null): void {
-		libLog.Log(`Responded with Not-Found`);
-
-		if (msg != null)
-			this.responseString(StatusCode.NotFound, 'f.txt', msg);
-		else {
-			const content = libTemplates.ErrorNotFound({ path: this.rawpath });
-			this.responseString(StatusCode.NotFound, 'f.html', content);
 		}
 	}
 	public respondConflict(conflict: string, msg: string | null = null): void {
@@ -555,24 +551,24 @@ export class HttpUpgrade extends HttpBaseClass {
 	private socket: libStream.Duplex;
 	private head: Buffer;
 
-	constructor(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean) {
-		super(request, internal);
+	constructor(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer) {
+		super(request);
 		this.socket = socket;
 		this.head = head;
 	}
 
-	private responseString(status: string, type: string, text: string): void {
+	private responseString(status: string, path: string, text: string): void {
 		const buffer = libBuffer.Buffer.from(text, 'utf-8');
 
 		/* check if the header has already been sent (always set to finalized, as it is closed) */
-		if (this._state != HttpRequestState.none && this._state != HttpRequestState.received)
+		if (this.state != HttpRequestState.none && this.state != HttpRequestState.received)
 			throw new Error('Request has already been handled');
-		this._state = HttpRequestState.finalized;
+		this.state = HttpRequestState.finalized;
 
 		let header = `HTTP/1.1 ${status}\r\n`;
 		header += `Date: ${new Date().toUTCString()}\r\n`;
 		header += `Server: ${libConfig.getServerName()}\r\n`;
-		header += `Content-Type: ${type}\r\n`;
+		header += `Content-Type: ${MakeContentType(path)}\r\n`;
 		header += `Content-Length: ${buffer.length}\r\n`;
 		header += `Accept-Ranges: none\r\n`;
 		header += 'Connection: keep-alive\r\n';
@@ -583,19 +579,10 @@ export class HttpUpgrade extends HttpBaseClass {
 		this.socket.write(buffer);
 		this.socket.destroy();
 	}
-	protected respondInternalError(msg: string): void {
-		this.responseString(`${StatusCode.InternalError} Internal Server Error`, 'text/plain; charset=utf-8', msg);
+	protected setupResponse(status: number, message: string, content: string, path: string): void {
+		this.responseString(`${status} ${message}`, path, content);
 	}
 
-	public respondNotFound(msg: string | null = null): void {
-		libLog.Log(`Responded with Not-Found`);
-		if (msg != null)
-			this.responseString(`${StatusCode.NotFound} Not Found`, 'text/plain; charset=utf-8', msg);
-		else {
-			const content = libTemplates.ErrorNotFound({ path: this.rawpath });
-			this.responseString(`${StatusCode.NotFound} Not Found`, 'text/html; charset=utf-8', content);
-		}
-	}
 	public tryAcceptWebSocket(cb: (ws: libWs.WebSocket | null) => void): boolean {
 		let connection = this.request.headers?.connection?.toLowerCase().split(',').map((v) => v.trim());
 		if (connection == undefined || connection.indexOf('upgrade') == -1)
@@ -604,9 +591,9 @@ export class HttpUpgrade extends HttpBaseClass {
 			return false;
 
 		/* ensure the connection can be accepted */
-		if (this._state != HttpRequestState.none)
+		if (this.state != HttpRequestState.none)
 			throw new Error('Request has already been handled');
-		this._state = HttpRequestState.upgrading;
+		this.state = HttpRequestState.upgrading;
 
 		webSocketServer.handleUpgrade(this.request, this.socket, this.head, function (ws, request) {
 			webSocketServer.emit('connection', ws, request);

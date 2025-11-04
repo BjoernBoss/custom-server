@@ -25,6 +25,6 @@ export type CheckHost = ((host: string) => boolean) | null;
 
 export interface ServerInterface {
 	register(path: string, handler: AppInterface, check: CheckConnection): void;
-	listenHttp(port: number, internal: boolean, check: CheckHost): void;
-	listenHttps(port: number, key: string, cert: string, internal: boolean, check: CheckHost): void;
+	listenHttp(port: number, check: CheckHost): void;
+	listenHttps(port: number, key: string, cert: string, check: CheckHost): void;
 }

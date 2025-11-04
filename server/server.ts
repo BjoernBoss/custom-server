@@ -94,20 +94,20 @@ export class Server implements libCommon.ServerInterface {
 			/* log the unknown caught exception (internal-server-error) */
 			libLog.Error(`Uncaught exception encountered: ${err}`)
 			if (client != null)
-				client.internalError('Unknown internal error encountered');
+				client.respondInternalError('Unknown internal error encountered');
 			request.destroy();
 		}
 	}
-	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, internal: boolean, check: libCommon.CheckHost, port: number): void {
-		libLog.Info(`New ${internal ? "internal" : "external"}:${port} request from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, check: libCommon.CheckHost, port: number): void {
+		libLog.Info(`New ${port} request from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 		this.handleWrapper(true, request, check, port, function (): libClient.HttpRequest {
-			return new libClient.HttpRequest(request, response, internal);
+			return new libClient.HttpRequest(request, response);
 		});
 	}
-	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean, check: libCommon.CheckHost, port: number): void {
-		libLog.Info(`New ${internal ? "internal" : "external"}:${port} upgrade from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, check: libCommon.CheckHost, port: number): void {
+		libLog.Info(`New ${port} upgrade from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 		this.handleWrapper(false, request, check, port, function (): libClient.HttpUpgrade {
-			return new libClient.HttpUpgrade(request, socket, head, internal);
+			return new libClient.HttpUpgrade(request, socket, head);
 		});
 	}
 
@@ -120,7 +120,7 @@ export class Server implements libCommon.ServerInterface {
 			this.handler[path] = { handler, check };
 		}
 	}
-	public listenHttp(port: number, internal: boolean, check: libCommon.CheckHost): void {
+	public listenHttp(port: number, check: libCommon.CheckHost): void {
 		try {
 			/* initialize the server config */
 			const config = {
@@ -128,9 +128,9 @@ export class Server implements libCommon.ServerInterface {
 			};
 
 			/* start the actual server */
-			const server = libHttp.createServer(config, (req, resp) => this.handleRequest(req, resp, internal, check, port)).listen(port);
+			const server = libHttp.createServer(config, (req, resp) => this.handleRequest(req, resp, check, port)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using http: ${err}`));
-			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal, check, port));
+			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, check, port));
 			if (!server.listening)
 				return;
 
@@ -139,12 +139,12 @@ export class Server implements libCommon.ServerInterface {
 
 			/* log the established listener */
 			const address = server.address() as AddressInfo;
-			libLog.Info(`Http-server${internal ? " flagged as internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
+			libLog.Info(`Http-server started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using http: ${err}`);
 		}
 	}
-	public listenHttps(port: number, key: string, cert: string, internal: boolean, check: libCommon.CheckHost): void {
+	public listenHttps(port: number, key: string, cert: string, check: libCommon.CheckHost): void {
 		try {
 			/* initialize the server config and load the key and certificate */
 			const config = {
@@ -154,9 +154,9 @@ export class Server implements libCommon.ServerInterface {
 			};
 
 			/* start the actual server */
-			const server = libHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, internal, check, port)).listen(port);
+			const server = libHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, check, port)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using https: ${err}`));
-			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal, check, port));
+			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, check, port));
 			if (!server.listening)
 				return;
 
@@ -165,7 +165,7 @@ export class Server implements libCommon.ServerInterface {
 
 			/* log the established listener */
 			const address = server.address() as AddressInfo;
-			libLog.Info(`Https-server${internal ? " flagged as internal " : " "}started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
+			libLog.Info(`Https-server started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using https: ${err}`);
 		}
