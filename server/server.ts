@@ -11,7 +11,7 @@ import * as libStream from "stream";
 import { AddressInfo } from "net";
 
 export class Server implements libCommon.ServerInterface {
-	private handler: Record<string, libCommon.AppInterface>;
+	private handler: Record<string, { handler: libCommon.AppInterface, check: libCommon.CheckConnection }>;
 	private stopList: (() => void)[];
 
 	constructor() {
@@ -20,7 +20,7 @@ export class Server implements libCommon.ServerInterface {
 		this.stopList = [];
 	}
 
-	private lookupHandler(pathname: string): string | null {
+	private lookupHandler(pathname: string, host: string, port: number): string | null {
 		/* lookup the best matching handler */
 		let bestKey = null;
 		for (const key in this.handler) {
@@ -31,35 +31,64 @@ export class Server implements libCommon.ServerInterface {
 			if (pathname.length > key.length && pathname[key.length] != '/' && (key.length == 0 || pathname[key.length - 1] != '/'))
 				continue;
 
+			/* check if this handler applies */
+			if (this.handler[key].check != null && !this.handler[key].check(host, port))
+				continue;
+
 			/* check if this is the better match by being the first match or more precise */
 			if (bestKey == null || key.length > bestKey.length)
 				bestKey = key;
 		}
 		return bestKey;
 	}
-	private handleWrapper(wasRequest: boolean, request: libHttp.IncomingMessage, establish: () => libClient.HttpRequest | libClient.HttpUpgrade): void {
+	private respondNotFound(request: libHttp.IncomingMessage, client: libClient.HttpRequest | libClient.HttpUpgrade): void {
+		client.respondNotFound(`No resource found at [${request.headers.host ?? ''}]:[${client.rawpath}]`);
+		client.finalize();
+	}
+	private handleWrapper(wasRequest: boolean, request: libHttp.IncomingMessage, check: libCommon.CheckHost, port: number, establish: () => libClient.HttpRequest | libClient.HttpUpgrade): void {
 		let client = null;
 		try {
 			client = establish();
 
+			/* extract the host to be used and validate its port */
+			let hostName = (request.headers.host ?? '');
+			let lastColon = hostName.lastIndexOf(':');
+			if (lastColon != -1) {
+				for (const c of hostName.substring(lastColon + 1)) {
+					if (c >= '0' && c <= '9') continue;
+					lastColon = -1;
+					break;
+				}
+
+				/* check if the port of the host-name does not match */
+				if (lastColon != -1) {
+					if (parseInt(hostName.substring(lastColon + 1), 10) != port) {
+						libLog.Error(`Host [${hostName}] port does not match [${port}]`);
+						return this.respondNotFound(request, client);
+					}
+					hostName = hostName.substring(0, lastColon);
+				}
+			}
+
+			/* validate the host name */
+			if (check != null && !check(hostName)) {
+				libLog.Error(`Host [${hostName}] now allowed for this endpoint [${port}]`);
+				return this.respondNotFound(request, client);
+			}
+
 			/* find the handler to use */
-			let key = this.lookupHandler(client.path);
-
-			/* check if a handler has been found */
-			if (key != null) {
-				client.translate(key);
-				if (wasRequest)
-					this.handler[key].request(client as libClient.HttpRequest);
-				else
-					this.handler[key].upgrade(client as libClient.HttpUpgrade);
-			}
-
-			/* add the default [not-found] response */
-			else {
+			let key = this.lookupHandler(client.path, hostName, port);
+			if (key == null) {
 				libLog.Error(`No handler registered for [${client.path}]`)
-				client.respondNotFound(`No handler registered for [${client.rawpath}]`);
+				return this.respondNotFound(request, client);
 			}
 
+			/* handle the actual client request */
+			client.translate(key);
+			if (wasRequest)
+				this.handler[key].handler.request(client as libClient.HttpRequest);
+			else
+				this.handler[key].handler.upgrade(client as libClient.HttpUpgrade);
 			client.finalize();
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
@@ -69,34 +98,39 @@ export class Server implements libCommon.ServerInterface {
 			request.destroy();
 		}
 	}
-	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, internal: boolean): void {
-		this.handleWrapper(true, request, function (): libClient.HttpRequest {
-			libLog.Info(`New ${internal ? "internal" : "external"} request: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
+	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, internal: boolean, check: libCommon.CheckHost, port: number): void {
+		libLog.Info(`New ${internal ? "internal" : "external"}:${port} request from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+		this.handleWrapper(true, request, check, port, function (): libClient.HttpRequest {
 			return new libClient.HttpRequest(request, response, internal);
 		});
 	}
-	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean): void {
-		this.handleWrapper(false, request, function (): libClient.HttpUpgrade {
-			libLog.Info(`New ${internal ? "internal" : "external"} upgrade: ([${request.socket.remoteAddress}]:${request.socket.remotePort}) [${request.url}] using user-agent [${request.headers['user-agent']}]`);
+	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, internal: boolean, check: libCommon.CheckHost, port: number): void {
+		libLog.Info(`New ${internal ? "internal" : "external"}:${port} upgrade from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
+		this.handleWrapper(false, request, check, port, function (): libClient.HttpUpgrade {
 			return new libClient.HttpUpgrade(request, socket, head, internal);
 		});
 	}
 
-	public registerPath(path: string, handler: libCommon.AppInterface): void {
+	public register(path: string, handler: libCommon.AppInterface, check: libCommon.CheckConnection): void {
 		path = libLocation.Sanitize(path);
 		if (path in this.handler)
 			libLog.Error(`Path [${path}] is already being handled`);
 		else {
 			libLog.Info(`Registered path handler for [${path}]`);
-			this.handler[path] = handler;
+			this.handler[path] = { handler, check };
 		}
 	}
-	public listenHttp(port: number, internal: boolean): void {
+	public listenHttp(port: number, internal: boolean, check: libCommon.CheckHost): void {
 		try {
+			/* initialize the server config */
+			const config = {
+				requireHostHeader: true
+			};
+
 			/* start the actual server */
-			const server = libHttp.createServer((req, resp) => this.handleRequest(req, resp, internal)).listen(port);
+			const server = libHttp.createServer(config, (req, resp) => this.handleRequest(req, resp, internal, check, port)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using http: ${err}`));
-			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal));
+			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal, check, port));
 			if (!server.listening)
 				return;
 
@@ -110,18 +144,19 @@ export class Server implements libCommon.ServerInterface {
 			libLog.Error(`While listening to port ${port} using http: ${err}`);
 		}
 	}
-	public listenHttps(port: number, key: string, cert: string, internal: boolean): void {
+	public listenHttps(port: number, key: string, cert: string, internal: boolean, check: libCommon.CheckHost): void {
 		try {
-			/* load the key and certificate */
+			/* initialize the server config and load the key and certificate */
 			const config = {
+				requireHostHeader: true,
 				key: libFs.readFileSync(key),
 				cert: libFs.readFileSync(cert)
 			};
 
 			/* start the actual server */
-			const server = libHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, internal)).listen(port);
+			const server = libHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, internal, check, port)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using https: ${err}`));
-			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal));
+			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, internal, check, port));
 			if (!server.listening)
 				return;
 
