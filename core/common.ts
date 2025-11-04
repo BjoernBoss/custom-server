@@ -3,6 +3,7 @@
 import * as libClient from './client.js';
 
 export interface ModuleInterface {
+	name: string;
 	request(client: libClient.HttpRequest): void;
 	upgrade(client: libClient.HttpUpgrade): void;
 }

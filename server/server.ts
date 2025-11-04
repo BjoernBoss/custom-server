@@ -89,7 +89,7 @@ export class Server implements libCommon.ServerInterface {
 
 			/* log the established listener */
 			const address = server.address() as libNet.AddressInfo;
-			libLog.Info(`Http-server started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
+			libLog.Info(`Http-server started successfully on [${address.address}]:${address.port} [family: ${address.family}] with handler [${handler.name}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using http: ${err}`);
 		}
@@ -115,7 +115,7 @@ export class Server implements libCommon.ServerInterface {
 
 			/* log the established listener */
 			const address = server.address() as libNet.AddressInfo;
-			libLog.Info(`Https-server started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
+			libLog.Info(`Https-server started successfully on [${address.address}]:${address.port} [family: ${address.family}] with handler [${handler.name}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using https: ${err}`);
 		}

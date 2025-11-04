@@ -161,6 +161,8 @@ export abstract class HttpBaseClass {
 
 		this.basepath = libLocation.Join(this.basepath, path);
 		this.path = this.path.substring(path.endsWith('/') ? path.length - 1 : path.length);
+		if (this.path == '')
+			this.path = '/';
 	}
 	public finalize() {
 		if (this.state == HttpRequestState.none || this.state == HttpRequestState.received)
@@ -392,11 +394,11 @@ export class HttpRequest extends HttpBaseClass {
 		}
 	}
 	public respondHtml(content: string): void {
-		this.log(`Responded with html: [${content.substring(0, 16).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
+		this.log(`Responded with html: [${content.substring(0, 32).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
 		this.respondString(StatusCode.Ok, 'html', content);
 	}
 	public respondJson(content: string): void {
-		this.log(`Responded with json: [${content.substring(0, 16).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
+		this.log(`Responded with json: [${content.substring(0, 32).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
 		this.respondString(StatusCode.Ok, 'json', content);
 	}
 	public tryRespondFile(filePath: string): void {
@@ -434,7 +436,7 @@ export class HttpRequest extends HttpBaseClass {
 
 		/* check if the file is empty (can only happen for unused ranges) */
 		if (size == 0) {
-			this.log('Sending empty content');
+			this.log(`Sending empty content for [${filePath}]`);
 			this.respondString(StatusCode.Ok, fileType, '');
 			return;
 		}
@@ -450,7 +452,7 @@ export class HttpRequest extends HttpBaseClass {
 		this.closeHeader((rangeResult == RangeParseState.noRange ? StatusCode.Ok : StatusCode.PartialContent), fileType, size);
 
 		/* write the content to the stream */
-		this.log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}]`);
+		this.log(`Sending content [${offset} - ${offset + size - 1}/${fileSize}] from [${filePath}]`);
 		libStream.pipeline(stream, this.response, (err) => {
 			this.log(err == undefined ? `All content has been sent` : `Error while sending content: [${err}]`);
 		});
