@@ -436,10 +436,10 @@ export class HttpRequest extends HttpBaseClass {
 			libLog.Log(err == undefined ? `All content has been sent` : `Error while sending content: [${err}]`);
 		});
 	}
-	public receiveChunks(cb: (data: Buffer | null, error: Error | null) => boolean, maxLength: number | null = null): boolean {
+	public receiveChunks(maxLength: number | null, cb: (data: Buffer | null, error: Error | null) => boolean): boolean {
 		return this.receiveClientChunks(cb, maxLength);
 	}
-	public receiveAllBuffer(cb: (data: Buffer | null, error: Error | null) => void, maxLength: number | null = null): boolean {
+	public receiveAllBuffer(maxLength: number | null, cb: (data: Buffer | null, error: Error | null) => void): boolean {
 		const body: Buffer[] = [];
 
 		return this.receiveClientChunks(function (buf, err): boolean {
@@ -452,7 +452,7 @@ export class HttpRequest extends HttpBaseClass {
 			return true;
 		}, maxLength);
 	}
-	public receiveAllText(encoding: BufferEncoding, cb: (text: string | null, error: Error | null) => void, maxLength: number | null = null): boolean {
+	public receiveAllText(maxLength: number | null, encoding: string, cb: (text: string | null, error: Error | null) => void): boolean {
 		const body: Buffer[] = [];
 
 		return this.receiveClientChunks(function (buf, err): boolean {
@@ -463,14 +463,14 @@ export class HttpRequest extends HttpBaseClass {
 
 			/* convert the buffers to a string */
 			else try {
-				cb(libBuffer.Buffer.concat(body).toString(encoding), null);
+				cb(libBuffer.Buffer.concat(body).toString(encoding as BufferEncoding), null);
 			} catch (e: any) {
 				cb(null, e);
 			}
 			return true;
 		}, maxLength);
 	}
-	public receiveToFile(file: string, cb: (error: Error | null) => void, maxLength: number | null = null): boolean {
+	public receiveToFile(maxLength: number | null, file: string, cb: (error: Error | null) => void): boolean {
 		libLog.Log(`Collecting data from [${this.rawpath}] to: [${file}]`);
 
 		/* initialize busy until the file has been opened */

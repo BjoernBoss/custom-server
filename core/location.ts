@@ -2,7 +2,6 @@
 /* Copyright (c) 2025 Bjoern Boss Henrichsen */
 import * as libUrl from 'url';
 import * as libPath from "path";
-import * as libConfig from "./config.js";
 
 /* sanitize path and remove relative path components */
 export function Sanitize(path: string): string {
@@ -51,23 +50,17 @@ export function Join(a: string, b: string): string {
 	return (bSlash ? a + b : `${a}/${b}`);
 }
 
+/* create path-creator, which returns sanitized paths relative to [path] */
+export function MakeLocation(path: string): (path: string) => string {
+	return function (p) {
+		return libPath.join(path, Sanitize(p));
+	};
+}
+
+/* create path-creator, which returns paths within the app base path and optionally the nested path [path] */
 export function MakeAppPath(urlFilePath: string, path: string | null = null): (path: string) => string {
 	let dirName = libPath.dirname(libUrl.fileURLToPath(urlFilePath));
 	if (path != null)
 		dirName = libPath.join(dirName, Sanitize(path));
-	return function (path) {
-		return libPath.join(dirName, Sanitize(path));
-	};
-}
-
-export function MakeStoragePath(path: string | null = null): (path: string) => string {
-	const append = (path == null ? null : Sanitize(path));
-
-	/* path must be built new everytime, as the storage path might change throughout */
-	return function (path) {
-		let storagePath = libConfig.getStoragePath();
-		if (append != null)
-			storagePath = libPath.join(storagePath, append);
-		return libPath.join(storagePath, Sanitize(path));
-	};
+	return MakeLocation(dirName);
 }
