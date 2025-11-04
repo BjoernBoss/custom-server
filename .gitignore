@@ -5,5 +5,5 @@ node_modules
 core/*.js
 server/*.js
 data
-apps
-!apps/setup.d.ts
+modules/*
+!modules/setup.d.ts

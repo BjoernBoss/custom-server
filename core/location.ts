@@ -57,8 +57,8 @@ export function MakeLocation(path: string): (path: string) => string {
 	};
 }
 
-/* create path-creator, which returns paths within the app base path and optionally the nested path [path] */
-export function MakeAppPath(urlFilePath: string, path: string | null = null): (path: string) => string {
+/* create path-creator, which returns paths within the module base path and optionally the nested path [path] */
+export function MakeSelfPath(urlFilePath: string, path: string | null = null): (path: string) => string {
 	let dirName = libPath.dirname(libUrl.fileURLToPath(urlFilePath));
 	if (path != null)
 		dirName = libPath.join(dirName, Sanitize(path));

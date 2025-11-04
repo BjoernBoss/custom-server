@@ -6,7 +6,7 @@ import * as libConfig from "core/config.js";
 
 async function Setup(setupModule: any) {
 	if (setupModule == null || setupModule.Run === undefined) {
-		libLog.Warning('Unable to load local module [apps/setup.js:Run]');
+		libLog.Warning('Unable to load local module [module/setup.js:Run]');
 		return;
 	}
 	libLog.Info('Local module loaded');
@@ -17,7 +17,7 @@ async function Setup(setupModule: any) {
 		await setupModule.Run(server);
 	}
 	catch (e: any) {
-		libLog.Error(`Failed to setup the applications: ${e.message}`);
+		libLog.Error(`Failed to setup the application: ${e.message}`);
 		server.stop();
 	}
 }
@@ -26,6 +26,6 @@ async function Setup(setupModule: any) {
 libConfig.initialize();
 
 /* try to load the local configuration and otherwise perform the default-setup */
-import("../apps/setup.js")
+import("../modules/setup.js")
 	.then(setupModule => Setup(setupModule))
 	.catch(() => Setup(null));

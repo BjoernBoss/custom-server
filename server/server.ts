@@ -8,87 +8,48 @@ import * as libHttps from "https";
 import * as libHttp from "http";
 import * as libFs from "fs";
 import * as libStream from "stream";
-import { AddressInfo } from "net";
+import * as libNet from "net";
 
 export class Server implements libCommon.ServerInterface {
-	private handler: Record<string, { handler: libCommon.AppInterface, check: libCommon.CheckConnection }>;
 	private stopList: (() => void)[];
 
 	constructor() {
 		libLog.Info(`Server object created`);
-		this.handler = {};
 		this.stopList = [];
 	}
 
-	private lookupHandler(pathname: string, host: string, port: number): string | null {
-		/* lookup the best matching handler */
-		let bestKey = null;
-		for (const key in this.handler) {
-			/* ensure that the key is the leading path of the url and either a direct match or
-			*	immediately followed by a '/' (i.e. its not a partial name of a path-component) */
-			if (!pathname.startsWith(key))
-				continue;
-			if (pathname.length > key.length && pathname[key.length] != '/' && (key.length == 0 || pathname[key.length - 1] != '/'))
-				continue;
-
-			/* check if this handler applies */
-			if (this.handler[key].check != null && !this.handler[key].check(host, port))
-				continue;
-
-			/* check if this is the better match by being the first match or more precise */
-			if (bestKey == null || key.length > bestKey.length)
-				bestKey = key;
-		}
-		return bestKey;
-	}
 	private respondNotFound(request: libHttp.IncomingMessage, client: libClient.HttpRequest | libClient.HttpUpgrade): void {
 		client.respondNotFound(`No resource found at [${request.headers.host ?? ''}]:[${client.rawpath}]`);
 		client.finalize();
 	}
-	private handleWrapper(wasRequest: boolean, request: libHttp.IncomingMessage, check: libCommon.CheckHost, port: number, establish: () => libClient.HttpRequest | libClient.HttpUpgrade): void {
+	private handleWrapper(wasRequest: boolean, request: libHttp.IncomingMessage, checkHost: libCommon.CheckHost, handler: libCommon.ModuleInterface, port: number, establish: () => libClient.HttpRequest | libClient.HttpUpgrade): void {
 		let client = null;
 		try {
 			client = establish();
+			client.log(`${wasRequest ? 'Request' : 'Upgrade'}:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 
 			/* extract the host to be used and validate its port */
 			let hostName = (request.headers.host ?? '');
-			let lastColon = hostName.lastIndexOf(':');
-			if (lastColon != -1) {
-				for (const c of hostName.substring(lastColon + 1)) {
-					if (c >= '0' && c <= '9') continue;
-					lastColon = -1;
-					break;
+			const hostNameRegex = hostName.match(/^(.*):(\d+)$/);
+			if (hostNameRegex != null) {
+				if (parseInt(hostNameRegex[2], 10) != port) {
+					client.error(`Host [${hostName}] port does not match [${port}]`);
+					return this.respondNotFound(request, client);
 				}
-
-				/* check if the port of the host-name does not match */
-				if (lastColon != -1) {
-					if (parseInt(hostName.substring(lastColon + 1), 10) != port) {
-						client.error(`Host [${hostName}] port does not match [${port}]`);
-						return this.respondNotFound(request, client);
-					}
-					hostName = hostName.substring(0, lastColon);
-				}
+				hostName = hostNameRegex[1];
 			}
 
 			/* validate the host name */
-			if (check != null && !check(hostName)) {
+			if (checkHost != null && !checkHost(hostName)) {
 				client.error(`Host [${hostName}] now allowed for this endpoint [${port}]`);
 				return this.respondNotFound(request, client);
 			}
 
-			/* find the handler to use */
-			let key = this.lookupHandler(client.path, hostName, port);
-			if (key == null) {
-				client.error(`No handler registered for [${client.path}]`)
-				return this.respondNotFound(request, client);
-			}
-
 			/* handle the actual client request */
-			client.translate(key);
 			if (wasRequest)
-				this.handler[key].handler.request(client as libClient.HttpRequest);
+				handler.request(client as libClient.HttpRequest);
 			else
-				this.handler[key].handler.upgrade(client as libClient.HttpUpgrade);
+				handler.upgrade(client as libClient.HttpUpgrade);
 			client.finalize();
 		} catch (err) {
 			/* log the unknown caught exception (internal-server-error) */
@@ -98,31 +59,18 @@ export class Server implements libCommon.ServerInterface {
 			request.destroy();
 		}
 	}
-	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, check: libCommon.CheckHost, port: number): void {
-		this.handleWrapper(true, request, check, port, function (): libClient.HttpRequest {
-			const client = new libClient.HttpRequest(request, response);
-			client.log(`Request:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
-			return client;
+	private handleRequest(request: libHttp.IncomingMessage, response: libHttp.ServerResponse, check: libCommon.CheckHost, handler: libCommon.ModuleInterface, port: number): void {
+		this.handleWrapper(true, request, check, handler, port, function (): libClient.HttpRequest {
+			return new libClient.HttpRequest(request, response);
 		});
 	}
-	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, check: libCommon.CheckHost, port: number): void {
-		this.handleWrapper(false, request, check, port, function (): libClient.HttpUpgrade {
-			let client = new libClient.HttpUpgrade(request, socket, head);
-			client.log(`Upgrade:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
-			return client;
+	private handleUpgrade(request: libHttp.IncomingMessage, socket: libStream.Duplex, head: Buffer, check: libCommon.CheckHost, handler: libCommon.ModuleInterface, port: number): void {
+		this.handleWrapper(false, request, check, handler, port, function (): libClient.HttpUpgrade {
+			return new libClient.HttpUpgrade(request, socket, head);
 		});
 	}
 
-	public register(path: string, handler: libCommon.AppInterface, check: libCommon.CheckConnection): void {
-		path = libLocation.Sanitize(path);
-		if (path in this.handler)
-			libLog.Error(`Path [${path}] is already being handled`);
-		else {
-			libLog.Info(`Registered path handler for [${path}]`);
-			this.handler[path] = { handler, check };
-		}
-	}
-	public listenHttp(port: number, check: libCommon.CheckHost): void {
+	public listenHttp(port: number, handler: libCommon.ModuleInterface, checkHost: libCommon.CheckHost): void {
 		try {
 			/* initialize the server config */
 			const config = {
@@ -130,9 +78,9 @@ export class Server implements libCommon.ServerInterface {
 			};
 
 			/* start the actual server */
-			const server = libHttp.createServer(config, (req, resp) => this.handleRequest(req, resp, check, port)).listen(port);
+			const server = libHttp.createServer(config, (req, resp) => this.handleRequest(req, resp, checkHost, handler, port)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using http: ${err}`));
-			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, check, port));
+			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, checkHost, handler, port));
 			if (!server.listening)
 				return;
 
@@ -140,13 +88,13 @@ export class Server implements libCommon.ServerInterface {
 			this.stopList.push(() => server.close());
 
 			/* log the established listener */
-			const address = server.address() as AddressInfo;
+			const address = server.address() as libNet.AddressInfo;
 			libLog.Info(`Http-server started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using http: ${err}`);
 		}
 	}
-	public listenHttps(port: number, key: string, cert: string, check: libCommon.CheckHost): void {
+	public listenHttps(port: number, key: string, cert: string, handler: libCommon.ModuleInterface, checkHost: libCommon.CheckHost): void {
 		try {
 			/* initialize the server config and load the key and certificate */
 			const config = {
@@ -156,9 +104,9 @@ export class Server implements libCommon.ServerInterface {
 			};
 
 			/* start the actual server */
-			const server = libHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, check, port)).listen(port);
+			const server = libHttps.createServer(config, (req, resp) => this.handleRequest(req, resp, checkHost, handler, port)).listen(port);
 			server.on('error', (err) => libLog.Error(`While listening to port ${port} using https: ${err}`));
-			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, check, port));
+			server.on('upgrade', (req, sock, head) => this.handleUpgrade(req, sock, head, checkHost, handler, port));
 			if (!server.listening)
 				return;
 
@@ -166,7 +114,7 @@ export class Server implements libCommon.ServerInterface {
 			this.stopList.push(() => server.close());
 
 			/* log the established listener */
-			const address = server.address() as AddressInfo;
+			const address = server.address() as libNet.AddressInfo;
 			libLog.Info(`Https-server started successfully on [${address.address}]:${address.port} [family: ${address.family}]`);
 		} catch (err) {
 			libLog.Error(`While listening to port ${port} using https: ${err}`);

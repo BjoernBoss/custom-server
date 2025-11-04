@@ -6,7 +6,7 @@
 	},
 	"workspaces": [
 		"core",
-		"apps/*"
+		"modules/*"
 	],
 	"devDependencies": {
 		"@types/node": "^24.9.2",

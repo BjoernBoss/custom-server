@@ -126,7 +126,7 @@ abstract class HttpBaseClass {
 	protected state: HttpRequestState;
 	protected headers: Record<string, string>;
 
-	/* path relative to current application base-path */
+	/* path relative to current module base-path */
 	public path: string;
 
 	/* absolute path on web-server */
