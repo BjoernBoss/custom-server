@@ -4,7 +4,7 @@
 
 Small custom webserver written in typescript/javascript, capable to host mutliple separate apps with support for simple http requests and websockets.
 
-To write an application for the service, simply implement the `AppInterface` defined in `core/common.js`. 
+To write an application for the server, simply implement the `AppInterface` defined in `core/common.ts`. 
 
 ## Using the Server
 To setup this server simply clone the project:
@@ -12,7 +12,7 @@ To setup this server simply clone the project:
     $ git clone https://github.com/BjoernBoss/maws-host.git
 
 Afterwards implement the `apps/setup.js` file with its `Run` method.
-This method should setup any listeners, as well as register the applications themselves.
+This method should setup any listeners, as well as register the applications themselves, and configure the system accordingly.
 
 Finally install the dependencies, and transpile and start the server:
 
