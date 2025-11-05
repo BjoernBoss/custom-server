@@ -6,7 +6,7 @@ import * as libConfig from "core/config.js";
 
 async function Setup(setupModule: any) {
 	if (setupModule == null || setupModule.Run === undefined) {
-		libLog.Warning('Unable to load local module [module/setup.js:Run]');
+		libLog.Error('Unable to load local module [module/setup.js:Run]');
 		return;
 	}
 	libLog.Info('Local module loaded');
