@@ -27,7 +27,8 @@ var logFile: FileLoggingConfig = {
 };
 
 function FlushToFile(): void {
-	console.log('flushing into file');
+	if (logIntoConsole)
+		console.log('flushing into file');
 
 	/* write the buffer to the file */
 	if (logFile.buffer.length > 0 && logFile.fs != null) {
