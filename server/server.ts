@@ -28,7 +28,7 @@ export class Server implements libCommon.ServerInterface {
 			client.log(`${wasRequest ? 'Request' : 'Upgrade'}:${port} from [${request.socket.remoteAddress}]:${request.socket.remotePort} to [${request.headers.host}]:[${request.url}] (user-agent: [${request.headers['user-agent']}])`);
 
 			/* extract the host to be used and validate its port */
-			let hostName = (request.headers.host ?? '');
+			let hostName = (request.headers.host ?? '').toLowerCase();
 			const hostNameRegex = hostName.match(/^(.*):(\d+)$/);
 			if (hostNameRegex != null) {
 				if (parseInt(hostNameRegex[2], 10) != port) {
