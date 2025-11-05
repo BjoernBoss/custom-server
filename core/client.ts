@@ -422,12 +422,19 @@ export class HttpRequest extends HttpBase {
 	}
 	public tryRespondFile(filePath: string): void {
 		/* check if the file exists */
-		if (!libFs.existsSync(filePath) || !libFs.lstatSync(filePath).isFile()) {
-			this.log(`Request to unknown resource`);
-			this.respondNotFound();
+		let fileSize: number = 0;
+		try {
+			if (!libFs.existsSync(filePath) || !libFs.lstatSync(filePath).isFile()) {
+				this.log(`Request to unknown resource`);
+				this.respondNotFound();
+				return;
+			}
+			fileSize = libFs.statSync(filePath).size;
+		} catch (e: any) {
+			libLog.Error(`Filesystem error while processing [${filePath}]: ${e.message}`);
+			this.respondInternalError('File operation failed');
 			return;
 		}
-		const fileSize = libFs.statSync(filePath).size;
 
 		/* mark byte-ranges to be supported in principle */
 		this.headers['Accept-Ranges'] = 'bytes';
