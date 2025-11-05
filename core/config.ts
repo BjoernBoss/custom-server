@@ -13,5 +13,5 @@ export function getServerName(): string {
 
 /* initialize the default configuration */
 export function initialize(): void {
-	setServerName('ma-web-server');
+	setServerName('modular-web-server');
 }
