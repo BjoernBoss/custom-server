@@ -120,11 +120,10 @@ enum HttpRequestState {
 }
 
 var NextClientId: number = 0;
+const WebSocketServerInstance: libWs.Server = new libWs.WebSocketServer({ noServer: true });
 
-export abstract class HttpBaseClass {
-	protected request: libHttp.IncomingMessage;
-	protected state: HttpRequestState;
-	protected headers: Record<string, string>;
+
+export class ClientBase {
 	protected logLayer: string;
 
 	/* path relative to current module base-path */
@@ -142,22 +141,27 @@ export abstract class HttpBaseClass {
 	/* unique id to identify client in logs */
 	readonly id: number;
 
-	protected abstract setupResponse(status: number, message: string, content: string, fileType: string): void;
-
-	constructor(request: libHttp.IncomingMessage) {
-		this.state = HttpRequestState.none;
-		this.request = request;
-		this.headers = {};
-		this.logLayer = '';
-
-		this.id = ++NextClientId;
-
-		const url = new libURL.URL(`http://host.server${request.url}`);
-		this.path = libLocation.Sanitize(decodeURIComponent(url.pathname));
-		this.rawpath = url.pathname;
-		this.fullpath = this.path;
-		this.basepath = '/';
+	protected constructor(url: libURL.URL);
+	protected constructor(client: ClientBase);
+	protected constructor(arg: libURL.URL | ClientBase) {
+		if (arg instanceof libURL.URL) {
+			this.logLayer = '';
+			this.id = ++NextClientId;
+			this.path = libLocation.Sanitize(decodeURIComponent(arg.pathname));
+			this.rawpath = arg.pathname;
+			this.fullpath = this.path;
+			this.basepath = '/';
+		}
+		else {
+			this.logLayer = arg.logLayer;
+			this.path = arg.path;
+			this.fullpath = arg.fullpath;
+			this.basepath = arg.basepath;
+			this.rawpath = arg.rawpath;
+			this.id = arg.id;
+		}
 	}
+
 	public translate(path: string): void {
 		if (!libLocation.IsSubDirectory(path, this.path))
 			throw new Error(`Path [${path}] is not a base of [${this.path}]`);
@@ -167,6 +171,31 @@ export abstract class HttpBaseClass {
 		if (this.path == '')
 			this.path = '/';
 	}
+	public pushLog(name: string) {
+		this.logLayer = `${this.logLayer}::${name}`;
+	}
+	public log(msg: string) {
+		libLog.Log(`Client[${this.id}]${this.logLayer}: ${msg}`);
+	}
+	public error(msg: string) {
+		libLog.Error(`Client[${this.id}]${this.logLayer}: ${msg}`);
+	}
+};
+
+export abstract class HttpBase extends ClientBase {
+	protected request: libHttp.IncomingMessage;
+	protected state: HttpRequestState;
+	protected headers: Record<string, string>;
+
+	protected abstract setupResponse(status: number, message: string, content: string, fileType: string): void;
+
+	constructor(request: libHttp.IncomingMessage) {
+		super(new libURL.URL(`http://host.server${request.url}`));
+		this.request = request;
+		this.state = HttpRequestState.none;
+		this.headers = {};
+	}
+
 	public finalize() {
 		if (this.state == HttpRequestState.none || this.state == HttpRequestState.received)
 			throw new Error('Request has not been handled');
@@ -194,19 +223,9 @@ export abstract class HttpBaseClass {
 			this.setupResponse(StatusCode.NotFound.code, StatusCode.NotFound.msg, content, 'html');
 		}
 	}
-
-	public pushLog(name: string) {
-		this.logLayer = `${this.logLayer}:${name}`;
-	}
-	public log(msg: string) {
-		libLog.Log(`Client[${this.id}]${this.logLayer}: ${msg}`);
-	}
-	public error(msg: string) {
-		libLog.Error(`Client[${this.id}]${this.logLayer}: ${msg}`);
-	}
 };
 
-export class HttpRequest extends HttpBaseClass {
+export class HttpRequest extends HttpBase {
 	private response: libHttp.ServerResponse;
 
 	constructor(request: libHttp.IncomingMessage, response: libHttp.ServerResponse) {
@@ -569,9 +588,7 @@ export class HttpRequest extends HttpBaseClass {
 	}
 };
 
-const webSocketServer: libWs.Server = new libWs.WebSocketServer({ noServer: true });
-
-export class HttpUpgrade extends HttpBaseClass {
+export class HttpUpgrade extends HttpBase {
 	private socket: libStream.Duplex;
 	private head: Buffer;
 
@@ -607,7 +624,7 @@ export class HttpUpgrade extends HttpBaseClass {
 		this.responseString(`${status} ${message}`, fileType, content);
 	}
 
-	public tryAcceptWebSocket(cb: (ws: libWs.WebSocket) => void): boolean {
+	public tryAcceptWebSocket(cb: (ws: ClientSocket) => void): boolean {
 		let connection = this.request.headers?.connection?.toLowerCase().split(',').map((v) => v.trim());
 		if (connection == undefined || connection.indexOf('upgrade') == -1)
 			return false;
@@ -619,10 +636,49 @@ export class HttpUpgrade extends HttpBaseClass {
 			throw new Error('Request has already been handled');
 		this.state = HttpRequestState.upgrading;
 
-		webSocketServer.handleUpgrade(this.request, this.socket, this.head, function (ws, request) {
-			webSocketServer.emit('connection', ws, request);
-			cb(ws);
+		const that = this;
+		WebSocketServerInstance.handleUpgrade(this.request, this.socket, this.head, function (ws, request) {
+			WebSocketServerInstance.emit('connection', ws, request);
+			cb(new ClientSocket(ws, that));
 		});
 		return true;
+	}
+};
+
+export class ClientSocket extends ClientBase {
+	private ws: libWs.WebSocket;
+
+	public onpong?: () => void;
+	public ondata?: (data: libWs.RawData, isBinary: boolean) => void;
+	public onclose?: () => void;
+
+	constructor(ws: libWs.WebSocket, base: HttpUpgrade) {
+		super(base);
+		this.ws = ws;
+
+		/* register the callbacks */
+		const that = this;
+		this.ws.on('message', function (data, isBinary) {
+			if (that.ondata != null)
+				that.ondata(data, isBinary);
+		});
+		this.ws.on('close', function () {
+			if (that.onclose != null)
+				that.onclose();
+		});
+		this.ws.on('pong', function () {
+			if (that.onpong != null)
+				that.onpong();
+		});
+	}
+
+	public ping(): void {
+		this.ws.ping();
+	}
+	public send(buffer: any): void {
+		this.ws.send(buffer);
+	}
+	public close(): void {
+		this.ws.close();
 	}
 };
