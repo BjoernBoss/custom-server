@@ -1,9 +1,7 @@
-local-config.js
 package-lock.json
 node_modules
 .vscode
 core/*.js
 server/*.js
-data
 modules/*
 !modules/setup.d.ts
