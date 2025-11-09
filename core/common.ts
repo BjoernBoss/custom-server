@@ -11,10 +11,10 @@ export interface ModuleInterface {
 /*
 *	Validate the host passed in via the http-parameter.
 *	Host string will be empty for no host-parameter.
-*	Host strings optional port will have been verified.
-*	null: allow any host
+*	Host strings optional port will have been verified and dropped.
+*		=> Will only contain the lower-case host name.
 */
-export type CheckHost = ((host: string) => boolean) | null;
+export type CheckHost = (host: string) => boolean;
 
 export interface ServerInterface {
 	listenHttp(port: number, handler: ModuleInterface, checkHost: CheckHost): void;

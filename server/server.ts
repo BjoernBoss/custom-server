@@ -39,7 +39,7 @@ export class Server implements libCommon.ServerInterface {
 			}
 
 			/* validate the host name */
-			if (checkHost != null && !checkHost(hostName)) {
+			if (!checkHost(hostName)) {
 				client.error(`Host [${hostName}] now allowed for this endpoint [${port}]`);
 				return this.respondNotFound(request, client);
 			}
