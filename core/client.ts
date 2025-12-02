@@ -412,13 +412,9 @@ export class HttpRequest extends HttpBase {
 			this.respondString(StatusCode.BadRequest, 'html', content);
 		}
 	}
-	public respondHtml(content: string): void {
-		this.log(`Responded with html: [${content.substring(0, 32).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
-		this.respondString(StatusCode.Ok, 'html', content);
-	}
-	public respondJson(content: string): void {
-		this.log(`Responded with json: [${content.substring(0, 32).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')}...]`);
-		this.respondString(StatusCode.Ok, 'json', content);
+	public respondText(content: string, fsKind = 'html'): void {
+		this.log(`Responded with ${fsKind}: [${content.substring(0, 32).replaceAll('\n', ' ').replaceAll('\r', ' ').replaceAll('\t', ' ')}...]`);
+		this.respondString(StatusCode.Ok, fsKind, content);
 	}
 	public tryRespondFile(filePath: string): void {
 		/* check if the file exists */
